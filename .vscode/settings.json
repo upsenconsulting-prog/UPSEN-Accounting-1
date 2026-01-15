@@ -1,3 +1,4 @@
 {
-    "livePreview.defaultPreviewPath": "/budgetPage/budget.html"
+    "livePreview.defaultPreviewPath": "/budgetPage/budget.html",
+    "liveServer.settings.port": 5501
 }
