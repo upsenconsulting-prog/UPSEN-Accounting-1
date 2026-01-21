@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="es">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Accounting - Accounting Dashboard</title>
+  <title>Accounting - Panel de Control</title>
   <style>
     /* Basis-Styles */
     * {
@@ -438,16 +438,16 @@
   <!-- Login Screen -->
   <div class="login-container" id="loginScreen">
     <div class="login-form">
-      <h2>Anmelden bei Accounting</h2>
+      <h2>Iniciar sesión en Accounting</h2>
       <div class="form-group">
-        <label for="email">E-Mail</label>
-        <input type="email" id="email" placeholder="Ihre E-Mail-Adresse" value="test@example.com">
+        <label for="email">Correo electrónico</label>
+        <input type="email" id="email" placeholder="Tu dirección de correo electrónico" value="test@example.com">
       </div>
       <div class="form-group">
-        <label for="password">Passwort</label>
-        <input type="password" id="password" placeholder="Ihr Passwort" value="123456">
+        <label for="password">Contraseña</label>
+        <input type="password" id="password" placeholder="Tu contraseña" value="123456">
       </div>
-      <button class="login-btn" id="loginBtn">Anmelden</button>
+      <button class="login-btn" id="loginBtn">Iniciar sesión</button>
     </div>
   </div>
 
@@ -461,9 +461,9 @@
           <div class="avatar" id="userMenuBtn">JS</div>
           <span>John Smith</span>
           <div class="dropdown-menu" id="userDropdown">
-            <div class="dropdown-item">Profil</div>
-            <div class="dropdown-item">Einstellungen</div>
-            <div class="dropdown-item" id="logoutBtn">Abmelden</div>
+            <div class="dropdown-item">Perfil</div>
+            <div class="dropdown-item">Configuración</div>
+            <div class="dropdown-item" id="logoutBtn">Cerrar sesión</div>
           </div>
         </div>
       </div>
@@ -473,18 +473,18 @@
     <div class="main-content">
       <!-- Sidebar -->
       <aside class="sidebar">
-        <div class="sidebar-header">Menü</div>
+        <div class="sidebar-header">Menú</div>
         <div class="accordion">
           <div class="accordion-item">
             <div class="accordion-header">Accounting</div>
             <div class="accordion-content">
                 <ul class="sidebar-menu">
-                    <li><a href="https://upsenconsulting-prog.github.io/UPSEN-Accounting/" class="sidebar-link">Dashboard</a></li>
-                    <li><a href="https://upsenconsulting-prog.github.io/UPSEN-Accounting/expense/expense.html" class="sidebar-link">Expenses</a></li>
-                    <li><a href="https://upsenconsulting-prog.github.io/UPSEN-Accounting/Invoice-issued/invoice-issued.html" class="sidebar-link">Invoice Issued</a></li>
-                    <li><a href="https://upsenconsulting-prog.github.io/UPSEN-Accounting/Invoice_recieved/Invoice_received.html" class="sidebar-link">Invoice Received</a></li>
-                    <li><a href="https://upsenconsulting-prog.github.io/UPSEN-Accounting/budgetPage/budget.html" class="sidebar-link">Budgets</a></li>
-                    <li><a href="#help" class="sidebar-link">Hilfe</a></li>
+                    <li><a href="../frontPage/frontPage.html" class="sidebar-link">Panel de control</a></li>
+                    <li><a href="../expense/expense.html" class="sidebar-link">Gastos</a></li>
+                    <li><a href="../Invoice-issued/invoice-issued.html" class="sidebar-link">Facturas emitidas</a></li>
+                    <li><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link">Facturas recibidas</a></li>
+                    <li><a href="../budgetPage/budget.html" class="sidebar-link">Presupuestos</a></li>
+                    <li><a href="#help" class="sidebar-link">Ayuda</a></li>
                 </ul>
             </div>
           </div>
@@ -494,59 +494,59 @@
       <!-- Content Area -->
       <main class="content">
         <div class="dashboard-header">
-          <h1 class="page-title">Dashboard</h1>
+          <h1 class="page-title">Panel de control</h1>
           <div class="action-buttons">
             <button class="btn btn-primary" id="newDocumentBtn">
-              <span>+</span> Neues Dokument
+              <span>+</span> Nuevo documento
             </button>
             <button class="btn btn-secondary" id="refreshBtn">
-              <span>↻</span> Aktualisieren
+              <span>↻</span> Actualizar
             </button>
           </div>
         </div>
 
         <!-- Status Message für Links -->
         <div class="status-message" id="linkStatus">
-          <strong>Hinweis:</strong> Klicken Sie auf die Links in der Sidebar, um zu den entsprechenden Seiten zu navigieren.
+          <strong>Aviso:</strong> Haz clic en los enlaces del menú lateral para navegar a las páginas correspondientes.
         </div>
 
         <div class="dashboard-grid">
           <div class="card plan-card">
-            <h2 class="card-header">Plan aktualisieren</h2>
+            <h2 class="card-header">Actualizar plan</h2>
             <div class="plan-info">
-              <p>Sie nutzen derzeit den kostenlosen Basis-Plan.</p>
+              <p>Actualmente estás utilizando el plan básico gratuito.</p>
             </div>
             <button class="btn" style="background: white; color: #2a4d9c;">
-              Plan upgraden oder Produkte hinzufügen
+              Mejorar plan o añadir productos
             </button>
           </div>
 
           <div class="card billing-card">
-            <h2 class="card-header">Abrechnungsübersicht</h2>
-            <p>Sie haben die maximale Anzahl von Dokumenten erreicht, die Ihr Plan für 2025 zulässt.</p>
-            <p class="billing-warning">Um die Limits zu erhöhen, mieten Sie einen höheren Plan an.</p>
+            <h2 class="card-header">Resumen de facturación</h2>
+            <p>Has alcanzado el número máximo de documentos permitidos por tu plan para 2025.</p>
+            <p class="billing-warning">Para aumentar los límites, contrata un plan superior.</p>
           </div>
 
           <div class="card chart-card">
-            <h2 class="card-header">Einnahmen- und Ausgabendiagramm</h2>
+            <h2 class="card-header">Gráfico de ingresos y gastos</h2>
             <table>
               <thead>
                 <tr>
-                  <th>Kumulierter Gewinn</th>
-                  <th>Einnahmen</th>
-                  <th>Ausgaben</th>
+                  <th>Beneficio acumulado</th>
+                  <th>Ingresos</th>
+                  <th>Gastos</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>€0.00</td>
-                  <td>€0.00</td>
-                  <td>€0.00</td>
+                  <p><strong>Total recibido (mes actual):</strong> <span id="kpi-received-total">0,00 €</span></p>
+                  <p><strong>Nº facturas recibidas (mes actual):</strong> <span id="kpi-received-count">0</span></p>
+                  <p><strong>Pendientes (recibidas):</strong> <span id="kpi-received-pending">0</span></p>
                 </tr>
               </tbody>
             </table>
             <div class="chart-placeholder">
-              Diagrammvisualisierung würde hier erscheinen
+              Aquí aparecería la visualización del gráfico
             </div>
           </div>
         </div>
@@ -554,14 +554,14 @@
         <div class="comments-section">
           <div class="comments-toggle" id="toggleComments">
             <span>+</span>
-            <span>Kommentare anzeigen</span>
+            <span>Mostrar comentarios</span>
           </div>
         </div>
 
         <div class="card forecast-card">
-          <h2 class="card-header">Zahlungsprognose</h2>
+          <h2 class="card-header">Previsión de pagos</h2>
           <div class="chart-placeholder">
-            Prognosediagramm würde hier erscheinen
+            Aquí aparecería el gráfico de previsión
           </div>
         </div>
       </main>
@@ -570,36 +570,43 @@
 
   <script>
     // ✅ PRÜFE BEIM LADEN DER SEITE OB BEREITS EINGELOGGT
-    window.addEventListener('load', function() {
-      // Prüfe ob bereits eingeloggt
-      const isLoggedIn = sessionStorage.getItem('isLoggedIn');
-      
-      if (isLoggedIn === 'true') {
-        // Direkt zur App wechseln wenn bereits eingeloggt
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('appContainer').style.display = 'flex';
-      } else {
-        // Auto-fill for easier testing
-        document.getElementById('email').value = 'test@example.com';
-        document.getElementById('password').value = '123456';
-      }
-    });
+    window.addEventListener("load", function () {
+  const isLoggedIn = localStorage.getItem("isLoggedIn");
+
+  if (isLoggedIn === "true") {
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("appContainer").style.display = "flex";
+
+    if (typeof markActivePage === "function") {
+      markActivePage();
+    }
+  } else {
+    document.getElementById("email").value = "test@example.com";
+    document.getElementById("password").value = "123456";
+  }
+});
+
 
     // Login functionality
-    document.getElementById('loginBtn').addEventListener('click', function() {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      
-      if (email && password) {
-        // ✅ LOGIN-STATUS IN SESSION SPEICHERN
-        sessionStorage.setItem('isLoggedIn', 'true');
-        
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('appContainer').style.display = 'flex';
-      } else {
-        alert('Bitte geben Sie E-Mail und Passwort ein');
-      }
-    });
+   document.getElementById("loginBtn").addEventListener("click", function () {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  if (email && password) {
+    // marca logado
+    localStorage.setItem("isLoggedIn", "true");
+
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("appContainer").style.display = "flex";
+
+    if (typeof markActivePage === "function") {
+      markActivePage();
+    }
+  } else {
+    alert("Introduce email y contraseña");
+  }
+});
+
     
     // User menu functionality
     document.getElementById('userMenuBtn').addEventListener('click', function() {
@@ -609,7 +616,7 @@
     // Logout functionality
     document.getElementById('logoutBtn').addEventListener('click', function() {
       // ✅ LOGIN-STATUS ENTFERNEN BEIM ABMELDEN
-      sessionStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('isLoggedIn');
       
       document.getElementById('appContainer').style.display = 'none';
       document.getElementById('loginScreen').style.display = 'flex';
@@ -660,5 +667,6 @@
       });
     });
   </script>
+  <script type="module" src="./frontPageDashboard.js"></script>
 </body>
 </html>

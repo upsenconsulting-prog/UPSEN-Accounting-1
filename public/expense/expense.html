@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Accounting - Invoice Issued</title>
+  <title>Accounting - Gastos</title>
   <style>
     /* Basis-Styles */
     * {
@@ -96,9 +96,6 @@
       justify-content: space-between;
       color: white;
       box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-      position: sticky;
-      top: 0;
-      z-index: 100;
     }
 
     .logo {
@@ -176,9 +173,6 @@
       background: #2c3e50;
       color: white;
       overflow-y: auto;
-      position: sticky;
-      top: 0;
-      height: 100vh;
     }
 
     .sidebar-header {
@@ -231,34 +225,11 @@
       padding: 10px 20px 10px 40px;
       font-size: 0.95em;
       cursor: pointer;
-      transition: all 0.3s;
     }
 
     .accordion-content li:hover {
       background: #2c3e50;
       color: #1abc9c;
-    }
-
-    /* Aktive Seite markieren */
-    .accordion-content li.active {
-      background: #1abc9c;
-      color: white;
-    }
-
-    .accordion-content li.active a {
-      color: white;
-    }
-
-    /* Link Styles */
-    .sidebar-link {
-      color: inherit;
-      text-decoration: none;
-      display: block;
-      width: 100%;
-    }
-
-    .sidebar-link:hover {
-      color: inherit;
     }
 
     /* Content Area */
@@ -313,11 +284,6 @@
       color: #495057;
     }
 
-    .btn-success {
-      background-color: #28a745;
-      color: white;
-    }
-
     /* Dashboard Cards */
     .dashboard-grid {
       display: grid;
@@ -331,7 +297,6 @@
       border-radius: 12px;
       padding: 22px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      margin-bottom: 20px;
     }
 
     .card-header {
@@ -339,12 +304,9 @@
       font-weight: 600;
       margin-bottom: 15px;
       color: #2c3e50;
-      display: flex;
-      justify-content: between;
-      align-items: center;
     }
 
-    /* Summary Cards */
+    /* Summary Cards für Expenses */
     .cards-container {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -372,29 +334,6 @@
       color: #2c3e50;
     }
 
-    /* Status Badges */
-    .status-badge {
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    .status-paid {
-      background-color: #d4edda;
-      color: #155724;
-    }
-
-    .status-pending {
-      background-color: #fff3cd;
-      color: #856404;
-    }
-
-    .status-overdue {
-      background-color: #f8d7da;
-      color: #721c24;
-    }
-
     /* Table Styles */
     table {
       width: 100%;
@@ -413,8 +352,28 @@
       font-weight: 600;
     }
 
-    tr:hover {
-      background-color: #f8f9fa;
+    /* Link Styles */
+    .sidebar-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      width: 100%;
+      padding: 10px 20px 10px 40px;
+    }
+
+    .sidebar-link:hover {
+      background: #2c3e50;
+      color: #1abc9c;
+    }
+
+    /* Status Message */
+    .status-message {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      border-radius: 4px;
+      padding: 10px;
+      margin: 10px 0;
+      color: #856404;
     }
 
     /* Chart Placeholder */
@@ -441,7 +400,7 @@
 
     @media (max-width: 768px) {
       .sidebar {
-        position: fixed;
+        position: absolute;
         left: -250px;
         height: 100%;
         z-index: 100;
@@ -462,16 +421,16 @@
   <!-- Login Screen -->
   <div class="login-container" id="loginScreen">
     <div class="login-form">
-      <h2>Anmelden bei Accounting</h2>
+      <h2>Iniciar sesión en Accounting</h2>
       <div class="form-group">
-        <label for="email">E-Mail</label>
-        <input type="email" id="email" placeholder="Ihre E-Mail-Adresse" value="test@example.com">
+        <label for="email">Correo electrónico</label>
+        <input type="email" id="email" placeholder="Su dirección de correo electrónico" value="test@example.com">
       </div>
       <div class="form-group">
-        <label for="password">Passwort</label>
-        <input type="password" id="password" placeholder="Ihr Passwort" value="123456">
+        <label for="password">Contraseña</label>
+        <input type="password" id="password" placeholder="Su contraseña" value="123456">
       </div>
-      <button class="login-btn" id="loginBtn">Anmelden</button>
+      <button class="login-btn" id="loginBtn">Iniciar sesión</button>
     </div>
   </div>
 
@@ -485,9 +444,9 @@
           <div class="avatar" id="userMenuBtn">JS</div>
           <span>John Smith</span>
           <div class="dropdown-menu" id="userDropdown">
-            <div class="dropdown-item">Profil</div>
-            <div class="dropdown-item">Einstellungen</div>
-            <div class="dropdown-item" id="logoutBtn">Abmelden</div>
+            <div class="dropdown-item">Perfil</div>
+            <div class="dropdown-item">Configuración</div>
+            <div class="dropdown-item" id="logoutBtn">Cerrar sesión</div>
           </div>
         </div>
       </div>
@@ -497,18 +456,18 @@
     <div class="main-content">
       <!-- Sidebar -->
       <aside class="sidebar">
-        <div class="sidebar-header">Menü</div>
+        <div class="sidebar-header">Menú</div>
         <div class="accordion">
           <div class="accordion-item">
             <div class="accordion-header">Accounting</div>
-            <div class="accordion-content open">
+            <div class="accordion-content">
                 <ul class="sidebar-menu">
-                    <li><a href="https://upsenconsulting-prog.github.io/UPSEN-Accounting/" class="sidebar-link">Dashboard</a></li>
-                    <li><a href="https://upsenconsulting-prog.github.io/UPSEN-Accounting/expense/expense.html" class="sidebar-link">Expenses</a></li>
-                    <li class="active"><a href="https://upsenconsulting-prog.github.io/UPSEN-Accounting/Invoice-issued/invoice-issued.html" class="sidebar-link">Invoice Issued</a></li>
-                    <li><a href="https://upsenconsulting-prog.github.io/UPSEN-Accounting/Invoice_recieved/Invoice_received.html" class="sidebar-link">Invoice Received</a></li>
-                    <li><a href="https://upsenconsulting-prog.github.io/UPSEN-Accounting/budgetPage/budget.html" class="sidebar-link">Budgets</a></li>
-                    <li><a href="#help" class="sidebar-link">Hilfe</a></li>
+                    <li><a href="../frontPage/frontPage.html" class="sidebar-link">Dashboard</a></li>
+                    <li><a href="../expense.html" class="sidebar-link">Gastos</a></li>
+                    <li><a href="../Invoice-issued/invoice-issued.html" class="sidebar-link">Facturas emitidas</a></li>
+                    <li><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link">Facturas recibidas</a></li>
+                    <li><a href="../budgetPage/budget.html" class="sidebar-link">Presupuestos</a></li>
+                    <li><a href="#help" class="sidebar-link">Ayuda</a></li>
                 </ul>
             </div>
           </div>
@@ -518,16 +477,13 @@
       <!-- Content Area -->
       <main class="content">
         <div class="dashboard-header">
-          <h1 class="page-title">Invoice Issued</h1>
+          <h1 class="page-title">Gastos</h1>
           <div class="action-buttons">
-            <button class="btn btn-primary" id="newInvoiceBtn">
-              <span>+</span> Neue Rechnung
-            </button>
-            <button class="btn btn-success" id="exportBtn">
-              <span>📊</span> Exportieren
+            <button class="btn btn-primary" id="newExpenseBtn">
+              <span>+</span> Nuevo gasto
             </button>
             <button class="btn btn-secondary" id="refreshBtn">
-              <span>↻</span> Aktualisieren
+              <span>↻</span> Actualizar
             </button>
           </div>
         </div>
@@ -535,82 +491,55 @@
         <!-- Summary Cards -->
         <div class="cards-container">
           <div class="card summary-card">
-            <h2>Ausstehende Zahlungen</h2>
-            <p><strong>€2.450,00</strong></p>
+            <h2>Gastos mensuales</h2>
+            <p><strong>€470,00</strong></p>
           </div>
           <div class="card summary-card">
-            <h2>Überfällige Rechnungen</h2>
-            <p><strong>€890,00</strong></p>
+            <h2>Categoría con mayor coste</h2>
+            <p><strong>Gastos de viaje</strong></p>
           </div>
           <div class="card summary-card">
-            <h2>Diesen Monat erstellt</h2>
-            <p><strong>12 Rechnungen</strong></p>
-          </div>
-          <div class="card summary-card">
-            <h2>Durchschnittlicher Betrag</h2>
-            <p><strong>€204,17</strong></p>
+            <h2>Último gasto</h2>
+            <p>10.09.2025 – Viaje en tren</p>
           </div>
         </div>
 
-        <!-- Invoice Table -->
+        <!-- Table -->
         <div class="card">
-          <h2 class="card-header">Ausgestellte Rechnungen</h2>
+          <h2 class="card-header">Resumen de gastos</h2>
           <table>
             <thead>
               <tr>
-                <th>Rechnungsnummer</th>
-                <th>Kunde</th>
-                <th>Datum</th>
-                <th>Fällig am</th>
-                <th>Betrag</th>
-                <th>Status</th>
-                <th>Aktionen</th>
+                <th>Fecha</th>
+                <th>Categoría</th>
+                <th>Importe</th>
+                <th>Notas</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="expenseTBody">
               <tr>
-                <td>INV-2025-001</td>
-                <td>Max Mustermann GmbH</td>
                 <td>01.09.2025</td>
-                <td>15.09.2025</td>
-                <td>€450,00</td>
-                <td><span class="status-badge status-paid">Bezahlt</span></td>
-                <td>
-                  <button class="btn" style="padding: 4px 8px; font-size: 12px;">Ansehen</button>
-                </td>
+                <td>Material de oficina</td>
+                <td>€120,00</td>
+                <td>Papel y cartuchos de impresora</td>
               </tr>
               <tr>
-                <td>INV-2025-002</td>
-                <td>WebDesign AG</td>
-                <td>05.09.2025</td>
-                <td>20.09.2025</td>
-                <td>€890,00</td>
-                <td><span class="status-badge status-pending">Ausstehend</span></td>
-                <td>
-                  <button class="btn" style="padding: 4px 8px; font-size: 12px;">Ansehen</button>
-                </td>
-              </tr>
-              <tr>
-                <td>INV-2025-003</td>
-                <td>Tech Solutions Ltd.</td>
                 <td>10.09.2025</td>
-                <td>25.09.2025</td>
-                <td>€1.200,00</td>
-                <td><span class="status-badge status-pending">Ausstehend</span></td>
-                <td>
-                  <button class="btn" style="padding: 4px 8px; font-size: 12px;">Ansehen</button>
-                </td>
+                <td>Gastos de viaje</td>
+                <td>€350,00</td>
+                <td>Viaje en tren a Berlín</td>
               </tr>
               <tr>
-                <td>INV-2025-004</td>
-                <td>Consulting Partners</td>
-                <td>15.08.2025</td>
-                <td>30.08.2025</td>
-                <td>€670,00</td>
-                <td><span class="status-badge status-overdue">Überfällig</span></td>
-                <td>
-                  <button class="btn" style="padding: 4px 8px; font-size: 12px;">Ansehen</button>
-                </td>
+                <td>15.09.2025</td>
+                <td>Comidas</td>
+                <td>€45,00</td>
+                <td>Almuerzo del equipo</td>
+              </tr>
+              <tr>
+                <td>20.09.2025</td>
+                <td>Software</td>
+                <td>€89,00</td>
+                <td>Licencia de Adobe</td>
               </tr>
             </tbody>
           </table>
@@ -618,9 +547,9 @@
 
         <!-- Charts Placeholder -->
         <div class="card">
-          <h2 class="card-header">Umsatzentwicklung</h2>
+          <h2 class="card-header">Visualización de gastos</h2>
           <div class="chart-placeholder">
-            Diagramm der ausgestellten Rechnungen und Zahlungseingänge
+            Gráfico de gastos por categorías
           </div>
         </div>
       </main>
@@ -631,35 +560,18 @@
     // ✅ PRÜFE BEIM LADEN DER SEITE OB BEREITS EINGELOGGT
     window.addEventListener('load', function() {
       // Prüfe ob bereits eingeloggt
-      const isLoggedIn = sessionStorage.getItem('isLoggedIn');
+      const isLoggedIn = localStorage.getItem('isLoggedIn');
       
       if (isLoggedIn === 'true') {
         // Direkt zur App wechseln wenn bereits eingeloggt
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('appContainer').style.display = 'flex';
-        
-        // Aktive Seite markieren
-        markActivePage();
       } else {
         // Auto-fill for easier testing
         document.getElementById('email').value = 'test@example.com';
         document.getElementById('password').value = '123456';
       }
     });
-
-    // Funktion zur Markierung der aktiven Seite
-    function markActivePage() {
-      const currentPage = window.location.href;
-      const links = document.querySelectorAll('.sidebar-link');
-      
-      links.forEach(link => {
-        if (link.href === currentPage) {
-          link.parentElement.classList.add('active');
-        } else {
-          link.parentElement.classList.remove('active');
-        }
-      });
-    }
 
     // Login functionality
     document.getElementById('loginBtn').addEventListener('click', function() {
@@ -668,15 +580,12 @@
       
       if (email && password) {
         // ✅ LOGIN-STATUS IN SESSION SPEICHERN
-        sessionStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('isLoggedIn', 'true');
         
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('appContainer').style.display = 'flex';
-        
-        // Aktive Seite markieren
-        markActivePage();
       } else {
-        alert('Bitte geben Sie E-Mail und Passwort ein');
+        alert('Por favor, introduzca el correo electrónico y la contraseña');
       }
     });
     
@@ -688,7 +597,7 @@
     // Logout functionality
     document.getElementById('logoutBtn').addEventListener('click', function() {
       // ✅ LOGIN-STATUS ENTFERNEN BEIM ABMELDEN
-      sessionStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('isLoggedIn');
       
       document.getElementById('appContainer').style.display = 'none';
       document.getElementById('loginScreen').style.display = 'flex';
@@ -713,14 +622,9 @@
       });
     });
 
-    // New Invoice Button
-    document.getElementById('newInvoiceBtn').addEventListener('click', function() {
-      alert('Neue Rechnung Dialog würde hier erscheinen');
-    });
-
-    // Export Button
-    document.getElementById('exportBtn').addEventListener('click', function() {
-      alert('Export Funktion würde hier starten');
+    // New Expense Button
+    document.getElementById('newExpenseBtn').addEventListener('click', function() {
+      alert('Aquí aparecería el diálogo de nuevo gasto');
     });
 
     // Refresh button
@@ -743,9 +647,8 @@
         window.location.href = href;
       });
     });
-
-    // Accordion standardmäßig öffnen
-    document.querySelector('.accordion-content').classList.add('open');
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module" src="./expense.js"></script>
 </body>
 </html>
