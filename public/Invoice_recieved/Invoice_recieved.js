@@ -1,199 +1,261 @@
 // public/Invoice_recieved/Invoice_recieved.js
-import {getInvoicesReceived, addInvoiceReceived, deleteInvoiceReceived} from "../shared/store.js";
+import {
+  getInvoicesReceived,
+  addInvoiceReceived,
+  deleteInvoiceReceived
+} from "../shared/store.js";
 
-// ====== Helpers UI ======
 function $(id) {
-  return document.getElementById(id);
+  const el = document.getElementById(id);
+  if (!el) console.warn(`[Invoice_recieved] Elemento não encontrado: #${id}`);
+  return el;
 }
 
-function formatEUR(n) {
-  const value = Number(n || 0);
-  return new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: "EUR",
-  }).format(value);
+// ---------- Period helper ----------
+function getQuarterPeriod(dateStr) {
+  if (!dateStr || !dateStr.includes("-")) return "";
+  const [y, m] = dateStr.split("-").map(Number);
+  if (!y || !m) return "";
+  const q = Math.ceil(m / 3);
+  return `${y}-${q}Q`;
 }
 
+function parseDate(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr + "T00:00:00");
+  return isNaN(d.getTime()) ? null : d;
+}
+
+// ---------- Filters ----------
+function getFilters() {
+  // Period selector é apenas visual - não filtra
+  const period = $("periodSelect")?.value?.trim() || "";
+
+  const form = $("filterForm");
+  const state = form?.elements?.["state"]?.value?.trim() || "";
+  const dateFrom = form?.elements?.["dateFrom"]?.value?.trim() || "";
+  const dateTo = form?.elements?.["dateTo"]?.value?.trim() || "";
+
+  return { period, state, dateFrom, dateTo };
+}
+
+function applyAllFilters(invoices) {
+  const { state, dateFrom, dateTo } = getFilters();
+  let list = [...invoices];
+
+  // state
+  if (state) list = list.filter(inv => (inv.state || "").toLowerCase() === state.toLowerCase());
+
+  // date range
+  const fromD = parseDate(dateFrom);
+  const toD = parseDate(dateTo);
+
+  if (fromD) list = list.filter(inv => {
+    const d = parseDate(inv.invoiceDate);
+    return d ? d >= fromD : false;
+  });
+
+  if (toD) list = list.filter(inv => {
+    const d = parseDate(inv.invoiceDate);
+    return d ? d <= toD : false;
+  });
+
+  return list;
+}
+
+// ---------- Render ----------
 function renderTable() {
   const tbody = $("invoiceTbody");
   if (!tbody) return;
 
-  const invoices = getInvoicesReceived();
+  const all = getInvoicesReceived().map(inv => ({
+    ...inv,
+    period: inv.period || getQuarterPeriod(inv.invoiceDate)
+  }));
+
+  const invoices = applyAllFilters(all);
+
   tbody.innerHTML = "";
 
   if (!invoices.length) {
     tbody.innerHTML = `
       <tr>
         <td colspan="6" class="text-center text-muted">
-          No hay facturas para el período seleccionado.<br/>
-          Puedes cambiar el período usando el selector en la parte superior derecha.
+          No hay facturas para el período/filtro seleccionado.
         </td>
-      </tr>
-    `;
+      </tr>`;
     return;
   }
 
-  invoices.forEach((inv) => {
+  invoices.forEach(inv => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${inv.invoiceNumber || "-"}</td>
       <td>${inv.state || "-"}</td>
       <td>${inv.invoiceDate || "-"}</td>
       <td>${inv.supplier || "-"}</td>
-      <td>${formatEUR(inv.amount ?? 0)}</td>
+      <td>${Number(inv.amount ?? 0).toFixed(2)} €</td>
       <td class="text-center">
-        <button class="btn btn-sm btn-outline-danger" data-del="${inv.id}">
-          Eliminar
-        </button>
+        <button class="btn btn-sm btn-outline-danger" data-del="${inv.id}">Eliminar</button>
       </td>
     `;
     tbody.appendChild(tr);
   });
 
-  // Delete handlers
-  tbody.querySelectorAll("[data-del]").forEach((btn) => {
+  tbody.querySelectorAll("[data-del]").forEach(btn => {
     btn.addEventListener("click", () => {
-      const id = btn.getAttribute("data-del");
-      deleteInvoiceReceived(id);
+      deleteInvoiceReceived(btn.getAttribute("data-del"));
       renderTable();
     });
   });
 }
 
-// ====== Modal bootstrap helpers ======
-function openModalById(modalId) {
-  const el = $(modalId);
-  if (!el) {
-    alert(`No encuentro el modal #${modalId} en el HTML.`);
-    return null;
-  }
+// ---------- PDF (print-to-PDF MVP) ----------
+function downloadPDF() {
+  const all = getInvoicesReceived().map(inv => ({
+    ...inv,
+    period: inv.period || getQuarterPeriod(inv.invoiceDate)
+  }));
+  const invoices = applyAllFilters(all);
 
-  if (window.bootstrap?.Modal) {
-    const instance = window.bootstrap.Modal.getOrCreateInstance(el);
-    instance.show();
-    return instance;
-  }
+  const rows = invoices.map(inv => `
+    <tr>
+      <td>${inv.invoiceNumber || "-"}</td>
+      <td>${inv.state || "-"}</td>
+      <td>${inv.invoiceDate || "-"}</td>
+      <td>${inv.supplier || "-"}</td>
+      <td style="text-align:right">${Number(inv.amount ?? 0).toFixed(2)} €</td>
+    </tr>
+  `).join("");
 
-  // fallback simples (caso bootstrap falhe)
-  el.classList.add("show");
-  el.style.display = "block";
-  el.removeAttribute("aria-hidden");
-  return null;
+  const period = $("periodSelect")?.value || "-";
+
+  const win = window.open("", "_blank");
+  win.document.write(`
+    <html>
+    <head>
+      <title>Facturas recibidas - ${period}</title>
+      <style>
+        body{font-family:Arial;padding:24px}
+        h2{margin:0 0 10px}
+        table{width:100%;border-collapse:collapse;margin-top:12px}
+        th,td{border:1px solid #ddd;padding:10px;font-size:13px}
+        th{background:#f4f6fb;text-align:left}
+      </style>
+    </head>
+    <body>
+      <h2>Registro de facturas recibidas</h2>
+      <div>Período: <b>${period}</b> · Total: <b>${invoices.length}</b></div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Nº</th><th>Estado</th><th>Fecha</th><th>Proveedor</th><th style="text-align:right">Importe</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows || `<tr><td colspan="5">Sin datos</td></tr>`}
+        </tbody>
+      </table>
+
+      <script>
+        window.onload = () => window.print();
+      </script>
+    </body>
+    </html>
+  `);
+  win.document.close();
 }
 
-function closeModalById(modalId) {
-  const el = $(modalId);
-  if (!el) return;
+// ---------- OCR (mock) ----------
+function saveOCRMock() {
+  const form = $("formNewInvoiceOCR");
+  if (!form) return;
 
-  if (window.bootstrap?.Modal) {
-    const instance = window.bootstrap.Modal.getOrCreateInstance(el);
-    instance.hide();
+  const fileInput = form.elements["ocrFile"];
+  const file = fileInput?.files?.[0];
+
+  if (!file) {
+    alert("Selecciona un archivo primero.");
     return;
   }
 
-  el.classList.remove("show");
-  el.style.display = "none";
-  el.setAttribute("aria-hidden", "true");
+  const today = new Date().toISOString().slice(0, 10);
+
+  addInvoiceReceived({
+    invoiceNumber: "OCR-" + Date.now(),
+    invoiceDate: today,
+    supplier: file.name.replace(/\.[^/.]+$/, ""),
+    amount: 0,
+    state: "Pendiente",
+    period: getQuarterPeriod(today)
+  });
+
+  form.reset();
+  
+  // Fechar modal - usar classe .show
+  const modalEl = document.getElementById("modalNewInvoiceOCR");
+  if (modalEl) {
+    modalEl.classList.remove("show");
+  }
+  
+  renderTable();
 }
 
-// ====== Main ======
+// ---------- Init ----------
 document.addEventListener("DOMContentLoaded", () => {
-  // Toggle filtro
-  const btnFilter = $("btnFilter");
-  const filterCard = $("filterCard");
-  if (btnFilter && filterCard) {
-    btnFilter.addEventListener("click", () => {
-      filterCard.classList.toggle("d-none");
-    });
-  }
-
-  // Abrir modal Nueva Factura
-  const btnNew = document.getElementById("btnNewInvoice");
-if (btnNew) {
-  btnNew.addEventListener("click", () => {
-    const modalEl = document.getElementById("modalNewInvoice");
-    if (!modalEl) {
-      alert("No encuentro el modal #modalNewInvoice en el HTML.");
-      return;
-    }
-    window.bootstrap?.Modal.getOrCreateInstance(modalEl).show();
-  });
-}
-
-const saveBtn = document.getElementById("saveInvoiceBtn");
-if (saveBtn) {
-  saveBtn.addEventListener("click", () => {
-    const form = document.getElementById("formNewInvoice");
-    if (!form) return;
-
-    const fd = new FormData(form);
-
-    const invoiceNumber = (fd.get("invoiceNumber") || "").toString();
-    const invoiceDate = (fd.get("invoiceDate") || "").toString();
-    const supplier = (fd.get("supplier") || "").toString();
-    const amount = (fd.get("amount") || "").toString();
-    const state = (fd.get("state") || "Pendiente").toString();
-
-    if (!invoiceNumber || !invoiceDate || !supplier || !amount) {
-      alert("Completa: número, fecha, proveedor e importe.");
-      return;
-    }
-
-    addInvoiceReceived({ invoiceNumber, invoiceDate, supplier, amount, state });
-
-    form.reset();
-    window.bootstrap?.Modal.getOrCreateInstance(document.getElementById("modalNewInvoice")).hide();
-    renderTable();
-  });
-}
-
-
-  // Abrir modal OCR (mock)
-  const btnNewOCR = $("btnNewInvoiceOCR");
-  if (btnNewOCR) {
-    btnNewOCR.addEventListener("click", () => {
-      openModalById("modalNewInvoiceOCR");
-    });
-  }
-
-
-  // Upload OCR (mock)
-  const saveOCRBtn = $("saveOCRBtn");
-  if (saveOCRBtn) {
-    saveOCRBtn.addEventListener("click", () => {
-      const form = $("formOCRInvoice");
-      if (!form) return;
-
-      const fileInput = form.elements["ocrFile"];
-      const file = fileInput?.files?.[0];
-
-      if (!file) {
-        alert("Selecciona un archivo primero.");
-        return;
-      }
-
-      addInvoiceReceived({
-        invoiceNumber: "OCR-" + Date.now(),
-        invoiceDate: new Date().toISOString().slice(0, 10),
-        supplier: "",
-        amount: 0,
-        state: "Pendiente",
-        ocrFileName: file.name,
-      });
-
-      form.reset();
-      closeModalById("modalNewInvoiceOCR");
+  // botão aplicar filtros
+  const applyFilter = document.getElementById("applyFilter");
+  if (applyFilter) {
+    applyFilter.addEventListener("click", function() {
       renderTable();
     });
   }
 
-  // Render inicial
+  // período
+  $("periodSelect")?.addEventListener("change", renderTable);
+
+  // salvar nova fatura
+  $("saveInvoiceBtn")?.addEventListener("click", () => {
+    const form = $("formNewInvoice");
+    if (!form) return;
+
+    const fd = new FormData(form);
+    const invoiceNumber = (fd.get("invoiceNumber") || "").toString().trim();
+    const invoiceDate = (fd.get("invoiceDate") || "").toString().trim();
+    const supplier = (fd.get("supplier") || "").toString().trim();
+    const amountStr = (fd.get("amount") || "").toString().trim();
+
+    if (!invoiceNumber || !invoiceDate || !supplier || !amountStr) {
+      alert("Por favor completa: número, fecha, proveedor y importe.");
+      return;
+    }
+
+    addInvoiceReceived({
+      invoiceNumber,
+      invoiceDate,
+      supplier,
+      amount: Number(amountStr),
+      state: "Pendiente",
+      period: getQuarterPeriod(invoiceDate)
+    });
+
+    form.reset();
+    
+    // Fechar modal - usar classe .show
+    const modalEl = document.getElementById("modalNewInvoice");
+    if (modalEl) {
+      modalEl.classList.remove("show");
+    }
+    
+    renderTable();
+  });
+
+  // OCR
+  $("saveOCRBtn")?.addEventListener("click", saveOCRMock);
+
+  // PDF
+  $("btnDownload")?.addEventListener("click", downloadPDF);
+
   renderTable();
 });
-
-window.addEventListener("load", () => {
-  document.querySelectorAll(".modal-backdrop").forEach((b) => b.remove());
-  document.body.classList.remove("modal-open");
-  document.body.style.overflow = "auto";
-});
-

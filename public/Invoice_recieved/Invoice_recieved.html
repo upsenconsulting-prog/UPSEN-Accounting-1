@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -611,7 +610,53 @@
         justify-content: center;
       }
     }
-  
+
+    /* ===== Modal look & feel (Received) ===== */
+    .received-modal {
+      border-radius: 16px;
+      border: 0;
+      box-shadow: 0 18px 45px rgba(0,0,0,.25);
+    }
+
+    .received-modal .modal-header {
+      background: linear-gradient(135deg, #2a4d9c 0%, #3a6cd6 100%);
+      color: #fff;
+      border-bottom: 0;
+      border-top-left-radius: 16px;
+      border-top-right-radius: 16px;
+    }
+
+    .received-modal .modal-title {
+      font-weight: 700;
+    }
+
+    .received-modal .btn-close {
+      filter: invert(1);
+      opacity: .9;
+    }
+
+    .received-modal .modal-body {
+      background: #f6f8fc;
+    }
+
+    .received-modal .modal-footer {
+      background: #f6f8fc;
+      border-top: 0;
+      border-bottom-left-radius: 16px;
+      border-bottom-right-radius: 16px;
+    }
+
+    /* Inputs um pouco mais "premium" */
+    .received-modal .form-control {
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+
+    .received-modal label.form-label {
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
     /* ... TODO O CSS PERMANECE IGUAL ... */
   </style>
 </head>
@@ -657,13 +702,13 @@
         <!-- Action Buttons -->
         <div class="action-buttons" style="margin-bottom: 25px;">
           <button class="btn btn-primary me-2" id="btnNewInvoice">+ Nueva factura</button>
-          <button class="btn btn-primary" id="newInvoiceOCRBtn">
+          <button class="btn btn-primary" id="btnNewInvoiceOCR">
             <span>📄</span> Factura por OCR
           </button>
-          <button class="btn btn-secondary" id="filterBtn">
+          <button class="btn btn-secondary" id="btnFilter" style="margin-left:auto;">
             <span>🔍</span> Filtros
           </button>
-          <button class="btn btn-success" id="downloadPDFBtn">
+          <button class="btn btn-success" id="btnDownload">
             <span>📊</span> Descargar PDF
           </button>
         </div>
@@ -774,92 +819,90 @@
 
       </main>
     </div>
-  </div>
+
     <!-- Modal Nueva Factura Recibida -->
     <div class="modal fade" id="modalNewInvoice" tabindex="-1" aria-labelledby="modalNewInvoiceLabel" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
+      <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content received-modal">
           <div class="modal-header">
             <h5 class="modal-title" id="modalNewInvoiceLabel">Nueva factura recibida</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            <button type="button" class="btn-close" id="closeNewInvoiceModal" data-bs-dismiss="modal" aria-label="Cerrar"></button>
           </div>
-
-        <div class="modal-body">
-          <form id="formNewInvoice">
-            <div class="row g-3">
-              <div class="col-md-4">
-                <label class="form-label">Número de factura</label>
-                <input type="text" name="invoiceNumber" class="form-control" placeholder="Ej: REC-2025-001" required />
+          <div class="modal-body">
+            <form id="formNewInvoice">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label">Número de factura</label>
+                  <input type="text" name="invoiceNumber" class="form-control" placeholder="Ej: REC-2025-001" required />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Fecha</label>
+                  <input type="date" name="invoiceDate" class="form-control" required />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Importe (€)</label>
+                  <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required />
+                </div>
+                <div class="col-md-8">
+                  <label class="form-label">Proveedor</label>
+                  <input type="text" name="supplier" class="form-control" placeholder="Nombre del proveedor" required />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Estado</label>
+                  <select name="state" class="form-select">
+                    <option value="Pendiente" selected>Pendiente</option>
+                    <option value="Pagada">Pagada</option>
+                    <option value="Vencida">Vencida</option>
+                  </select>
+                </div>
               </div>
-
-              <div class="col-md-4">
-                <label class="form-label">Fecha</label>
-                <input type="date" name="invoiceDate" class="form-control" required />
-              </div>
-
-              <div class="col-md-4">
-                <label class="form-label">Importe (€)</label>
-                <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required />
-              </div>
-
-              <div class="col-md-8">
-                <label class="form-label">Proveedor</label>
-                <input type="text" name="supplier" class="form-control" placeholder="Nombre del proveedor" required />
-              </div>
-
-              <div class="col-md-4">
-                <label class="form-label">Estado</label>
-                <select name="state" class="form-select">
-                  <option value="Pendiente" selected>Pendiente</option>
-                  <option value="Pagada">Pagada</option>
-                  <option value="Vencida">Vencida</option>
-                </select>
-              </div>
-            </div>
-          </form>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="button" class="btn btn-primary" id="saveInvoiceBtn">Guardar</button>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="cancelNewInvoiceBtn" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="saveInvoiceBtn">Guardar</button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
     <!-- Modal Nueva Factura por OCR -->
     <div class="modal fade" id="modalNewInvoiceOCR" tabindex="-1" aria-labelledby="modalNewInvoiceOCRLabel" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
+      <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content received-modal">
           <div class="modal-header">
             <h5 class="modal-title" id="modalNewInvoiceOCRLabel">Nueva factura recibida por OCR</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            <button type="button" class="btn-close" id="closeOCRModal" data-bs-dismiss="modal" aria-label="Cerrar"></button>
           </div>
+          <div class="modal-body">
+            <form id="formNewInvoiceOCR">
+              <div class="mb-3">
+                <label class="form-label">Subir archivo de factura</label>
+                <input type="file" name="ocrFile" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
+              </div>
+              <div class="alert alert-info">
+                El archivo será procesado automáticamente para extraer los datos de la factura.
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="cancelOCRBtn" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="saveOCRBtn">Procesar OCR</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-        <div class="modal-body">
-          <form id="formNewInvoiceOCR">
-            <div class="mb-3">
-              <label class="form-label
-  <!-- JS ORIGINAL — APENAS TEXTOS DE ALERT TRADUZIDOS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- JS SIMPLIFICADO - Eventos principais apenas -->
   <script>
-    window.addEventListener("load", function () {
-  const isLoggedIn = localStorage.getItem("isLoggedIn");
-
-  if (isLoggedIn === "true") {
-    document.getElementById("loginScreen").style.display = "none";
-    document.getElementById("appContainer").style.display = "flex";
-
-    if (typeof markActivePage === "function") {
-      markActivePage();
-    }
-  } else {
-    document.getElementById("email").value = "test@example.com";
-    document.getElementById("password").value = "123456";
-  }
-});
-
-
-    // Funktion zur Markierung der aktiven Seite
+    // Elementos DOM cacheados
+    const modalNewInvoice = document.getElementById('modalNewInvoice');
+    const modalNewInvoiceOCR = document.getElementById('modalNewInvoiceOCR');
+    const filterCard = document.getElementById('filterCard');
+    
+    // Função para marcar página ativa
     function markActivePage() {
       const currentPage = window.location.href;
       const links = document.querySelectorAll('.sidebar-link');
@@ -873,52 +916,10 @@
       });
     }
 
-    // Login functionality
-  document.getElementById("loginBtn").addEventListener("click", function () {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
-  if (email && password) {
-    // marca logado
-    localStorage.setItem("isLoggedIn", "true");
-
-    document.getElementById("loginScreen").style.display = "none";
-    document.getElementById("appContainer").style.display = "flex";
-
-    if (typeof markActivePage === "function") {
+    window.addEventListener("load", function () {
       markActivePage();
-    }
-  } else {
-    alert("Introduce email y contraseña");
-  }
-});
+    });
 
-    
-    // User menu functionality
-    document.getElementById('userMenuBtn').addEventListener('click', function() {
-      document.getElementById('userDropdown').classList.toggle('show');
-    });
-    
-    // Logout functionality
-    document.getElementById('logoutBtn').addEventListener('click', function() {
-      // ✅ LOGIN-STATUS ENTFERNEN BEIM ABMELDEN
-      localStorage.removeItem('isLoggedIn');
-      
-      document.getElementById('appContainer').style.display = 'none';
-      document.getElementById('loginScreen').style.display = 'flex';
-      document.getElementById('userDropdown').classList.remove('show');
-    });
-    
-    // Close dropdown when clicking outside
-    window.addEventListener('click', function(e) {
-      if (!e.target.matches('#userMenuBtn')) {
-        const dropdown = document.getElementById('userDropdown');
-        if (dropdown.classList.contains('show')) {
-          dropdown.classList.remove('show');
-        }
-      }
-    });
-    
     // Accordion functionality
     document.querySelectorAll('.accordion-header').forEach(header => {
       header.addEventListener('click', () => {
@@ -928,57 +929,37 @@
     });
 
     // Filter functionality
-    document.getElementById('filterBtn').addEventListener('click', function() {
-      document.getElementById('filterCard').classList.toggle('show');
-    });
-
-    // Apply filter functionality
-    document.getElementById('applyFilter').addEventListener('click', function() {
-      alert('Filtros aplicados');
-      document.getElementById('filterCard').classList.remove('show');
-    });
+    const btnFilter = document.getElementById('btnFilter');
+    if (btnFilter && filterCard) {
+      btnFilter.addEventListener('click', function() {
+        filterCard.classList.toggle('show');
+      });
+    }
 
     // New Invoice Button
-    document.getElementById('newInvoiceBtn').addEventListener('click', function() {
-      document.getElementById('modalNewInvoice').classList.add('show');
-    });
+    const btnNewInvoice = document.getElementById('btnNewInvoice');
+    if (btnNewInvoice && modalNewInvoice) {
+      btnNewInvoice.addEventListener('click', function() {
+        modalNewInvoice.classList.add('show');
+      });
+    }
 
     // New Invoice via OCR Button
-    document.getElementById('newInvoiceOCRBtn').addEventListener('click', function() {
-      document.getElementById('modalNewInvoiceOCR').classList.add('show');
-    });
+    const btnNewInvoiceOCR = document.getElementById('btnNewInvoiceOCR');
+    if (btnNewInvoiceOCR && modalNewInvoiceOCR) {
+      btnNewInvoiceOCR.addEventListener('click', function() {
+        modalNewInvoiceOCR.classList.add('show');
+      });
+    }
 
-    // Download PDF Button
-    document.getElementById('downloadPDFBtn').addEventListener('click', function() {
-      alert('La descarga del PDF está comenzando');
-    });
-
-    // Close modals
-    document.getElementById('closeNewInvoiceModal').addEventListener('click', function() {
-      document.getElementById('modalNewInvoice').classList.remove('show');
-    });
-
-    document.getElementById('closeOCRModal').addEventListener('click', function() {
-      document.getElementById('modalNewInvoiceOCR').classList.remove('show');
-    });
-
-    document.getElementById('cancelNewInvoiceBtn').addEventListener('click', function() {
-      document.getElementById('modalNewInvoice').classList.remove('show');
-    });
-
-    document.getElementById('cancelOCRBtn').addEventListener('click', function() {
-      document.getElementById('modalNewInvoiceOCR').classList.remove('show');
-    });
-
-    // Save buttons
-    document.getElementById('saveInvoiceBtn').addEventListener('click', function() {
-      alert('La factura se está guardando');
-      document.getElementById('modalNewInvoice').classList.remove('show');
-    });
-
-    document.getElementById('saveOCRBtn').addEventListener('click', function() {
-      alert('El procesamiento OCR ha comenzado');
-      document.getElementById('modalNewInvoiceOCR').classList.remove('show');
+    // Close modals with class .btn-close or data-bs-dismiss
+    document.querySelectorAll('[data-bs-dismiss="modal"]').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const modal = this.closest('.modal');
+        if (modal) {
+          modal.classList.remove('show');
+        }
+      });
     });
 
     // Close modals when clicking outside
@@ -988,26 +969,26 @@
       }
     });
 
-    // ✅ KORRIGIERT: Sidebar link handling - Öffnet Seiten im GLEICHEN Tab
+    // Sidebar link handling - Abre páginas na mesma aba
     document.querySelectorAll('.sidebar-link').forEach(link => {
       link.addEventListener('click', function(e) {
         const href = this.getAttribute('href');
-        
-        // Skip internal links (starting with #)
         if (href.startsWith('#')) {
           return;
         }
-        
         e.preventDefault();
-        // ✅ Öffne die Seite im GLEICHEN Tab
         window.location.href = href;
       });
     });
-    // Accordion standardmäßig öffnen
-    document.querySelector('.accordion-content').classList.add('open');
-  </script>
 
-  <script src= "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    // Accordion padrão aberto
+    const accordionContent = document.querySelector('.accordion-content');
+    if (accordionContent) {
+      accordionContent.classList.add('open');
+    }
+  </script>
+  
   <script type="module" src="./Invoice_recieved.js"></script>
 </body>
 </html>
+

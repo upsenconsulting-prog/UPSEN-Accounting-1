@@ -4,9 +4,4 @@ body {
 .alert {
   margin-top: 1rem;
 }
-.modal{
-  pointer-events: none;
-}
-.modal.show{
-  pointer-events: auto;
-}
+
