@@ -1,9 +1,5 @@
 // public/Invoice_recieved/Invoice_recieved.js
-import {
-  getInvoicesRecieved,
-  addInvoiceRecieved,
-  deleteInvoiceRecieved,
-} from "../shared/store.js";
+import {getInvoicesReceived, addInvoiceReceived, deleteInvoiceReceived} from "../shared/store.js";
 
 // ====== Helpers UI ======
 function $(id) {
@@ -22,7 +18,7 @@ function renderTable() {
   const tbody = $("invoiceTbody");
   if (!tbody) return;
 
-  const invoices = getInvoicesRecieved();
+  const invoices = getInvoicesReceived();
   tbody.innerHTML = "";
 
   if (!invoices.length) {
@@ -58,7 +54,7 @@ function renderTable() {
   tbody.querySelectorAll("[data-del]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const id = btn.getAttribute("data-del");
-      deleteInvoiceRecieved(id);
+      deleteInvoiceReceived(id);
       renderTable();
     });
   });
@@ -143,7 +139,7 @@ if (saveBtn) {
       return;
     }
 
-    addInvoiceRecieved({ invoiceNumber, invoiceDate, supplier, amount, state });
+    addInvoiceReceived({ invoiceNumber, invoiceDate, supplier, amount, state });
 
     form.reset();
     window.bootstrap?.Modal.getOrCreateInstance(document.getElementById("modalNewInvoice")).hide();
@@ -176,7 +172,7 @@ if (saveBtn) {
         return;
       }
 
-      addInvoiceRecieved({
+      addInvoiceReceived({
         invoiceNumber: "OCR-" + Date.now(),
         invoiceDate: new Date().toISOString().slice(0, 10),
         supplier: "",

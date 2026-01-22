@@ -1,181 +1,169 @@
-// ===== Expenses =====
-const STORAGE_KEYS = {
-  ...(typeof STORAGE_KEYS !== "undefined" ? STORAGE_KEYS : {}),
-  expenses: "upsen_expenses_v1",
-  invoicesIssued: "upsen_invoices_issued_v1",
+// public/shared/store.js
+// Store MVP (localStorage) - sem duplicações
+// Módulos: Invoices Received, Invoices Issued, Expenses, Budgets (opcional)
+
+// ===== Utils =====
+function safeParse(json, fallback) {
+  try {
+    const v = JSON.parse(json);
+    return v ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function read(key) {
+  return safeParse(localStorage.getItem(key), []);
+}
+
+function write(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+function uid() {
+  // crypto.randomUUID() é o ideal, mas nem todos os browsers antigos suportam
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+  return "id-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+}
+
+// ===== Keys =====
+const KEYS = {
+  invoicesReceived: "upsen_invoices_received",
+  invoicesIssued: "upsen_invoices_issued",
+  expenses: "upsen_expenses",
+  budgets: "upsen_budgets",
 };
 
-function readKey(key) {
-  try { return JSON.parse(localStorage.getItem(key) || "[]"); }
-  catch { return []; }
+// ======================================================
+// INVOICES RECEIVED
+// ======================================================
+export function getInvoicesReceived() {
+  return read(KEYS.invoicesReceived);
 }
 
-function writeKey(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
-}
-
-function uid(prefix = "id") {
-  return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-}
-
-export function getExpenses() {
-  return readKey(STORAGE_KEYS.expenses);
-}
-
-export function addExpense(data) {
-  const items = getExpenses();
-  const exp = {
-    id: uid("exp"),
-    description: (data.description || "").trim(),
-    supplier: (data.supplier || "").trim(),
-    expenseDate: data.expenseDate || "",
-    category: (data.category || "").trim(),
-    amount: Number(data.amount || 0),
+export function addInvoiceReceived(invoice) {
+  const list = getInvoicesReceived();
+  const item = {
+    id: uid(),
+    invoiceNumber: invoice.invoiceNumber ?? "",
+    invoiceDate: invoice.invoiceDate ?? "",
+    supplier: invoice.supplier ?? "",
+    amount: Number(invoice.amount ?? 0),
+    state: invoice.state ?? "Pendiente",
     createdAt: new Date().toISOString(),
   };
-  items.unshift(exp);
-  writeKey(STORAGE_KEYS.expenses, items);
-  return exp;
+  list.push(item);
+  write(KEYS.invoicesReceived, list);
+  return item;
 }
 
-export function deleteExpense(id) {
-  const items = getExpenses().filter((x) => x.id !== id);
-  writeKey(STORAGE_KEYS.expenses, items);
+export function deleteInvoiceReceived(id) {
+  const list = getInvoicesReceived().filter((x) => x.id !== id);
+  write(KEYS.invoicesReceived, list);
 }
 
-// ===== Invoice Issued =====
+// ======================================================
+// INVOICES ISSUED
+// ======================================================
 export function getInvoicesIssued() {
-  return readKey(STORAGE_KEYS.invoicesIssued);
+  return read(KEYS.invoicesIssued);
 }
 
-export function addInvoiceIssued(data) {
-  const items = getInvoicesIssued();
-  const inv = {
-    id: uid("invI"),
-    invoiceNumber: (data.invoiceNumber || "").trim(),
-    invoiceDate: data.invoiceDate || "",
-    customer: (data.customer || "").trim(),
-    amount: Number(data.amount || 0),
-    state: data.state || "Borrador",
+export function addInvoiceIssued(invoice) {
+  const list = getInvoicesIssued();
+  const item = {
+    id: uid(),
+    invoiceNumber: invoice.invoiceNumber ?? "",
+    customer: invoice.customer ?? "",
+    issueDate: invoice.issueDate ?? "",
+    dueDate: invoice.dueDate ?? "",
+    amount: Number(invoice.amount ?? 0),
+    state: invoice.state ?? "Pendiente",
     createdAt: new Date().toISOString(),
   };
-  items.unshift(inv);
-  writeKey(STORAGE_KEYS.invoicesIssued, items);
-  return inv;
+  list.push(item);
+  write(KEYS.invoicesIssued, list);
+  return item;
 }
 
 export function deleteInvoiceIssued(id) {
-  const items = getInvoicesIssued().filter((x) => x.id !== id);
-  writeKey(STORAGE_KEYS.invoicesIssued, items);
+  const list = getInvoicesIssued().filter((x) => x.id !== id);
+  write(KEYS.invoicesIssued, list);
 }
 
-// ===== Analytics extras (para o dashboard) =====
-export function sumExpensesMonth(year, monthIndex) {
-  return getExpenses()
-    .filter((e) => e.expenseDate && new Date(e.expenseDate).getFullYear() === year && new Date(e.expenseDate).getMonth() === monthIndex)
-    .reduce((acc, e) => acc + Number(e.amount || 0), 0);
-}
-
-export function sumInvoicesIssuedMonth(year, monthIndex) {
-  return getInvoicesIssued()
-    .filter((i) => i.invoiceDate && new Date(i.invoiceDate).getFullYear() === year && new Date(i.invoiceDate).getMonth() === monthIndex)
-    .reduce((acc, i) => acc + Number(i.amount || 0), 0);
-}
-
-// ===============================
-// EXPENSES (Gastos)
-// ===============================
-const EXPENSES_KEY = "upsen_expenses_v1";
-
+// ======================================================
+// EXPENSES
+// ======================================================
 export function getExpenses() {
-  try {
-    return JSON.parse(localStorage.getItem(EXPENSES_KEY) || "[]");
-  } catch {
-    return [];
-  }
+  return read(KEYS.expenses);
 }
 
-export function addExpense(data) {
-  const items = getExpenses();
-
-  const exp = {
-    id: `exp_${Date.now()}_${Math.random().toString(16).slice(2)}`,
-    expenseDate: (data.expenseDate || "").trim(),
-    category: (data.category || "").trim(),
-    description: (data.description || "").trim(),
-    supplier: (data.supplier || "").trim(),
-    amount: Number(data.amount || 0),
+export function addExpense(expense) {
+  const list = getExpenses();
+  const item = {
+    id: uid(),
+    date: expense.date ?? "",
+    category: expense.category ?? "",
+    description: expense.description ?? "",
+    amount: Number(expense.amount ?? 0),
     createdAt: new Date().toISOString(),
   };
-
-  items.unshift(exp);
-  localStorage.setItem(EXPENSES_KEY, JSON.stringify(items));
-  return exp;
+  list.push(item);
+  write(KEYS.expenses, list);
+  return item;
 }
 
 export function deleteExpense(id) {
-  const items = getExpenses().filter((x) => x.id !== id);
-  localStorage.setItem(EXPENSES_KEY, JSON.stringify(items));
+  const list = getExpenses().filter((x) => x.id !== id);
+  write(KEYS.expenses, list);
 }
 
-
-// ===============================
-// INVOICES ISSUED (Facturas emitidas)
-// ===============================
-const ISSUED_KEY = "upsen_invoices_issued_v1";
-
-export function getInvoicesIssued() {
-  try {
-    return JSON.parse(localStorage.getItem(ISSUED_KEY) || "[]");
-  } catch {
-    return [];
-  }
+// ======================================================
+// BUDGETS (opcional - se quiseres ligar depois)
+// ======================================================
+export function getBudgets() {
+  return read(KEYS.budgets);
 }
 
-export function addInvoiceIssued(data) {
-  const items = getInvoicesIssued();
-
-  const inv = {
-    id: `invI_${Date.now()}_${Math.random().toString(16).slice(2)}`,
-    invoiceNumber: (data.invoiceNumber || "").trim(),
-    customer: (data.customer || "").trim(),
-    invoiceDate: (data.invoiceDate || "").trim(),
-    dueDate: (data.dueDate || "").trim(),
-    amount: Number(data.amount || 0),
-    state: (data.state || "Pendiente").trim(),
+export function addBudget(budget) {
+  const list = getBudgets();
+  const item = {
+    id: uid(),
+    period: budget.period ?? "", // ex: "2025-01" ou "2025-Q1"
+    name: budget.name ?? "",
+    planned: Number(budget.planned ?? 0),
+    actual: Number(budget.actual ?? 0),
     createdAt: new Date().toISOString(),
   };
-
-  items.unshift(inv);
-  localStorage.setItem(ISSUED_KEY, JSON.stringify(items));
-  return inv;
+  list.push(item);
+  write(KEYS.budgets, list);
+  return item;
 }
 
-export function deleteInvoiceIssued(id) {
-  const items = getInvoicesIssued().filter((x) => x.id !== id);
-  localStorage.setItem(ISSUED_KEY, JSON.stringify(items));
+export function deleteBudget(id) {
+  const list = getBudgets().filter((x) => x.id !== id);
+  write(KEYS.budgets, list);
 }
 
+// ======================================================
+// DASHBOARD HELPERS (totais simples)
+// ======================================================
+export function getTotals() {
+  const receivedTotal = getInvoicesReceived().reduce((s, x) => s + (Number(x.amount) || 0), 0);
+  const issuedTotal = getInvoicesIssued().reduce((s, x) => s + (Number(x.amount) || 0), 0);
+  const expensesTotal = getExpenses().reduce((s, x) => s + (Number(x.amount) || 0), 0);
 
-// ===============================
-// ANALYTICS (para Dashboard)
-// ===============================
-export function sumExpensesMonth(year, monthIndex) {
-  return getExpenses()
-    .filter((e) => {
-      if (!e.expenseDate) return false;
-      const d = new Date(e.expenseDate);
-      return d.getFullYear() === year && d.getMonth() === monthIndex;
-    })
-    .reduce((acc, e) => acc + Number(e.amount || 0), 0);
+  return {
+    receivedTotal,
+    issuedTotal,
+    expensesTotal,
+    profit: issuedTotal - expensesTotal,
+  };
 }
 
-export function sumInvoicesIssuedMonth(year, monthIndex) {
-  return getInvoicesIssued()
-    .filter((i) => {
-      if (!i.invoiceDate) return false;
-      const d = new Date(i.invoiceDate);
-      return d.getFullYear() === year && d.getMonth() === monthIndex;
-    })
-    .reduce((acc, i) => acc + Number(i.amount || 0), 0);
+// ======================================================
+// RESET (para testes)
+// ======================================================
+export function resetAll() {
+  Object.values(KEYS).forEach((k) => localStorage.removeItem(k));
 }
