@@ -734,6 +734,62 @@
 
     // Accordion standardmäßig öffnen
     document.querySelector('.accordion-content').classList.add('open');
+
+    <!-- Modal Nueva factura emitida -->
+<div class="modal fade" id="modalNewInvoiceIssued" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Nueva factura emitida</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body">
+        <form id="formNewInvoiceIssued">
+          <div class="mb-3">
+            <label class="form-label">Número de factura</label>
+            <input type="text" name="invoiceNumber" class="form-control" required />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Cliente</label>
+            <input type="text" name="customer" class="form-control" required />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Fecha</label>
+            <input type="date" name="invoiceDate" class="form-control" required />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Vence el</label>
+            <input type="date" name="dueDate" class="form-control" required />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Importe (€)</label>
+            <input type="number" step="0.01" name="amount" class="form-control" required />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Estado</label>
+            <select name="status" class="form-select">
+              <option value="Pagada">Pagada</option>
+              <option value="Pendiente" selected>Pendiente</option>
+              <option value="Vencida">Vencida</option>
+            </select>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="saveInvoiceIssuedBtn">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
   </script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script type="module" src="./invoice-issued.js"></script>

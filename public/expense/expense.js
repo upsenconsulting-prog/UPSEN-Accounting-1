@@ -4,74 +4,96 @@ function $(id) {
   return document.getElementById(id);
 }
 
-function parseEuroToNumber(str) {
-  // aceita "€120,00" ou "120,00" ou "120.00"
-  if (typeof str !== "string") return Number(str || 0);
-  const s = str.replace("€", "").replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
-  const n = Number(s);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function formatEUR(n) {
-  return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(n || 0);
+function moneyEUR(n) {
+  const v = Number(n ?? 0);
+  return `€${v.toFixed(2)}`;
 }
 
 function renderExpenses() {
   const tbody = $("expenseTBody");
   if (!tbody) return;
 
-  const items = getExpenses();
+  const list = getExpenses();
   tbody.innerHTML = "";
 
-  if (!items.length) {
+  if (!list.length) {
     tbody.innerHTML = `
       <tr>
         <td colspan="4" class="text-center text-muted">
-          No hay gastos registrados.
+          No hay gastos registrados todavía.
         </td>
-      </tr>`;
+      </tr>
+    `;
     return;
   }
 
-  items.forEach((e) => {
+  list.forEach((e) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${e.expenseDate || "-"}</td>
+      <td>${e.date || "-"}</td>
       <td>${e.category || "-"}</td>
-      <td>${formatEUR(e.amount ?? 0)}</td>
-      <td>${e.description || "-"}</td>
+      <td>${moneyEUR(e.amount)}</td>
+      <td>
+        <span>${e.notes || ""}</span>
+        <button class="btn btn-sm btn-outline-danger" data-del="${e.id}" style="float:right;">
+          Eliminar
+        </button>
+      </td>
     `;
     tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll("[data-del]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      deleteExpense(btn.getAttribute("data-del"));
+      renderExpenses();
+    });
+  });
   });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  // ⚙️ Se ainda tens linhas hardcoded no HTML, vamos "importá-las" 1x para o store
-  // Assim não perdes o que já estava no template.
-  const tbody = $("expenseTBody");
-  if (tbody) {
-    const rows = Array.from(tbody.querySelectorAll("tr"));
-    const hasSeed = localStorage.getItem("upsen_expenses_seeded");
+  // Abrir modal
+  const newExpenseBtn = $("newExpenseBtn");
+  if (newExpenseBtn) {
+    newExpenseBtn.addEventListener("click", () => {
+      const el = $("modalNewExpense");
+      if (el && window.bootstrap?.Modal) {
+        window.bootstrap.Modal.getOrCreateInstance(el).show();
+      }
+    });
+  }
 
-    if (!hasSeed && rows.length) {
-      rows.forEach((tr) => {
-        const tds = tr.querySelectorAll("td");
-        if (tds.length < 4) return;
+  // Guardar gasto
+  const saveBtn = $("saveExpenseBtn");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", () => {
+      const form = $("formNewExpense");
+      if (!form) return;
 
-        addExpense({
-          expenseDate: tds[0].textContent.trim(),
-          category: tds[1].textContent.trim(),
-          amount: parseEuroToNumber(tds[2].textContent.trim()),
-          description: tds[3].textContent.trim(),
-          supplier: "", // não existe na tua tabela atual
-        });
-      });
+      const fd = new FormData(form);
+      const date = String(fd.get("date") || "");
+      const category = String(fd.get("category") || "");
+      const amount = String(fd.get("amount") || "");
+      const notes = String(fd.get("notes") || "");
 
-      localStorage.setItem("upsen_expenses_seeded", "true");
-    }
+      if (!date || !category || !amount) {
+        alert("Completa: fecha, categoría e importe.");
+        return;
+      }
+
+      addExpense({ date, category, amount, notes });
+
+      // fechar modal
+      const el = $("modalNewExpense");
+      if (el && window.bootstrap?.Modal) {
+        window.bootstrap.Modal.getOrCreateInstance(el).hide();
+      }
+
+      form.reset();
+      renderExpenses();
+    });
   }
 
   renderExpenses();
-
-  // Se tens botão/modal de "novo gasto", depois ligamos — por enquanto garantimos lista dinâmica.
 });

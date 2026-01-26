@@ -4,95 +4,104 @@ function $(id) {
   return document.getElementById(id);
 }
 
-function parseEuroToNumber(str) {
-  if (typeof str !== "string") return Number(str || 0);
-  const s = str.replace("€", "").replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
-  const n = Number(s);
-  return Number.isFinite(n) ? n : 0;
+function badge(status) {
+  const s = (status || "").toLowerCase();
+  if (s === "pagada") return `<span class="status-badge status-paid">Pagada</span>`;
+  if (s === "vencida") return `<span class="status-badge status-overdue">Vencida</span>`;
+  return `<span class="status-badge status-pending">Pendiente</span>`;
 }
 
-function formatEUR(n) {
-  return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(n || 0);
+function moneyEUR(n) {
+  const v = Number(n ?? 0);
+  return `€${v.toFixed(2)}`;
 }
 
 function renderIssued() {
   const tbody = $("invoiceTbody");
   if (!tbody) return;
 
-  const items = getInvoicesIssued();
+  const list = getInvoicesIssued();
   tbody.innerHTML = "";
 
-  if (!items.length) {
+  if (!list.length) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="8" class="text-center text-muted">
-          No hay facturas emitidas registradas.
+        <td colspan="7" class="text-center text-muted">
+          No hay facturas emitidas registradas todavía.
         </td>
-      </tr>`;
+      </tr>
+    `;
     return;
   }
 
-  items.forEach((inv) => {
-    const statusClass =
-      inv.state === "Pagada" ? "status-paid" :
-      inv.state === "Pendiente" ? "status-pending" :
-      inv.state === "Vencida" ? "status-overdue" : "status-pending";
-
+  list.forEach((inv) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${inv.invoiceNumber || "-"}</td>
       <td>${inv.customer || "-"}</td>
       <td>${inv.invoiceDate || "-"}</td>
       <td>${inv.dueDate || "-"}</td>
-      <td>${formatEUR(inv.amount ?? 0)}</td>
-      <td><span class="status-badge ${statusClass}">${inv.state || "Pendiente"}</span></td>
+      <td>${moneyEUR(inv.amount)}</td>
+      <td>${badge(inv.status)}</td>
       <td>
-        <button class="btn" style="padding:4px 8px;font-size:12px;">Ver</button>
+        <button class="btn btn-sm btn-outline-danger" data-del="${inv.id}">
+          Eliminar
+        </button>
       </td>
     `;
     tbody.appendChild(tr);
   });
+
+  tbody.querySelectorAll("[data-del]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      deleteInvoiceIssued(btn.getAttribute("data-del"));
+      renderIssued();
+    });
+  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Importa as linhas hardcoded do template para o store 1x
-  const tbody = $("invoiceTbody");
-  if (tbody) {
-    const rows = Array.from(tbody.querySelectorAll("tr"));
-    const hasSeed = localStorage.getItem("upsen_issued_seeded");
+  // Abrir modal
+  const newBtn = $("newInvoiceBtn");
+  if (newBtn) {
+    newBtn.addEventListener("click", () => {
+      const el = $("modalNewInvoiceIssued");
+      if (el && window.bootstrap?.Modal) {
+        window.bootstrap.Modal.getOrCreateInstance(el).show();
+      }
+    });
+  }
 
-    if (!hasSeed && rows.length) {
-      rows.forEach((tr) => {
-        const tds = tr.querySelectorAll("td");
-        if (tds.length < 6) return;
+  // Guardar
+  const saveBtn = $("saveInvoiceIssuedBtn");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", () => {
+      const form = $("formNewInvoiceIssued");
+      if (!form) return;
 
-        const number = tds[0].textContent.trim();
-        const customer = tds[1].textContent.trim();
-        const invDate = tds[2].textContent.trim();
-        const dueDate = tds[3].textContent.trim();
-        const amount = parseEuroToNumber(tds[4].textContent.trim());
-        const state = tr.querySelector(".status-badge")?.textContent?.trim() || "Pendiente";
+      const fd = new FormData(form);
+      const invoiceNumber = String(fd.get("invoiceNumber") || "");
+      const customer = String(fd.get("customer") || "");
+      const invoiceDate = String(fd.get("invoiceDate") || "");
+      const dueDate = String(fd.get("dueDate") || "");
+      const amount = String(fd.get("amount") || "");
+      const status = String(fd.get("status") || "Pendiente");
 
-        addInvoiceIssued({
-          invoiceNumber: number,
-          invoiceDate: invDate,
-          customer,
-          amount,
-          state,
-        });
+      if (!invoiceNumber || !customer || !invoiceDate || !dueDate || !amount) {
+        alert("Completa todos los campos obligatorios.");
+        return;
+      }
 
-        // guardamos dueDate como extra (não estava no store base)
-        // Se quiseres 100%: adiciona dueDate no store também.
-        const issued = getInvoicesIssued();
-        const latest = issued[0];
-        if (latest && latest.invoiceNumber === number) {
-          latest.dueDate = dueDate;
-          localStorage.setItem("upsen_invoices_issued_v1", JSON.stringify(issued));
-        }
-      });
+      addInvoiceIssued({ invoiceNumber, customer, invoiceDate, dueDate, amount, status });
 
-      localStorage.setItem("upsen_issued_seeded", "true");
-    }
+      const el = $("modalNewInvoiceIssued");
+      if (el && window.bootstrap?.Modal) {
+        window.bootstrap.Modal.getOrCreateInstance(el).hide();
+      }
+
+      form.reset();
+      renderIssued();
+    });
   }
 
   renderIssued();
