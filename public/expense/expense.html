@@ -173,6 +173,9 @@
       background: #2c3e50;
       color: white;
       overflow-y: auto;
+      position: sticky;
+      top: 0;
+      height: 100vh;
     }
 
     .sidebar-header {
@@ -230,6 +233,16 @@
     .accordion-content li:hover {
       background: #2c3e50;
       color: #1abc9c;
+    }
+
+    /* Aktive Seite markieren */
+    .accordion-content li.active {
+      background: #1abc9c;
+      color: white;
+    }
+
+    .accordion-content li.active a {
+      color: white;
     }
 
     /* Content Area */
@@ -390,6 +403,104 @@
       font-weight: 500;
     }
 
+    .chart-container {
+      position: relative;
+      height: 250px;
+    }
+
+    /* ========== MODAL STYLES ========== */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 10000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-header {
+      padding: 20px 25px;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, #2a4d9c 0%, #3a6cd6 100%);
+      color: white;
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: white;
+      opacity: 0.9;
+    }
+
+    .modal-close:hover {
+      opacity: 1;
+    }
+
+    .modal-body {
+      padding: 25px;
+      background: #f6f8fc;
+    }
+
+    .modal-footer {
+      padding: 20px 25px;
+      border-top: 1px solid #e9ecef;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      background: #f6f8fc;
+      border-bottom-left-radius: 12px;
+      border-bottom-right-radius: 12px;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      color: #2c3e50;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .mb-3 {
+      margin-bottom: 18px;
+    }
+
     /* Responsive */
     @media (max-width: 1024px) {
       .dashboard-grid,
@@ -400,7 +511,7 @@
 
     @media (max-width: 768px) {
       .sidebar {
-        position: absolute;
+        position: fixed;
         left: -250px;
         height: 100%;
         z-index: 100;
@@ -460,19 +571,19 @@
         <div class="accordion">
           <div class="accordion-item">
             <div class="accordion-header">Accounting</div>
-            <div class="accordion-content">
+            <div class="accordion-content open">
                 <ul class="sidebar-menu">
                     <li><a href="../frontPage/frontPage.html" class="sidebar-link">Dashboard</a></li>
-                    <li><a href="../expense.html" class="sidebar-link">Gastos</a></li>
+                    <li class="active"><a href="../expense/expense.html" class="sidebar-link">Gastos</a></li>
                     <li><a href="../Invoice-issued/invoice-issued.html" class="sidebar-link">Facturas emitidas</a></li>
                     <li><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link">Facturas recibidas</a></li>
                     <li><a href="../budgetPage/budget.html" class="sidebar-link">Presupuestos</a></li>
-                    <li><a href="#help" class="sidebar-link">Ayuda</a></li>
+            <li><a href="#help" class="sidebar-link">Ayuda</a></li>
                 </ul>
+              </div>
             </div>
           </div>
-        </div>
-      </aside>
+        </aside>
 
       <!-- Content Area -->
       <main class="content">
@@ -545,29 +656,63 @@
           </table>
         </div>
 
-        <!-- Charts Placeholder -->
+        <!-- Charts -->
         <div class="card">
           <h2 class="card-header">Visualización de gastos</h2>
-          <div class="chart-placeholder">
-            Gráfico de gastos por categorías
+          <div class="chart-container" style="height: 250px;">
+            <canvas id="expenseChartCanvas"></canvas>
           </div>
         </div>
       </main>
     </div>
   </div>
 
+  <!-- Modal Nuevo Gasto -->
+  <div class="modal" id="modalNewExpense">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Nuevo gasto</h5>
+        <button type="button" class="modal-close" id="closeExpenseModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="formNewExpense">
+          <div class="mb-3">
+            <label class="form-label">Fecha</label>
+            <input type="date" name="date" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Categoría</label>
+            <input type="text" name="category" class="form-control" placeholder="Ej: Material de oficina" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Importe (€)</label>
+            <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Notas</label>
+            <input type="text" name="notes" class="form-control" placeholder="Descripción opcional" />
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancelExpenseBtn">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="saveExpenseBtn">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
   <script>
     // ✅ PRÜFE BEIM LADEN DER SEITE OB BEREITS EINGELOGGT
     window.addEventListener('load', function() {
-      // Prüfe ob bereits eingeloggt
       const isLoggedIn = localStorage.getItem('isLoggedIn');
       
       if (isLoggedIn === 'true') {
-        // Direkt zur App wechseln wenn bereits eingeloggt
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('appContainer').style.display = 'flex';
       } else {
-        // Auto-fill for easier testing
         document.getElementById('email').value = 'test@example.com';
         document.getElementById('password').value = '123456';
       }
@@ -579,9 +724,7 @@
       const password = document.getElementById('password').value;
       
       if (email && password) {
-        // ✅ LOGIN-STATUS IN SESSION SPEICHERN
         localStorage.setItem('isLoggedIn', 'true');
-        
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('appContainer').style.display = 'flex';
       } else {
@@ -596,9 +739,7 @@
     
     // Logout functionality
     document.getElementById('logoutBtn').addEventListener('click', function() {
-      // ✅ LOGIN-STATUS ENTFERNEN BEIM ABMELDEN
       localStorage.removeItem('isLoggedIn');
-      
       document.getElementById('appContainer').style.display = 'none';
       document.getElementById('loginScreen').style.display = 'flex';
       document.getElementById('userDropdown').classList.remove('show');
@@ -607,7 +748,7 @@
     // Close dropdown when clicking outside
     window.addEventListener('click', function(e) {
       if (!e.target.matches('#userMenuBtn')) {
-        const dropdown = document.getElementById('userDropdown');
+        const dropdown = document.getElementElementById('userDropdown');
         if (dropdown.classList.contains('show')) {
           dropdown.classList.remove('show');
         }
@@ -622,71 +763,53 @@
       });
     });
 
-    // New Expense Button
-    <!-- Modal Nuevo gasto -->
-<div class="modal fade" id="modalNewExpense" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Nuevo gasto</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-      </div>
+    // Modal elements
+    const modalExpense = document.getElementById('modalNewExpense');
+    const closeExpenseModal = document.getElementById('closeExpenseModal');
+    const cancelExpenseBtn = document.getElementById('cancelExpenseBtn');
 
-      <div class="modal-body">
-        <form id="formNewExpense">
-          <div class="mb-3">
-            <label class="form-label">Fecha</label>
-            <input type="date" name="date" class="form-control" required />
-          </div>
+    // New Expense Button - ABRIR MODAL
+    document.getElementById('newExpenseBtn').addEventListener('click', function() {
+      modalExpense.classList.add('show');
+    });
 
-          <div class="mb-3">
-            <label class="form-label">Categoría</label>
-            <input type="text" name="category" class="form-control" required />
-          </div>
+    // Close modal buttons
+    closeExpenseModal.addEventListener('click', function() {
+      modalExpense.classList.remove('show');
+    });
 
-          <div class="mb-3">
-            <label class="form-label">Importe (€)</label>
-            <input type="number" step="0.01" name="amount" class="form-control" required />
-          </div>
+    cancelExpenseBtn.addEventListener('click', function() {
+      modalExpense.classList.remove('show');
+    });
 
-          <div class="mb-3">
-            <label class="form-label">Notas</label>
-            <input type="text" name="notes" class="form-control" />
-          </div>
-        </form>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-primary" id="saveExpenseBtn">Guardar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
+    // Close modal when clicking outside
+    window.addEventListener('click', function(e) {
+      if (e.target === modalExpense) {
+        modalExpense.classList.remove('show');
+      }
+    });
 
     // Refresh button
     document.getElementById('refreshBtn').addEventListener('click', function() {
       location.reload();
     });
 
-    // ✅ KORRIGIERT: Sidebar link handling - Öffnet Seiten im GLEICHEN Tab
+    // Sidebar link handling
     document.querySelectorAll('.sidebar-link').forEach(link => {
       link.addEventListener('click', function(e) {
         const href = this.getAttribute('href');
-        
-        // Skip internal links (starting with #)
         if (href.startsWith('#')) {
           return;
         }
-        
         e.preventDefault();
-        // ✅ Öffne die Seite im GLEICHEN Tab
         window.location.href = href;
       });
     });
+
+    // Accordion padrão aberto
+    document.querySelector('.accordion-content').classList.add('open');
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
   <script type="module" src="./expense.js"></script>
 </body>
 </html>

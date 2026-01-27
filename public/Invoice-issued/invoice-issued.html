@@ -431,6 +431,113 @@
       font-weight: 500;
     }
 
+    .chart-container {
+      position: relative;
+      height: 250px;
+    }
+
+    /* ========== MODAL STYLES ========== */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 10000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 550px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-header {
+      padding: 20px 25px;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, #2a4d9c 0%, #3a6cd6 100%);
+      color: white;
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: white;
+      opacity: 0.9;
+    }
+
+    .modal-close:hover {
+      opacity: 1;
+    }
+
+    .modal-body {
+      padding: 25px;
+      background: #f6f8fc;
+    }
+
+    .modal-footer {
+      padding: 20px 25px;
+      border-top: 1px solid #e9ecef;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      background: #f6f8fc;
+      border-bottom-left-radius: 12px;
+      border-bottom-right-radius: 12px;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      color: #2c3e50;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .form-select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      background-color: white;
+    }
+
+    .mb-3 {
+      margin-bottom: 18px;
+    }
+
     /* Responsive */
     @media (max-width: 1024px) {
       .dashboard-grid,
@@ -505,15 +612,15 @@
                 <ul class="sidebar-menu">
                     <li><a href="../frontPage/frontPage.html" class="sidebar-link">Dashboard</a></li>
                     <li><a href="../expense/expense.html" class="sidebar-link">Gastos</a></li>
-                    <li class="active"><a href="../invoice-issued.html" class="sidebar-link">Facturas Emitidas</a></li>
+                    <li class="active"><a href="invoice-issued.html" class="sidebar-link">Facturas Emitidas</a></li>
                     <li><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link">Facturas recibidas</a></li>
                     <li><a href="../budgetPage/budget.html" class="sidebar-link">Presupuestos</a></li>
                     <li><a href="#help" class="sidebar-link">Ayuda</a></li>
-                </ul>
+                  </ul>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </aside>
+          </aside>
 
       <!-- Content Area -->
       <main class="content">
@@ -567,7 +674,7 @@
                 <th>Acciones</th>
               </tr>
             </thead>
-            <tbody id ="invoiceTbody">
+            <tbody id="invoiceTbody">
               <tr>
                 <td>INV-2025-001</td>
                 <td>Max Mustermann GmbH</td>
@@ -616,58 +723,136 @@
           </table>
         </div>
 
-        <!-- Charts Placeholder -->
+        <!-- Charts -->
         <div class="card">
           <h2 class="card-header">Evolución de ingresos</h2>
-          <div class="chart-placeholder">
-            Gráfico de facturas emitidas y cobros
+          <div class="chart-container" style="height: 250px;">
+            <canvas id="issuedChartCanvas"></canvas>
           </div>
         </div>
       </main>
     </div>
   </div>
 
+  <!-- Modal Exportar Facturas -->
+  <div class="modal" id="modalExport">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Exportar Facturas</h5>
+        <button type="button" class="modal-close" id="closeExportModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Formato de exportacíon</label>
+          <select id="exportFormat" class="form-select">
+            <option value="pdf">PDF</option>
+            <option value="csv">CSV</option>
+            <option value="excel">Excel</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Período</label>
+          <select id="exportPeriod" class="form-select">
+            <option value="all">Todas las facturas</option>
+            <option value="month">Este mes</option>
+            <option value="quarter">Este trimestre</option>
+            <option value="year">Este año</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Estado</label>
+          <select id="exportState" class="form-select">
+            <option value="all">Todos los estados</option>
+            <option value="Pagada">Pagadas</option>
+            <option value="Pendiente">Pendientes</option>
+            <option value="Vencida">Vencidas</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancelExportBtn">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="confirmExportBtn">Exportar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nueva Factura Emitida -->
+  <div class="modal" id="modalNewInvoiceIssued">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Nueva factura emitida</h5>
+        <button type="button" class="modal-close" id="closeInvoiceIssuedModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="formNewInvoiceIssued">
+          <div class="mb-3">
+            <label class="form-label">Número de factura</label>
+            <input type="text" name="invoiceNumber" class="form-control" placeholder="Ej: INV-2025-001" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Cliente</label>
+            <input type="text" name="customer" class="form-control" placeholder="Nombre del cliente" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fecha</label>
+            <input type="date" name="invoiceDate" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Vence el</label>
+            <input type="date" name="dueDate" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Importe (€)</label>
+            <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Estado</label>
+            <select name="state" class="form-select">
+              <option value="Pagada">Pagada</option>
+              <option value="Pendiente" selected>Pendiente</option>
+              <option value="Vencida">Vencida</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancelInvoiceIssuedBtn">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="saveInvoiceIssuedBtn">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
   <script>
-    // ✅ PRÜFE BEIM LADEN DER SEITE OB BEREITS EINGELOGGT
-   window.addEventListener("load", function () {
-  const isLoggedIn = localStorage.getItem("isLoggedIn");
+    // PRÜFE BEIM LADEN DER SEITE OB BEREITS EINGELOGGT
+    window.addEventListener("load", function () {
+      const isLoggedIn = localStorage.getItem("isLoggedIn");
 
-  if (isLoggedIn === "true") {
-    document.getElementById("loginScreen").style.display = "none";
-    document.getElementById("appContainer").style.display = "flex";
-
-    if (typeof markActivePage === "function") {
-      markActivePage();
-    }
-  } else {
-    document.getElementById("email").value = "test@example.com";
-    document.getElementById("password").value = "123456";
-  }
-});
-
+      if (isLoggedIn === "true") {
+        document.getElementById("loginScreen").style.display = "none";
+        document.getElementById("appContainer").style.display = "flex";
+      } else {
+        document.getElementById("email").value = "test@example.com";
+        document.getElementById("password").value = "123456";
+      }
+    });
 
     // Login functionality
     document.getElementById("loginBtn").addEventListener("click", function () {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
 
-  if (email && password) {
-    // marca logado
-    localStorage.setItem("isLoggedIn", "true");
+      if (email && password) {
+        localStorage.setItem("isLoggedIn", "true");
+        document.getElementById("loginScreen").style.display = "none";
+        document.getElementById("appContainer").style.display = "flex";
+      } else {
+        alert("Introduce email y contraseña");
+      }
+    });
 
-    document.getElementById("loginScreen").style.display = "none";
-    document.getElementById("appContainer").style.display = "flex";
-
-    if (typeof markActivePage === "function") {
-      markActivePage();
-    }
-  } else {
-    alert("Introduce email y contraseña");
-  }
-});
-
-
-    
     // User menu functionality
     document.getElementById('userMenuBtn').addEventListener('click', function() {
       document.getElementById('userDropdown').classList.toggle('show');
@@ -675,9 +860,7 @@
     
     // Logout functionality
     document.getElementById('logoutBtn').addEventListener('click', function() {
-      // ✅ LOGIN-STATUS ENTFERNEN BEIM ABMELDEN
       localStorage.removeItem('isLoggedIn');
-      
       document.getElementById('appContainer').style.display = 'none';
       document.getElementById('loginScreen').style.display = 'flex';
       document.getElementById('userDropdown').classList.remove('show');
@@ -701,14 +884,66 @@
       });
     });
 
-    // New Invoice Button
+    // Modal elements
+    const modalNewInvoice = document.getElementById('modalNewInvoiceIssued');
+    const closeInvoiceModal = document.getElementById('closeInvoiceIssuedModal');
+    const cancelInvoiceBtn = document.getElementById('cancelInvoiceIssuedBtn');
+
+    // New Invoice Button - ABRIR MODAL
     document.getElementById('newInvoiceBtn').addEventListener('click', function() {
-      alert('Aquí aparecería el diálogo de nueva factura');
+      modalNewInvoice.classList.add('show');
     });
 
-    // Export Button
+    // Close modal buttons
+    closeInvoiceModal.addEventListener('click', function() {
+      modalNewInvoice.classList.remove('show');
+    });
+
+    cancelInvoiceBtn.addEventListener('click', function() {
+      modalNewInvoice.classList.remove('show');
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(e) {
+      if (e.target === modalNewInvoice) {
+        modalNewInvoice.classList.remove('show');
+      }
+    });
+
+    // Export Button - ABRIR MODAL
     document.getElementById('exportBtn').addEventListener('click', function() {
-      alert('Aquí se iniciaría la función de exportación');
+      document.getElementById('modalExport').classList.add('show');
+    });
+
+    // Modal Export elements
+    const modalExport = document.getElementById('modalExport');
+    const closeExportModal = document.getElementById('closeExportModal');
+    const cancelExportBtn = document.getElementById('cancelExportBtn');
+
+    // Close export modal
+    closeExportModal.addEventListener('click', function() {
+      modalExport.classList.remove('show');
+    });
+
+    cancelExportBtn.addEventListener('click', function() {
+      modalExport.classList.remove('show');
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(e) {
+      if (e.target === modalExport) {
+        modalExport.classList.remove('show');
+      }
+    });
+
+    // Confirm Export
+    document.getElementById('confirmExportBtn').addEventListener('click', function() {
+      const format = document.getElementById('exportFormat').value;
+      const period = document.getElementById('exportPeriod').value;
+      const state = document.getElementById('exportState').value;
+      
+      alert(`Exportando em formato ${format.toUpperCase()}\nPeríodo: ${period}\nEstado: ${state}`);
+      modalExport.classList.remove('show');
     });
 
     // Refresh button
@@ -716,82 +951,22 @@
       location.reload();
     });
 
-    // ✅ KORRIGIERT: Sidebar link handling - Öffnet Seiten im GLEICHEN Tab
+    // Sidebar link handling
     document.querySelectorAll('.sidebar-link').forEach(link => {
       link.addEventListener('click', function(e) {
         const href = this.getAttribute('href');
-        
-        // Skip internal links (starting with #)
         if (href.startsWith('#')) {
           return;
         }
-        
         e.preventDefault();
-        // ✅ Öffne die Seite im GLEICHEN Tab
         window.location.href = href;
       });
     });
 
-    // Accordion standardmäßig öffnen
+    // Accordion padrão aberto
     document.querySelector('.accordion-content').classList.add('open');
-
-    <!-- Modal Nueva factura emitida -->
-<div class="modal fade" id="modalNewInvoiceIssued" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Nueva factura emitida</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-      </div>
-
-      <div class="modal-body">
-        <form id="formNewInvoiceIssued">
-          <div class="mb-3">
-            <label class="form-label">Número de factura</label>
-            <input type="text" name="invoiceNumber" class="form-control" required />
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">Cliente</label>
-            <input type="text" name="customer" class="form-control" required />
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">Fecha</label>
-            <input type="date" name="invoiceDate" class="form-control" required />
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">Vence el</label>
-            <input type="date" name="dueDate" class="form-control" required />
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">Importe (€)</label>
-            <input type="number" step="0.01" name="amount" class="form-control" required />
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">Estado</label>
-            <select name="status" class="form-select">
-              <option value="Pagada">Pagada</option>
-              <option value="Pendiente" selected>Pendiente</option>
-              <option value="Vencida">Vencida</option>
-            </select>
-          </div>
-        </form>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-primary" id="saveInvoiceIssuedBtn">Guardar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script type="module" src="./invoice-issued.js"></script>
+  
+  <script type="module" src="./invoice-issued.js"></script>
 </body>
 </html>

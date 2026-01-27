@@ -9,6 +9,69 @@ function moneyEUR(n) {
   return `€${v.toFixed(2)}`;
 }
 
+// Chart instance
+let expenseChart = null;
+
+function renderChart() {
+  const chartContainer = document.getElementById('expenseChartCanvas');
+  if (!chartContainer) return;
+
+  const list = getExpenses();
+  
+  // Calculate totals by category
+  const categoryTotals = {};
+  list.forEach(exp => {
+    const cat = exp.category || "Sin categoría";
+    categoryTotals[cat] = (categoryTotals[cat] || 0) + Number(exp.amount || 0);
+  });
+
+  const labels = Object.keys(categoryTotals);
+  const data = Object.values(categoryTotals);
+
+  const ctx = chartContainer.getContext('2d');
+
+  // Destroy existing chart
+  if (expenseChart) {
+    expenseChart.destroy();
+  }
+
+  // Create new chart
+  expenseChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels.length ? labels : ['Sem dados'],
+      datasets: [{
+        label: 'Gastos por categoría',
+        data: data.length ? data : [0],
+        backgroundColor: [
+          '#2a4d9c', '#3a6cd6', '#1abc9c', '#e74c3c', '#f39c12',
+          '#9b59b6', '#3498db', '#1abc9c', '#e67e22', '#34495e'
+        ],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return '€' + value;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
 function renderExpenses() {
   const tbody = $("expenseTBody");
   if (!tbody) return;
@@ -49,21 +112,10 @@ function renderExpenses() {
       renderExpenses();
     });
   });
-  });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  // Abrir modal
-  const newExpenseBtn = $("newExpenseBtn");
-  if (newExpenseBtn) {
-    newExpenseBtn.addEventListener("click", () => {
-      const el = $("modalNewExpense");
-      if (el && window.bootstrap?.Modal) {
-        window.bootstrap.Modal.getOrCreateInstance(el).show();
-      }
-    });
-  }
 
+document.addEventListener("DOMContentLoaded", () => {
   // Guardar gasto
   const saveBtn = $("saveExpenseBtn");
   if (saveBtn) {
@@ -84,16 +136,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
       addExpense({ date, category, amount, notes });
 
-      // fechar modal
+      // fechar modal - usar classe .show
       const el = $("modalNewExpense");
-      if (el && window.bootstrap?.Modal) {
-        window.bootstrap.Modal.getOrCreateInstance(el).hide();
+      if (el) {
+        el.classList.remove("show");
       }
 
       form.reset();
       renderExpenses();
+      renderChart();
     });
   }
 
   renderExpenses();
+  renderChart();
 });

@@ -16,6 +16,53 @@ function moneyEUR(n) {
   return `€${v.toFixed(2)}`;
 }
 
+// Chart instance
+let issuedChart = null;
+
+function renderChart() {
+  const chartContainer = document.getElementById('issuedChartCanvas');
+  if (!chartContainer) return;
+
+  const list = getInvoicesIssued();
+  
+  // Calculate totals by state
+  const paid = list.filter(inv => (inv.state || "").toLowerCase() === "pagada")
+    .reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
+  const pending = list.filter(inv => (inv.state || "").toLowerCase() === "pendiente")
+    .reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
+  const overdue = list.filter(inv => (inv.state || "").toLowerCase() === "vencida")
+    .reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
+
+  const ctx = chartContainer.getContext('2d');
+
+  // Destroy existing chart
+  if (issuedChart) {
+    issuedChart.destroy();
+  }
+
+  // Create new chart
+  issuedChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Pagadas', 'Pendientes', 'Vencidas'],
+      datasets: [{
+        data: [paid, pending, overdue],
+        backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom'
+        }
+      }
+    }
+  });
+}
+
 function renderIssued() {
   const tbody = $("invoiceTbody");
   if (!tbody) return;
@@ -42,7 +89,7 @@ function renderIssued() {
       <td>${inv.invoiceDate || "-"}</td>
       <td>${inv.dueDate || "-"}</td>
       <td>${moneyEUR(inv.amount)}</td>
-      <td>${badge(inv.status)}</td>
+      <td>${badge(inv.state)}</td>
       <td>
         <button class="btn btn-sm btn-outline-danger" data-del="${inv.id}">
           Eliminar
@@ -61,18 +108,46 @@ function renderIssued() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Abrir modal
+  const modalEl = $("modalNewInvoiceIssued");
+  
+  // Abrir modal - usando classes .show
   const newBtn = $("newInvoiceBtn");
   if (newBtn) {
     newBtn.addEventListener("click", () => {
-      const el = $("modalNewInvoiceIssued");
-      if (el && window.bootstrap?.Modal) {
-        window.bootstrap.Modal.getOrCreateInstance(el).show();
+      if (modalEl) {
+        modalEl.classList.add("show");
       }
     });
   }
 
-  // Guardar
+  // Fechar modal com botão X
+  const closeBtn = $("closeInvoiceIssuedModal");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      if (modalEl) {
+        modalEl.classList.remove("show");
+      }
+    });
+  }
+
+  // Fechar modal com Cancelar
+  const cancelBtn = $("cancelInvoiceIssuedBtn");
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", () => {
+      if (modalEl) {
+        modalEl.classList.remove("show");
+      }
+    });
+  }
+
+  // Fechar modal ao clicar fora
+  window.addEventListener("click", (e) => {
+    if (e.target === modalEl) {
+      modalEl.classList.remove("show");
+    }
+  });
+
+  // Guardar nova factura
   const saveBtn = $("saveInvoiceIssuedBtn");
   if (saveBtn) {
     saveBtn.addEventListener("click", () => {
@@ -85,24 +160,25 @@ document.addEventListener("DOMContentLoaded", () => {
       const invoiceDate = String(fd.get("invoiceDate") || "");
       const dueDate = String(fd.get("dueDate") || "");
       const amount = String(fd.get("amount") || "");
-      const status = String(fd.get("status") || "Pendiente");
+      const state = String(fd.get("state") || "Pendiente");
 
       if (!invoiceNumber || !customer || !invoiceDate || !dueDate || !amount) {
         alert("Completa todos los campos obligatorios.");
         return;
       }
 
-      addInvoiceIssued({ invoiceNumber, customer, invoiceDate, dueDate, amount, status });
+      addInvoiceIssued({ invoiceNumber, customer, invoiceDate, dueDate, amount, state });
 
-      const el = $("modalNewInvoiceIssued");
-      if (el && window.bootstrap?.Modal) {
-        window.bootstrap.Modal.getOrCreateInstance(el).hide();
+      if (modalEl) {
+        modalEl.classList.remove("show");
       }
 
       form.reset();
       renderIssued();
+      renderChart();
     });
   }
 
   renderIssued();
+  renderChart();
 });
