@@ -75,7 +75,7 @@ export function addInvoiceIssued(invoice) {
     id: uid(),
     invoiceNumber: invoice.invoiceNumber ?? "",
     customer: invoice.customer ?? "",
-    issueDate: invoice.issueDate ?? "",
+    invoiceDate: invoice.invoiceDate ?? "",
     dueDate: invoice.dueDate ?? "",
     amount: Number(invoice.amount ?? 0),
     state: invoice.state ?? "Pendiente",

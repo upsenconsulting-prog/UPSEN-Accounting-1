@@ -106,6 +106,8 @@ function renderTable() {
     btn.addEventListener("click", () => {
       deleteInvoiceReceived(btn.getAttribute("data-del"));
       renderTable();
+      renderChart();
+      renderSummaryCards();
     });
   });
 }
@@ -167,6 +169,135 @@ function downloadPDF() {
   win.document.close();
 }
 
+// ---------- Summary Cards ----------
+function renderSummaryCards() {
+  const all = getInvoicesReceived().map(inv => ({
+    ...inv,
+    period: inv.period || getQuarterPeriod(inv.invoiceDate)
+  }));
+  const invoices = applyAllFilters(all);
+  
+  // Calculate totals
+  let pendingTotal = 0;
+  let overdueTotal = 0;
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  let monthlyCount = 0;
+  
+  invoices.forEach(inv => {
+    const state = (inv.state || "").toLowerCase();
+    const amount = Number(inv.amount || 0);
+    
+    // Pending total
+    if (state === "pendiente") {
+      pendingTotal += amount;
+    }
+    
+    // Overdue total
+    if (state === "vencida") {
+      overdueTotal += amount;
+    }
+    
+    // Monthly count
+    if (inv.invoiceDate) {
+      const [year, month] = inv.invoiceDate.split('-').map(Number);
+      if (year === currentYear && month - 1 === currentMonth) {
+        monthlyCount++;
+      }
+    }
+  });
+  
+  // Calculate average
+  const averageAmount = invoices.length > 0 
+    ? invoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0) / invoices.length 
+    : 0;
+  
+  // Update DOM
+  const pendingEl = $("pendingTotal");
+  if (pendingEl) pendingEl.textContent = `€${pendingTotal.toFixed(2)}`;
+  
+  const overdueEl = $("overdueTotal");
+  if (overdueEl) overdueEl.textContent = `€${overdueTotal.toFixed(2)}`;
+  
+  const monthlyEl = $("monthlyCount");
+  if (monthlyEl) monthlyEl.textContent = `${monthlyCount} facturas`;
+  
+  const averageEl = $("averageAmount");
+  if (averageEl) averageEl.textContent = `€${averageAmount.toFixed(2)}`;
+}
+
+// ---------- Chart ----------
+let receivedChart = null;
+
+function renderChart() {
+  const chartContainer = document.getElementById('receivedChartCanvas');
+  if (!chartContainer) return;
+
+  const all = getInvoicesReceived().map(inv => ({
+    ...inv,
+    period: inv.period || getQuarterPeriod(inv.invoiceDate)
+  }));
+  const invoices = applyAllFilters(all);
+  
+  // Calculate totals by supplier (top 5)
+  const supplierTotals = {};
+  invoices.forEach(inv => {
+    const supplier = inv.supplier || "Sin proveedor";
+    supplierTotals[supplier] = (supplierTotals[supplier] || 0) + Number(inv.amount || 0);
+  });
+
+  // Sort by amount and get top 5
+  const sortedSuppliers = Object.entries(supplierTotals)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  const labels = sortedSuppliers.length ? sortedSuppliers.map(([name]) => name) : ['Sem dados'];
+  const data = sortedSuppliers.length ? sortedSuppliers.map(([, amount]) => amount) : [0];
+
+  const ctx = chartContainer.getContext('2d');
+
+  // Destroy existing chart
+  if (receivedChart) {
+    receivedChart.destroy();
+  }
+
+  // Create new chart
+  receivedChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Gastos por proveedor',
+        data: data,
+        backgroundColor: [
+          '#2a4d9c', '#3a6cd6', '#1abc9c', '#e74c3c', '#f39c12'
+        ],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return '€' + value;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
 // ---------- OCR (mock) ----------
 function saveOCRMock() {
   const form = $("formNewInvoiceOCR");
@@ -200,6 +331,7 @@ function saveOCRMock() {
   }
   
   renderTable();
+  renderChart();
 }
 
 // ---------- Init ----------
@@ -209,11 +341,17 @@ document.addEventListener("DOMContentLoaded", () => {
   if (applyFilter) {
     applyFilter.addEventListener("click", function() {
       renderTable();
+      renderChart();
+      renderSummaryCards();
     });
   }
 
   // período
-  $("periodSelect")?.addEventListener("change", renderTable);
+  $("periodSelect")?.addEventListener("change", function() {
+    renderTable();
+    renderChart();
+    renderSummaryCards();
+  });
 
   // salvar nova fatura
   $("saveInvoiceBtn")?.addEventListener("click", () => {
@@ -249,13 +387,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     
     renderTable();
+    renderChart();
+    renderSummaryCards();
   });
 
   // OCR
-  $("saveOCRBtn")?.addEventListener("click", saveOCRMock);
+  $("saveOCRBtn")?.addEventListener("click", function() {
+    saveOCRMock();
+    renderSummaryCards();
+  });
 
   // PDF
   $("btnDownload")?.addEventListener("click", downloadPDF);
 
   renderTable();
+  renderChart();
+  renderSummaryCards();
 });
