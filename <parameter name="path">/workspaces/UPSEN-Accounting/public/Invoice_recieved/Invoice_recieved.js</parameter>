@@ -1,3 +1,4 @@
+<parameter name="content">
 // public/Invoice_recieved/Invoice_recieved.js
 import {
   getInvoicesReceived,
@@ -9,19 +10,6 @@ function $(id) {
   const el = document.getElementById(id);
   if (!el) console.warn(`[Invoice_recieved] Elemento não encontrado: #${id}`);
   return el;
-}
-
-// ========== MARK ACTIVE PAGE ==========
-function markActivePage() {
-  const currentPage = window.location.href;
-  const links = document.querySelectorAll('.sidebar-link');
-  
-  links.forEach(link => {
-    link.parentElement.classList.remove('active');
-    if (link.href === currentPage) {
-      link.parentElement.classList.add('active');
-    }
-  });
 }
 
 // ---------- Period helper ----------
@@ -56,10 +44,10 @@ function populatePeriodSelector() {
     }
   });
   
-  // Always add current and previous year quarters
+  // Also add current and previous year quarters
   const now = new Date();
   const currentYear = now.getFullYear();
-  for (let y = currentYear - 1; y <= currentYear + 1; y++) {
+  for (let y = currentYear - 2; y <= currentYear + 1; y++) {
     for (let q = 1; q <= 4; q++) {
       periods.add(`${y}-Q${q}`);
     }
@@ -88,30 +76,23 @@ function populatePeriodSelector() {
   // Restore selection if still exists
   if (currentSelection && sortedPeriods.includes(currentSelection)) {
     select.value = currentSelection;
-  } else {
-    // Default to current quarter
-    const currentPeriod = getQuarterPeriod(now.toISOString().slice(0, 10));
-    if (sortedPeriods.includes(currentPeriod)) {
-      select.value = currentPeriod;
-    }
   }
 }
 
 // ---------- Filters ----------
 function getFilters() {
-  const periodSelect = $("periodSelect");
-  const period = periodSelect?.value?.trim() || "";
-
   const form = $("filterForm");
   const state = form?.elements?.["state"]?.value?.trim() || "";
   const dateFrom = form?.elements?.["dateFrom"]?.value?.trim() || "";
   const dateTo = form?.elements?.["dateTo"]?.value?.trim() || "";
 
-  return { period, state, dateFrom, dateTo };
+  return { state, dateFrom, dateTo };
 }
 
 function applyAllFilters(invoices) {
-  const { period, state, dateFrom, dateTo } = getFilters();
+  const periodSelect = $("periodSelect");
+  const period = periodSelect?.value?.trim() || "";
+  const { state, dateFrom, dateTo } = getFilters();
   let list = [...invoices];
 
   // Period filter
@@ -187,7 +168,6 @@ function renderTable() {
       renderTable();
       renderChart();
       renderSummaryCards();
-      populatePeriodSelector();
     });
   });
 }
@@ -210,7 +190,7 @@ function downloadPDF() {
     </tr>
   `).join("");
 
-  const period = $("periodSelect")?.value || "-";
+  const period = $("periodSelect")?.value || "Todos";
 
   const win = window.open("", "_blank");
   win.document.write(`
@@ -418,9 +398,6 @@ function saveOCRMock() {
 
 // ---------- Init ----------
 document.addEventListener("DOMContentLoaded", () => {
-  // Mark current page as active
-  markActivePage();
-  
   // Populate period selector dynamically
   populatePeriodSelector();
   
@@ -492,6 +469,5 @@ document.addEventListener("DOMContentLoaded", () => {
   renderTable();
   renderChart();
   renderSummaryCards();
-  populatePeriodSelector();
 });
-
+</parameter>

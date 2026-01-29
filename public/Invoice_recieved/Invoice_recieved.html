@@ -696,11 +696,9 @@
         <div class="dashboard-header">
           <h1 class="page-title">Facturas Recibidas</h1>
           <div class="period-selector">
-            <label for="periodSelect">Periodo:</label>
+            <label for="periodSelect">Período:</label>
             <select id="periodSelect">
-              <option>2025-Q3</option>
-              <option>2025-Q2</option>
-              <option>2025-Q1</option>
+              <option value="">Todos los períodos</option>
             </select>
           </div>
         </div>
@@ -748,11 +746,11 @@
         <div class="cards-container">
           <div class="card summary-card">
             <h2>Pagos pendientes</h2>
-            <p><strong>€3.250,00</strong></p>
+            <p><strong id="pendingTotal">€0,00</strong></p>
           </div>
           <div class="card summary-card">
             <h2>Facturas vencidas</h2>
-            <p><strong>€1.120,00</strong></p>
+            <p><strong id="overdueTotal">€0,00</strong></p>
           </div>
           <div class="card summary-card">
             <h2>Recibidas este mes</h2>
@@ -760,7 +758,7 @@
           </div>
           <div class="card summary-card">
             <h2>Importe medio</h2>
-            <p><strong>€406,25</strong></p>
+            <p><strong id="averageAmount">€0,00</strong></p>
           </div>
         </div>
 

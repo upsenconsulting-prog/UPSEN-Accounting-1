@@ -232,6 +232,16 @@
       color: #1abc9c;
     }
 
+    /* Active page indicator */
+    .accordion-content li.active {
+      background: #1abc9c;
+      color: white;
+    }
+
+    .accordion-content li.active a {
+      color: white;
+    }
+
     /* Content Area */
     .content {
       flex: 1;
@@ -432,6 +442,78 @@
         display: none;
       }
     }
+
+    /* ========== MODAL STYLES ========== */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 10000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 450px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-header {
+      padding: 20px 25px;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, #2a4d9c 0%, #3a6cd6 100%);
+      color: white;
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: white;
+      opacity: 0.9;
+    }
+
+    .modal-close:hover {
+      opacity: 1;
+    }
+
+    .modal-body {
+      padding: 25px;
+      background: #f6f8fc;
+    }
+
+    .modal-footer {
+      padding: 20px 25px;
+      border-top: 1px solid #e9ecef;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      background: #f6f8fc;
+      border-bottom-left-radius: 12px;
+      border-bottom-right-radius: 12px;
+    }
   </style>
 </head>
 <body>
@@ -528,20 +610,31 @@
           </div>
 
           <div class="card chart-card">
-            <h2 class="card-header">Gráfico de ingresos y gastos</h2>
-            <table>
+            <h2 class="card-header">Resumen de KPIs del mes actual</h2>
+            <table id="kpi-received-table">
               <thead>
                 <tr>
-                  <th>Beneficio acumulado</th>
-                  <th>Ingresos</th>
+                  <th>Facturas Recibidas</th>
+                  <th>Facturas Emitidas</th>
                   <th>Gastos</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <p><strong>Total recibido (mes actual):</strong> <span id="kpi-received-total">0,00 €</span></p>
-                  <p><strong>Nº facturas recibidas (mes actual):</strong> <span id="kpi-received-count">0</span></p>
-                  <p><strong>Pendientes (recibidas):</strong> <span id="kpi-received-pending">0</span></p>
+                  <td>
+                    <p><strong>Total recibido:</strong> <span id="kpi-received-total">0,00 €</span></p>
+                    <p><strong>Nº facturas:</strong> <span id="kpi-received-count">0</span></p>
+                    <p><strong>Pendientes:</strong> <span id="kpi-received-pending">0</span></p>
+                  </td>
+                  <td>
+                    <p><strong>Total emitido:</strong> <span id="kpi-issued-total">0,00 €</span></p>
+                    <p><strong>Nº facturas:</strong> <span id="kpi-issued-count">0</span></p>
+                    <p><strong>Pendientes:</strong> <span id="kpi-issued-pending">0</span></p>
+                  </td>
+                  <td>
+                    <p><strong>Total gastos:</strong> <span id="kpi-expenses-total">0,00 €</span></p>
+                    <p><strong>Nº gastos:</strong> <span id="kpi-expenses-count">0</span></p>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -565,6 +658,36 @@
           </div>
         </div>
       </main>
+    </div>
+  </div>
+
+  <!-- Modal Nuevo Documento -->
+  <div class="modal" id="modalNewDocument">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Nuevo documento</h5>
+        <button type="button" class="modal-close" id="closeNewDocumentModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 20px; color: #6c757d;">Selecciona el tipo de documento que deseas crear:</p>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <button class="btn btn-primary" id="btnNewExpense" style="justify-content: center;">
+            <span>💰</span> Nuevo Gasto
+          </button>
+          <button class="btn btn-primary" id="btnNewInvoiceIssued" style="justify-content: center;">
+            <span>📤</span> Nueva Factura Emitida
+          </button>
+          <button class="btn btn-primary" id="btnNewInvoiceReceived" style="justify-content: center;">
+            <span>📥</span> Nueva Factura Recibida
+          </button>
+          <button class="btn btn-primary" id="btnNewBudget" style="justify-content: center;">
+            <span>📊</span> Nuevo Presupuesto
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancelNewDocumentBtn">Cancelar</button>
+      </div>
     </div>
   </div>
 

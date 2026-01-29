@@ -16,6 +16,19 @@ function moneyEUR(n) {
   return `€${v.toFixed(2)}`;
 }
 
+// ========== MARK ACTIVE PAGE ==========
+function markActivePage() {
+  const currentPage = window.location.href;
+  const links = document.querySelectorAll('.sidebar-link');
+  
+  links.forEach(link => {
+    link.parentElement.classList.remove('active');
+    if (link.href === currentPage) {
+      link.parentElement.classList.add('active');
+    }
+  });
+}
+
 // Chart instance
 let issuedChart = null;
 
@@ -165,6 +178,9 @@ function renderIssued() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Mark current page as active
+  markActivePage();
+  
   const modalEl = $("modalNewInvoiceIssued");
   
   // Abrir modal - usando classes .show

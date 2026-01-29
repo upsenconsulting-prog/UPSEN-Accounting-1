@@ -162,6 +162,82 @@ export function getTotals() {
 }
 
 // ======================================================
+// DASHBOARD KPI FUNCTIONS
+// ======================================================
+export function sumInvoicesReceivedMonth(year, month) {
+  const invoices = getInvoicesReceived();
+  return invoices.reduce((sum, inv) => {
+    if (!inv.invoiceDate) return sum;
+    const [y, m] = inv.invoiceDate.split('-').map(Number);
+    if (y === year && m - 1 === month) {
+      return sum + (Number(inv.amount) || 0);
+    }
+    return sum;
+  }, 0);
+}
+
+export function countInvoicesReceivedMonth(year, month) {
+  const invoices = getInvoicesReceived();
+  return invoices.filter(inv => {
+    if (!inv.invoiceDate) return false;
+    const [y, m] = inv.invoiceDate.split('-').map(Number);
+    return y === year && m - 1 === month;
+  }).length;
+}
+
+export function countInvoicesReceivedPending() {
+  const invoices = getInvoicesReceived();
+  return invoices.filter(inv => (inv.state || "").toLowerCase() === "pendiente").length;
+}
+
+export function sumInvoicesIssuedMonth(year, month) {
+  const invoices = getInvoicesIssued();
+  return invoices.reduce((sum, inv) => {
+    if (!inv.invoiceDate) return sum;
+    const [y, m] = inv.invoiceDate.split('-').map(Number);
+    if (y === year && m - 1 === month) {
+      return sum + (Number(inv.amount) || 0);
+    }
+    return sum;
+  }, 0);
+}
+
+export function countInvoicesIssuedMonth(year, month) {
+  const invoices = getInvoicesIssued();
+  return invoices.filter(inv => {
+    if (!inv.invoiceDate) return false;
+    const [y, m] = inv.invoiceDate.split('-').map(Number);
+    return y === year && m - 1 === month;
+  }).length;
+}
+
+export function countInvoicesIssuedPending() {
+  const invoices = getInvoicesIssued();
+  return invoices.filter(inv => (inv.state || "").toLowerCase() === "pendiente").length;
+}
+
+export function sumExpensesMonth(year, month) {
+  const expenses = getExpenses();
+  return expenses.reduce((sum, exp) => {
+    if (!exp.date) return sum;
+    const [y, m, d] = exp.date.split('-').map(Number);
+    if (y === year && m - 1 === month) {
+      return sum + (Number(exp.amount) || 0);
+    }
+    return sum;
+  }, 0);
+}
+
+export function countExpensesMonth(year, month) {
+  const expenses = getExpenses();
+  return expenses.filter(exp => {
+    if (!exp.date) return false;
+    const [y, m, d] = exp.date.split('-').map(Number);
+    return y === year && m - 1 === month;
+  }).length;
+}
+
+// ======================================================
 // RESET (para testes)
 // ======================================================
 export function resetAll() {
