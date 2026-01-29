@@ -267,20 +267,17 @@ export function getExpensesMonth(year, month) {
   });
 }
 
-export function getExpensesByCategory(year, month) {
+export function getExpensesByMonth(year, month) {
   const expenses = getExpenses();
-  const categoryTotals = {};
-  
+  let total = 0;
   expenses.forEach(exp => {
     if (!exp.date) return;
     const [y, m] = exp.date.split('-').map(Number);
     if (y === year && m - 1 === month) {
-      const cat = exp.category || "Sin categoría";
-      categoryTotals[cat] = (categoryTotals[cat] || 0) + (Number(exp.amount) || 0);
+      total += Number(exp.amount) || 0;
     }
   });
-  
-  return categoryTotals;
+  return total;
 }
 
 // ======================================================

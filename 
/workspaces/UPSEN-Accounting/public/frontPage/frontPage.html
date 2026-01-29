@@ -343,7 +343,6 @@
       grid-column: span 2;
     }
 
-    /* Chart Container */
     .chart-container {
       position: relative;
       height: 250px;
@@ -354,7 +353,6 @@
       height: 200px;
     }
 
-    /* Comments Section */
     .comments-section {
       margin-top: 30px;
     }
@@ -366,61 +364,73 @@
       color: #2a4d9c;
       cursor: pointer;
       font-weight: 500;
-      padding: 10px 15px;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      transition: all 0.3s ease;
     }
 
-    .comments-toggle:hover {
-      background: #f0f4ff;
+    .forecast-card {
+      margin-top: 30px;
     }
 
-    .comments-toggle .toggle-icon {
-      font-size: 18px;
-      transition: transform 0.3s ease;
+    /* Expense Forecast Card */
+    .expense-forecast-card {
+      margin-top: 30px;
     }
 
-    .comments-toggle.expanded .toggle-icon {
-      transform: rotate(45deg);
+    .expense-forecast-card .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
-    .comments-content {
-      display: none;
-      margin-top: 15px;
-      padding: 20px;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    .forecast-period-selector {
+      display: flex;
+      gap: 10px;
+      align-items: center;
     }
 
-    .comments-content.show {
-      display: block;
+    .forecast-period-selector label {
+      font-size: 14px;
+      color: #6c757d;
     }
 
-    .comment-item {
+    .forecast-period-selector select {
+      padding: 6px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .forecast-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
       padding: 15px;
-      border-bottom: 1px solid #e9ecef;
+      background: #f8f9fa;
+      border-radius: 8px;
     }
 
-    .comment-item:last-child {
-      border-bottom: none;
+    .forecast-item {
+      text-align: center;
     }
 
-    .comment-date {
+    .forecast-item-label {
       font-size: 12px;
       color: #6c757d;
       margin-bottom: 5px;
     }
 
-    .comment-text {
-      font-size: 14px;
+    .forecast-item-value {
+      font-size: 18px;
+      font-weight: 600;
       color: #2c3e50;
     }
 
-    .forecast-card {
-      margin-top: 30px;
+    .forecast-item-value.positive {
+      color: #28a745;
+    }
+
+    .forecast-item-value.negative {
+      color: #dc3545;
     }
 
     /* Table Styles */
@@ -472,6 +482,9 @@
       }
       .chart-card {
         grid-column: span 1;
+      }
+      .forecast-summary {
+        grid-template-columns: 1fr;
       }
     }
 
@@ -697,14 +710,14 @@
           <div class="accordion-item">
             <div class="accordion-header">Accounting</div>
             <div class="accordion-content">
-              <ul class="sidebar-menu">
-                <li><a href="../frontPage/frontPage.html" class="sidebar-link">Panel de control</a></li>
-                <li><a href="../expense/expense.html" class="sidebar-link">Gastos</a></li>
-                <li><a href="../Invoice-issued/invoice-issued.html" class="sidebar-link">Facturas emitidas</a></li>
-                <li><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link">Facturas recibidas</a></li>
-                <li><a href="../budgetPage/budget.html" class="sidebar-link">Presupuestos</a></li>
-                <li><a href="#help" class="sidebar-link">Ayuda</a></li>
-              </ul>
+                <ul class="sidebar-menu">
+                    <li><a href="../frontPage/frontPage.html" class="sidebar-link">Panel de control</a></li>
+                    <li><a href="../expense/expense.html" class="sidebar-link">Gastos</a></li>
+                    <li><a href="../Invoice-issued/invoice-issued.html" class="sidebar-link">Facturas emitidas</a></li>
+                    <li><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link">Facturas recibidas</a></li>
+                    <li><a href="../budgetPage/budget.html" class="sidebar-link">Presupuestos</a></li>
+                    <li><a href="#help" class="sidebar-link">Ayuda</a></li>
+                </ul>
             </div>
           </div>
         </div>
@@ -715,12 +728,8 @@
         <div class="dashboard-header">
           <h1 class="page-title">Panel de control</h1>
           <div class="action-buttons">
-            <button class="btn btn-primary" id="newDocumentBtn">
-              <span>+</span> Nuevo documento
-            </button>
-            <button class="btn btn-secondary" id="refreshBtn">
-              <span>↻</span> Actualizar
-            </button>
+            <button class="btn btn-primary" id="newDocumentBtn">Nuevo documento</button>
+            <button class="btn btn-secondary" id="refreshBtn">Actualizar</button>
           </div>
         </div>
 
@@ -803,80 +812,91 @@
               </div>
             </div>
 
-            <!-- Gráfico de Gastos -->
+            <!-- Chart Container -->
             <div class="chart-container">
-              <canvas id="expensesChart"></canvas>
+              <canvas id="dashboardChart"></canvas>
             </div>
           </div>
         </div>
 
-        <!-- Comments Section -->
         <div class="comments-section">
           <div class="comments-toggle" id="toggleComments">
-            <span class="toggle-icon">+</span>
+            <span>+</span>
             <span>Mostrar comentarios</span>
-          </div>
-          <div class="comments-content" id="commentsContent">
-            <div class="comment-item">
-              <div class="comment-date">15/09/2025</div>
-              <div class="comment-text">Revisión mensual de gastos operativos completada. Los gastos de materiales han aumentado un 15% respecto al mes anterior.</div>
-            </div>
-            <div class="comment-item">
-              <div class="comment-date">10/09/2025</div>
-              <div class="comment-text">Factura de proveedores pendiente de verificación para el departamento de IT.</div>
-            </div>
-            <div class="comment-item">
-              <div class="comment-date">05/09/2025</div>
-              <div class="comment-text">Presupuesto del tercer trimestre ajustado según las nuevas proyecciones de ingresos.</div>
-            </div>
           </div>
         </div>
 
-        <!-- Forecast Card: Gastos -->
         <div class="card forecast-card">
-          <h2 class="card-header">Prevision de gastos</h2>
+          <h2 class="card-header">Previsión de pagos</h2>
           <div class="chart-container">
             <canvas id="forecastChart"></canvas>
           </div>
         </div>
 
-        <!-- Forecast Card: Pagos -->
-        <div class="card forecast-card">
-          <h2 class="card-header">Prevision de pagos</h2>
-          <div class="chart-container">
-            <canvas id="paymentsForecastChart"></canvas>
+        <!-- Expense Forecast Card -->
+        <div class="card expense-forecast-card">
+          <h2 class="card-header">
+            Previsión de gastos
+            <div class="forecast-period-selector">
+              <label for="forecastPeriod">Período:</label>
+              <select id="forecastPeriod">
+                <option value="3">3 meses</option>
+                <option value="6" selected>6 meses</option>
+                <option value="12">12 meses</option>
+              </select>
+            </div>
+          </h2>
+          
+          <!-- Forecast Summary -->
+          <div class="forecast-summary">
+            <div class="forecast-item">
+              <div class="forecast-item-label">Total Histórico</div>
+              <div class="forecast-item-value" id="forecast-historical">€0,00</div>
+            </div>
+            <div class="forecast-item">
+              <div class="forecast-item-label">Média Mensal</div>
+              <div class="forecast-item-value" id="forecast-average">€0,00</div>
+            </div>
+            <div class="forecast-item">
+              <div class="forecast-item-label">Projeção Total</div>
+              <div class="forecast-item-value negative" id="forecast-projection">€0,00</div>
+            </div>
+          </div>
+          
+          <div class="chart-container small">
+            <canvas id="expenseForecastChart"></canvas>
           </div>
         </div>
       </main>
     </div>
+  </div>
 
-    <!-- Modal Nuevo Documento -->
-    <div class="modal" id="modalNewDocument">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Nuevo documento</h5>
-          <button type="button" class="modal-close" id="closeNewDocumentModal">&times;</button>
+  <!-- Modal Nuevo Documento -->
+  <div class="modal" id="modalNewDocument">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Nuevo documento</h5>
+        <button type="button" class="modal-close" id="closeNewDocumentModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 20px; color: #6c757d;">Selecciona el tipo de documento que deseas crear:</p>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <button class="btn btn-primary" id="btnNewExpense" style="justify-content: center;">
+            Nuevo Gasto
+          </button>
+          <button class="btn btn-primary" id="btnNewInvoiceIssued" style="justify-content: center;">
+            Nueva Factura Emitida
+          </button>
+          <button class="btn btn-primary" id="btnNewInvoiceReceived" style="justify-content: center;">
+            Nueva Factura Recibida
+          </button>
+          <button class="btn btn-primary" id="btnNewBudget" style="justify-content: center;">
+            Nuevo Presupuesto
+          </button>
         </div>
-        <div class="modal-body">
-          <p style="margin-bottom: 20px; color: #6c757d;">Selecciona el tipo de documento que deseas crear:</p>
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            <button class="btn btn-primary" id="btnNewExpense" style="justify-content: center;">
-              Nuevo Gasto
-            </button>
-            <button class="btn btn-primary" id="btnNewInvoiceIssued" style="justify-content: center;">
-              Nueva Factura Emitida
-            </button>
-            <button class="btn btn-primary" id="btnNewInvoiceReceived" style="justify-content: center;">
-              Nueva Factura Recibida
-            </button>
-            <button class="btn btn-primary" id="btnNewBudget" style="justify-content: center;">
-              Nuevo Presupuesto
-            </button>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" id="cancelNewDocumentBtn">Cancelar</button>
-        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancelNewDocumentBtn">Cancelar</button>
       </div>
     </div>
   </div>
@@ -884,54 +904,56 @@
   <script>
     // PRÜFE BEIM LADEN DER SEITE OB BEREITS EINGELOGGT
     window.addEventListener("load", function () {
-      const isLoggedIn = localStorage.getItem("isLoggedIn");
+  const isLoggedIn = localStorage.getItem("isLoggedIn");
 
-      if (isLoggedIn === "true") {
-        document.getElementById("loginScreen").style.display = "none";
-        document.getElementById("appContainer").style.display = "flex";
+  if (isLoggedIn === "true") {
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("appContainer").style.display = "flex";
 
-        if (typeof markActivePage === "function") {
-          markActivePage();
-        }
-      } else {
-        document.getElementById("email").value = "test@example.com";
-        document.getElementById("password").value = "123456";
-      }
-    });
+    if (typeof markActivePage === "function") {
+      markActivePage();
+    }
+  } else {
+    document.getElementById("email").value = "test@example.com";
+    document.getElementById("password").value = "123456";
+  }
+});
+
 
     // Login functionality
-    document.getElementById("loginBtn").addEventListener("click", function () {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
+   document.getElementById("loginBtn").addEventListener("click", function () {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
 
-      if (email && password) {
-        localStorage.setItem("isLoggedIn", "true");
+  if (email && password) {
+    localStorage.setItem("isLoggedIn", "true");
 
-        document.getElementById("loginScreen").style.display = "none";
-        document.getElementById("appContainer").style.display = "flex";
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("appContainer").style.display = "flex";
 
-        if (typeof markActivePage === "function") {
-          markActivePage();
-        }
-      } else {
-        alert("Introduce email y contraseña");
-      }
-    });
+    if (typeof markActivePage === "function") {
+      markActivePage();
+    }
+  } else {
+    alert("Introduce email y contraseña");
+  }
+});
 
+    
     // User menu functionality
     document.getElementById('userMenuBtn').addEventListener('click', function() {
       document.getElementById('userDropdown').classList.toggle('show');
     });
-
+    
     // Logout functionality
     document.getElementById('logoutBtn').addEventListener('click', function() {
       localStorage.removeItem('isLoggedIn');
-
+      
       document.getElementById('appContainer').style.display = 'none';
       document.getElementById('loginScreen').style.display = 'flex';
       document.getElementById('userDropdown').classList.remove('show');
     });
-
+    
     // Close dropdown when clicking outside
     window.addEventListener('click', function(e) {
       if (!e.target.matches('#userMenuBtn')) {
@@ -941,13 +963,18 @@
         }
       }
     });
-
+    
     // Accordion functionality
     document.querySelectorAll('.accordion-header').forEach(header => {
       header.addEventListener('click', () => {
         const content = header.nextElementSibling;
         content.classList.toggle("open");
       });
+    });
+
+    // Comments toggle
+    document.getElementById('toggleComments').addEventListener('click', function() {
+      alert('Kommentarbereich würde sich hier erweitern');
     });
 
     // Refresh button
@@ -959,11 +986,11 @@
     document.querySelectorAll('.sidebar-link').forEach(link => {
       link.addEventListener('click', function(e) {
         const href = this.getAttribute('href');
-
+        
         if (href.startsWith('#')) {
           return;
         }
-
+        
         e.preventDefault();
         window.location.href = href;
       });
