@@ -749,7 +749,7 @@
           <div class="card chart-card">
             <h2 class="card-header">Resumen de KPIs del mes actual</h2>
             
-            <!-- KPI Cards Grid -->
+<!-- KPI Cards Grid -->
             <div class="kpi-grid">
               <!-- Facturas Recibidas -->
               <div class="kpi-card received">
@@ -801,11 +801,67 @@
                   </div>
                 </div>
               </div>
+              
+              <!-- Presupuestos -->
+              <div class="kpi-card" style="border-left: 4px solid #9b59b6;">
+                <div class="kpi-title">Presupuestos</div>
+                <div class="kpi-value" id="kpi-budget-total">€0,00</div>
+                <div class="kpi-subtitle">Total general</div>
+                <div class="kpi-stats">
+                  <div class="kpi-stat">
+                    <div class="kpi-stat-value" id="kpi-budget-monthly">€0,00</div>
+                    <div class="kpi-stat-label">Este mes</div>
+                  </div>
+                  <div class="kpi-stat pending">
+                    <div class="kpi-stat-value" id="kpi-budget-pending">0</div>
+                    <div class="kpi-stat-label">Pendientes</div>
+                  </div>
+                  <div class="kpi-stat">
+                    <div class="kpi-stat-value" id="kpi-budget-approved">0</div>
+                    <div class="kpi-stat-label">Aprobados</div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Gráfico de Gastos -->
-            <div class="chart-container">
+            <div class="chart-container small" style="height: 200px;">
               <canvas id="expensesChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección de Presupuestos -->
+        <div class="card" style="margin-top: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2 class="card-header" style="margin-bottom: 0;">Presupuestos Recientes</h2>
+            <a href="../budgetPage/budget.html" class="btn btn-primary btn-sm">+ Nuevo Presupuesto</a>
+          </div>
+          <div class="row">
+            <div class="col-md-5">
+              <div class="chart-container" style="height: 220px;">
+                <canvas id="budgetsChart"></canvas>
+              </div>
+            </div>
+            <div class="col-md-7">
+              <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                  <thead class="table-secondary">
+                    <tr>
+                      <th>Número</th>
+                      <th>Fecha</th>
+                      <th>Cliente</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recentBudgetsTbody">
+                    <tr><td colspan="4" class="text-center">No hay presupuestos guardados</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="text-end mt-3">
+                <a href="../budgetPage/budget.html" class="btn btn-secondary btn-sm">Ver todos los presupuestos</a>
+              </div>
             </div>
           </div>
         </div>
@@ -881,21 +937,30 @@
     </div>
   </div>
 
+  <script src="../shared/auth.js"></script>
   <script>
     // PRÜFE BEIM LADEN DER SEITE OB BEREITS EINGELOGGT
     window.addEventListener("load", function () {
-      const isLoggedIn = localStorage.getItem("isLoggedIn");
-
-      if (isLoggedIn === "true") {
+      AuthManager.init();
+      
+      if (AuthManager.isLoggedIn()) {
+        const user = AuthManager.getCurrentUser();
         document.getElementById("loginScreen").style.display = "none";
         document.getElementById("appContainer").style.display = "flex";
-
+        
+        // Update user info
+        if (user) {
+          document.getElementById('userMenuBtn').textContent = user.companyName ? user.companyName.charAt(0).toUpperCase() : 'U';
+          document.querySelector('.user-profile span').textContent = user.companyName || user.email;
+        }
+        
         if (typeof markActivePage === "function") {
           markActivePage();
         }
       } else {
-        document.getElementById("email").value = "test@example.com";
-        document.getElementById("password").value = "123456";
+        // Preencher credenciais do utilizador demo
+        document.getElementById("email").value = "admin@demo.com";
+        document.getElementById("password").value = "demo123";
       }
     });
 
@@ -904,17 +969,22 @@
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
 
-      if (email && password) {
-        localStorage.setItem("isLoggedIn", "true");
+      const result = AuthManager.login(email, password);
 
+      if (result.success) {
+        const user = AuthManager.getCurrentUser();
         document.getElementById("loginScreen").style.display = "none";
         document.getElementById("appContainer").style.display = "flex";
+        
+        // Update user info
+        document.getElementById('userMenuBtn').textContent = user.companyName ? user.companyName.charAt(0).toUpperCase() : 'U';
+        document.querySelector('.user-profile span').textContent = user.companyName || user.email;
 
         if (typeof markActivePage === "function") {
           markActivePage();
         }
       } else {
-        alert("Introduce email y contraseña");
+        alert(result.message || "Introduce email y contraseña");
       }
     });
 
@@ -923,13 +993,25 @@
       document.getElementById('userDropdown').classList.toggle('show');
     });
 
+    // Dropdown menu items
+    document.querySelectorAll('.dropdown-item').forEach(item => {
+      item.addEventListener('click', function() {
+        const text = this.textContent.trim();
+        document.getElementById('userDropdown').classList.remove('show');
+        
+        if (text === 'Perfil') {
+          window.location.href = '../profile/profile.html';
+        } else if (text === 'Configuración') {
+          window.location.href = '../profile/settings.html';
+        } else if (text === 'Cerrar sesión') {
+          AuthManager.logout();
+        }
+      });
+    });
+
     // Logout functionality
     document.getElementById('logoutBtn').addEventListener('click', function() {
-      localStorage.removeItem('isLoggedIn');
-
-      document.getElementById('appContainer').style.display = 'none';
-      document.getElementById('loginScreen').style.display = 'flex';
-      document.getElementById('userDropdown').classList.remove('show');
+      AuthManager.logout();
     });
 
     // Close dropdown when clicking outside

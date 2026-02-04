@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perfil - Accounting</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #eef1f7; min-height: 100vh; }
+    .sidebar { width: 250px; background: #2c3e50; color: white; min-height: 100vh; position: fixed; }
+    .sidebar-header { padding: 20px; font-size: 1.4em; font-weight: bold; background: #1a252f; text-align: center; }
+    .sidebar-menu { list-style: none; padding: 0; margin: 0; }
+    .sidebar-menu li { padding: 15px 20px; cursor: pointer; }
+    .sidebar-menu li:hover { background: #1abc9c; }
+    .sidebar-menu li.active { background: #1abc9c; }
+    .sidebar-link { color: inherit; text-decoration: none; display: block; }
+    .main-content { margin-left: 250px; padding: 30px; }
+    .profile-card { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
+    .user-avatar { width: 100px; height: 100px; border-radius: 50%; background: #2a4d9c; color: white; display: flex; align-items: center; justify-content: center; font-size: 2.5em; margin: 0 auto 20px; }
+    .user-name { text-align: center; font-size: 1.5em; font-weight: 600; color: #2c3e50; margin-bottom: 5px; }
+    .user-email { text-align: center; color: #6c757d; margin-bottom: 20px; }
+    .info-label { color: #6c757d; font-size: 0.9em; }
+    .info-value { font-weight: 500; }
+  </style>
+</head>
+<body>
+<div class="container-fluid">
+  <div class="row">
+    <aside class="sidebar">
+      <div class="sidebar-header">Accounting</div>
+      <ul class="sidebar-menu">
+        <li><a href="../frontPage/frontPage.html" class="sidebar-link">Panel de control</a></li>
+        <li><a href="../expense/expense.html" class="sidebar-link">Gastos</a></li>
+        <li><a href="../Invoice-issued/invoice-issued.html" class="sidebar-link">Facturas emitidas</a></li>
+        <li><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link">Facturas recibidas</a></li>
+        <li><a href="../budgetPage/budget.html" class="sidebar-link">Presupuestos</a></li>
+        <li class="active"><a href="profile.html" class="sidebar-link">Perfil</a></li>
+        <li><a href="settings.html" class="sidebar-link">Configuración</a></li>
+      </ul>
+    </aside>
+    <main class="main-content col-md-9">
+      <h1 class="mb-4">Mi Perfil</h1>
+      
+      <div class="profile-card">
+        <div class="user-avatar" id="userAvatar">JS</div>
+        <div class="user-name" id="userName">John Smith</div>
+        <div class="user-email" id="userEmail">admin@demo.com</div>
+      </div>
+      
+      <div class="profile-card">
+        <h5 class="section-title" style="color: #2a4d9c; font-weight: 600; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #e9ecef;">Datos de la Empresa</h5>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <div class="info-label">Nombre de la Empresa</div>
+            <div class="info-value" id="displayCompanyName">-</div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <div class="info-label">Teléfono</div>
+            <div class="info-value" id="displayPhone">-</div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <div class="info-label">Email</div>
+            <div class="info-value" id="displayEmail">-</div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <div class="info-label">Rol</div>
+            <div class="info-value" id="displayRole">-</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="profile-card">
+        <h5 class="section-title" style="color: #2a4d9c; font-weight: 600; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #e9ecef;">Preferencias</h5>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <div class="info-label">Moneda</div>
+            <div class="info-value" id="displayCurrency">-</div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <div class="info-label">Idioma</div>
+            <div class="info-value" id="displayLanguage">-</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="profile-card">
+        <h5 class="section-title" style="color: #2a4d9c; font-weight: 600; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #e9ecef;">Estadísticas</h5>
+        <div class="row text-center">
+          <div class="col-md-3 mb-3">
+            <div style="font-size: 2em; font-weight: bold; color: #2a4d9c;" id="statInvoices">0</div>
+            <div class="info-label">Facturas</div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div style="font-size: 2em; font-weight: bold; color: #27ae60;" id="statIssued">0</div>
+            <div class="info-label">Emitidas</div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div style="font-size: 2em; font-weight: bold; color: #e74c3c;" id="statExpenses">0</div>
+            <div class="info-label">Gastos</div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div style="font-size: 2em; font-weight: bold; color: #9b59b6;" id="statBudgets">0</div>
+            <div class="info-label">Presupuestos</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="profile-card">
+        <button class="btn btn-primary me-2" onclick="window.location.href='settings.html'">Configuración</button>
+        <button class="btn btn-danger" onclick="deleteAccount()">Eliminar Cuenta</button>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../shared/auth.js"></script>
+<script src="../shared/store.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async function() {
+  // Initialize AuthManager
+  AuthManager.init();
+  
+  if (!AuthManager.isLoggedIn()) {
+    window.location.href = '../frontPage/frontPage.html';
+    return;
+  }
+  
+  const user = AuthManager.getCurrentUser();
+  
+  // Update profile display
+  document.getElementById('userAvatar').textContent = user.companyName ? user.companyName.charAt(0).toUpperCase() : 'U';
+  document.getElementById('userName').textContent = user.companyName || 'Usuario';
+  document.getElementById('userEmail').textContent = user.email || '-';
+  
+  document.getElementById('displayCompanyName').textContent = user.companyName || '-';
+  document.getElementById('displayPhone').textContent = user.phone || '-';
+  document.getElementById('displayEmail').textContent = user.email || '-';
+  document.getElementById('displayRole').textContent = user.role === 'admin' ? 'Administrador' : 'Usuario';
+  
+  document.getElementById('displayCurrency').textContent = user.settings?.currency === 'EUR' ? 'Euro (EUR)' : user.settings?.currency || 'EUR';
+  document.getElementById('displayLanguage').textContent = user.settings?.language === 'pt' ? 'Português' : user.settings?.language === 'en' ? 'English' : 'Español';
+  
+  // Load statistics
+  try {
+    const invoices = getInvoicesReceived();
+    const issued = getInvoicesIssued();
+    const expenses = getExpenses();
+    const budgets = getBudgets();
+    
+    document.getElementById('statInvoices').textContent = invoices.length;
+    document.getElementById('statIssued').textContent = issued.length;
+    document.getElementById('statExpenses').textContent = expenses.length;
+    document.getElementById('statBudgets').textContent = budgets.length;
+  } catch (e) {
+    console.log('Estadísticas no disponibles');
+  }
+});
+
+function deleteAccount() {
+  if (confirm('¿Está seguro de eliminar su cuenta? Todos los datos se perderán.')) {
+    if (confirm('Esta acción no se puede deshacer.')) {
+      AuthManager.deleteAccount();
+    }
+  }
+}
+</script>
+</body>
+</html>
+

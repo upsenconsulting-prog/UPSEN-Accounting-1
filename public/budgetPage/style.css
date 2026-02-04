@@ -1,0 +1,195 @@
+/* Budget Page Styles */
+
+/* Ensure buttons are clickable with high z-index */
+.btn {
+  cursor: pointer;
+  position: relative;
+  z-index: 100;
+}
+
+.btn-primary {
+  background-color: #2a4d9c;
+  border-color: #2a4d9c;
+  position: relative;
+  z-index: 100;
+}
+
+.btn-primary:hover {
+  background-color: #1e3a8a;
+  border-color: #1e3a8a;
+}
+
+.btn-info {
+  background-color: #0dcaf0;
+  border-color: #0dcaf0;
+  color: #000;
+  position: relative;
+  z-index: 100;
+}
+
+.btn-info:hover {
+  background-color: #31d2f2;
+  border-color: #25cff2;
+}
+
+.btn-success {
+  background-color: #198754;
+  border-color: #198754;
+  position: relative;
+  z-index: 100;
+}
+
+.btn-success:hover {
+  background-color: #157347;
+  border-color: #146c43;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: #fff;
+  position: relative;
+  z-index: 100;
+}
+
+.btn-secondary:hover {
+  background-color: #5c636a;
+  border-color: #565e64;
+  color: #fff;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  position: relative;
+  z-index: 100;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+  border-color: #bd2130;
+}
+
+/* Action buttons container - ensure buttons are clickable */
+.mb-4.text-center {
+  position: relative;
+  z-index: 100;
+  padding: 20px 0;
+}
+
+.mb-4.text-center .btn {
+  margin: 5px;
+  min-width: 120px;
+}
+
+/* Card styles */
+.card {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: none;
+  position: relative;
+  z-index: 1;
+}
+
+/* Form styles */
+.form-control:focus, .form-select:focus {
+  border-color: #2a4d9c;
+  box-shadow: 0 0 0 0.25rem rgba(42, 77, 156, 0.25);
+}
+
+/* Table styles */
+.table {
+  margin-bottom: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+}
+
+.table-dark th {
+  background-color: #2c3e50;
+}
+
+/* Modal styles - ensure they're above everything */
+.modal {
+  z-index: 9999 !important;
+}
+
+.modal-dialog {
+  z-index: 10000 !important;
+}
+
+.modal-content {
+  z-index: 10001 !important;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+}
+
+.modal-backdrop {
+  z-index: 9998 !important;
+}
+
+.modal.fade.show {
+  display: flex !important;
+}
+
+/* Line total cell */
+.line-total {
+  font-weight: bold;
+  min-width: 80px;
+}
+
+/* Grand total */
+#grandTotal {
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+/* Container */
+.container.my-5 {
+  position: relative;
+  z-index: 1;
+  padding-bottom: 50px;
+}
+
+/* Form styling */
+#budgetForm {
+  position: relative;
+  z-index: 1;
+  background: white;
+}
+
+/* Item rows */
+#itemsTable tbody tr {
+  position: relative;
+  z-index: 1;
+}
+
+#itemsTable tbody tr td {
+  position: relative;
+  z-index: 1;
+  vertical-align: middle;
+}
+
+/* Add item button */
+#addItem {
+  position: relative;
+  z-index: 10;
+}
+
+/* Header section */
+h1.text-center {
+  position: relative;
+  z-index: 1;
+}
+
+/* Responsive fix for small screens */
+@media (max-width: 768px) {
+  .mb-4.text-center .btn {
+    display: block;
+    width: 100%;
+    margin: 10px 0;
+  }
+}
+

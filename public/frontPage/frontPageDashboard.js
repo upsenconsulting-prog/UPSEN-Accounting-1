@@ -13,6 +13,7 @@ import {
   getInvoicesReceived,
   getInvoicesIssued,
   getExpenses,
+  getBudgets,
   getTotals
 } from "../shared/store.js";
 
@@ -50,6 +51,14 @@ function renderDashboardKPIs() {
   const y = now.getFullYear();
   const m = now.getMonth();
 
+  // Check localStorage
+  const expensesFromStorage = localStorage.getItem("upsen_expenses");
+  console.log("=== DEBUG: Expenses ===");
+  console.log("localStorage 'upsen_expenses':", expensesFromStorage);
+  
+  const allExpenses = getExpenses();
+  console.log("getExpenses() returned:", allExpenses);
+
   // Received KPIs
   const totalReceived = sumInvoicesReceivedMonth(y, m);
   const countReceived = countInvoicesReceivedMonth(y, m);
@@ -64,6 +73,8 @@ function renderDashboardKPIs() {
   const totalExpenses = sumExpensesMonth(y, m);
   const countExpenses = countExpensesMonth(y, m);
   const topCategory = getTopExpenseCategory(y, m);
+  
+  console.log("Total expenses this month:", totalExpenses);
 
   // Update Received KPIs
   const elReceivedTotal = $("kpi-received-total");
@@ -91,6 +102,149 @@ function renderDashboardKPIs() {
   if (elExpensesTotal) elExpensesTotal.textContent = formatEUR(totalExpenses);
   if (elExpensesCount) elExpensesCount.textContent = String(countExpenses);
   if (elExpensesCategory) elExpensesCategory.textContent = topCategory || "-";
+
+  // Budget KPIs
+  renderBudgetKPIs();
+}
+
+// ========== BUDGET KPIs ==========
+function renderBudgetKPIs() {
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+
+  const budgets = getBudgets();
+  
+  // Calculate budget totals
+  let totalBudgets = 0;
+  let monthlyBudgets = 0;
+  let approvedCount = 0;
+  let pendingCount = 0;
+
+  budgets.forEach(budget => {
+    const amount = Number(budget.total) || 0;
+    totalBudgets += amount;
+
+    // Check status
+    const status = (budget.status || "").toLowerCase();
+    if (status === "approved") {
+      approvedCount++;
+    } else if (status === "pending") {
+      pendingCount++;
+    }
+
+    // Check if from current month
+    if (budget.date) {
+      const [year, month] = budget.date.split("-").map(Number);
+      if (year === currentYear && month === currentMonth) {
+        monthlyBudgets += amount;
+      }
+    }
+  });
+
+  // Create or update budget KPIs in the UI
+  const kpiBudgetTotal = $("kpi-budget-total");
+  const kpiBudgetMonthly = $("kpi-budget-monthly");
+  const kpiBudgetApproved = $("kpi-budget-approved");
+  const kpiBudgetPending = $("kpi-budget-pending");
+
+  if (kpiBudgetTotal) kpiBudgetTotal.textContent = formatEUR(totalBudgets);
+  if (kpiBudgetMonthly) kpiBudgetMonthly.textContent = formatEUR(monthlyBudgets);
+  if (kpiBudgetApproved) kpiBudgetApproved.textContent = String(approvedCount);
+  if (kpiBudgetPending) kpiBudgetPending.textContent = String(pendingCount);
+}
+
+// ========== BUDGETS CHART ==========
+let budgetsChart = null;
+
+function renderBudgetsChart() {
+  const chartContainer = $("budgetsChart");
+  if (!chartContainer) return;
+
+  const ctx = chartContainer.getContext("2d");
+
+  const budgets = getBudgets();
+  
+  // Group by customer
+  const customerTotals = {};
+  budgets.forEach(budget => {
+    const customer = budget.customer || "Sin cliente";
+    customerTotals[customer] = (customerTotals[customer] || 0) + Number(budget.total || 0);
+  });
+
+  // Sort by amount (top 5)
+  const sortedCustomers = Object.entries(customerTotals)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  const labels = sortedCustomers.length ? sortedCustomers.map(([name]) => name) : ["Sin datos"];
+  const data = sortedCustomers.length ? sortedCustomers.map(([, amount]) => amount) : [1];
+
+  // Colors
+  const colors = ["#2a4d9c", "#3a6cd6", "#1abc9c", "#e74c3c", "#f39c12"];
+
+  // Destroy existing chart
+  if (budgetsChart) {
+    budgetsChart.destroy();
+  }
+
+  // Create new chart
+  budgetsChart = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: labels,
+      datasets: [{
+        data: data,
+        backgroundColor: colors,
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: "right"
+        },
+        title: {
+          display: true,
+          text: "Presupuestos por cliente",
+          font: {
+            size: 14,
+            weight: "600"
+          },
+          color: "#2c3e50"
+        }
+      }
+    }
+  });
+}
+
+// ========== RECENT BUDGETS TABLE ==========
+function renderRecentBudgets() {
+  const tbody = $("recentBudgetsTbody");
+  if (!tbody) return;
+
+  const budgets = getBudgets();
+
+  if (budgets.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center">No hay presupuestos guardados</td></tr>';
+    return;
+  }
+
+  // Sort by date (newest first) and take top 5
+  const recentBudgets = budgets
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+    .slice(0, 5);
+
+  tbody.innerHTML = recentBudgets.map(budget => `
+    <tr>
+      <td><strong>${budget.number || "-"}</strong></td>
+      <td>${budget.date || "-"}</td>
+      <td>${budget.customer || "-"}</td>
+      <td><strong>${formatEUR(budget.total)}</strong></td>
+    </tr>
+  `).join("");
 }
 
 // ========== COMMENTS TOGGLE ==========
@@ -465,6 +619,11 @@ document.addEventListener("DOMContentLoaded", () => {
   renderExpensesChart();
   renderForecastChart();
   renderPaymentsForecastChart();
+  
+  // Render Budget KPIs, Chart and Table
+  renderBudgetKPIs();
+  renderBudgetsChart();
+  renderRecentBudgets();
 
   // Initialize comments toggle
   initCommentsToggle();
