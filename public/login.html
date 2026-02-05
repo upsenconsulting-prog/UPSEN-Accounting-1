@@ -1,92 +1,535 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - UPSEN Accounting</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #2a4d9c 0%, #3a6cd6 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-    .login-container { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); width: 100%; max-width: 420px; }
-    .login-header { text-align: center; margin-bottom: 30px; }
-    .login-header h1 { color: #2a4d9c; font-size: 28px; font-weight: bold; margin-bottom: 10px; }
-    .login-header p { color: #6c757d; font-size: 14px; }
+    body { 
+      font-family: 'Segoe UI', Arial, sans-serif; 
+      background: linear-gradient(135deg, #2a4d9c 0%, #3a6cd6 50%, #1e3a8a 100%);
+      min-height: 100vh; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      padding: 20px;
+    }
+    .login-container { 
+      background: white; 
+      padding: 0; 
+      border-radius: 20px; 
+      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.35); 
+      width: 100%; 
+      max-width: 480px; 
+      overflow: hidden;
+    }
+    .login-header { 
+      background: linear-gradient(135deg, #2a4d9c, #3a6cd6); 
+      padding: 35px 30px; 
+      text-align: center; 
+      color: white;
+    }
+    .login-header h1 { 
+      font-size: 28px; 
+      font-weight: 700; 
+      margin-bottom: 8px; 
+    }
+    .login-header p { 
+      font-size: 14px; 
+      opacity: 0.9;
+    }
+    .login-header i { 
+      font-size: 48px; 
+      margin-bottom: 15px; 
+    }
+    .form-container { padding: 30px; }
     .form-group { margin-bottom: 20px; }
-    .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: #495057; }
-    .form-group input { width: 100%; padding: 14px 16px; border: 2px solid #e9ecef; border-radius: 10px; font-size: 16px; transition: border-color 0.3s; }
-    .form-group input:focus { outline: none; border-color: #2a4d9c; }
-    .login-btn { width: 100%; padding: 14px; background: #2a4d9c; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.3s; }
-    .login-btn:hover { background: #1e3a8a; }
-    .demo-accounts { margin-top: 25px; padding: 20px; background: #f8f9fa; border-radius: 10px; }
-    .demo-accounts h6 { color: #495057; margin-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .demo-account { background: white; padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s; border: 2px solid transparent; }
-    .demo-account:hover { border-color: #2a4d9c; transform: translateX(5px); }
+    .form-group label { 
+      display: block; 
+      margin-bottom: 8px; 
+      font-weight: 500; 
+      color: #495057;
+      font-size: 14px;
+    }
+    .form-group input, .form-group select { 
+      width: 100%; 
+      padding: 14px 16px; 
+      border: 2px solid #e9ecef; 
+      border-radius: 12px; 
+      font-size: 15px; 
+      transition: all 0.3s;
+    }
+    .form-group input:focus, .form-group select:focus { 
+      outline: none; 
+      border-color: #2a4d9c;
+      box-shadow: 0 0 0 4px rgba(42, 77, 156, 0.1);
+    }
+    .login-btn { 
+      width: 100%; 
+      padding: 14px; 
+      background: linear-gradient(135deg, #2a4d9c, #3a6cd6); 
+      color: white; 
+      border: none; 
+      border-radius: 12px; 
+      font-size: 16px; 
+      font-weight: 600; 
+      cursor: pointer; 
+      transition: all 0.3s;
+    }
+    .login-btn:hover { 
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(42, 77, 156, 0.4);
+    }
+    .login-btn:disabled { 
+      opacity: 0.7; 
+      cursor: not-allowed; 
+      transform: none;
+    }
+    .divider {
+      display: flex;
+      align-items: center;
+      margin: 25px 0;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #e9ecef;
+    }
+    .divider span {
+      padding: 0 15px;
+      color: #6c757d;
+      font-size: 13px;
+    }
+    .toggle-btn {
+      background: none;
+      border: none;
+      color: #2a4d9c;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 0;
+      font-size: 14px;
+      transition: color 0.3s;
+    }
+    .toggle-btn:hover { color: #1e3a8a; text-decoration: underline; }
+    .demo-accounts { 
+      margin-top: 25px; 
+      padding: 20px; 
+      background: #f8f9fa; 
+      border-radius: 12px; 
+    }
+    .demo-accounts h6 { 
+      color: #495057; 
+      margin-bottom: 12px; 
+      font-size: 12px; 
+      text-transform: uppercase; 
+      letter-spacing: 0.5px;
+    }
+    .demo-account { 
+      background: white; 
+      padding: 12px 15px; 
+      border-radius: 10px; 
+      margin-bottom: 10px; 
+      cursor: pointer; 
+      transition: all 0.3s; 
+      border: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .demo-account:hover { 
+      border-color: #2a4d9c; 
+      transform: translateX(5px);
+      box-shadow: 0 4px 15px rgba(42, 77, 156, 0.15);
+    }
     .demo-account:last-child { margin-bottom: 0; }
-    .demo-account strong { color: #2a4d9c; font-size: 14px; }
-    .demo-account small { color: #6c757d; display: block; margin-top: 4px; }
-    .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; }
-    .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .demo-account i { 
+      color: #2a4d9c; 
+      font-size: 18px;
+      width: 32px;
+      height: 32px;
+      background: rgba(42, 77, 156, 0.1);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .demo-account strong { 
+      color: #2a4d9c; 
+      font-size: 14px; 
+      display: block;
+    }
+    .demo-account small { 
+      color: #6c757d; 
+      display: block; 
+      margin-top: 3px;
+      font-size: 12px;
+    }
+    .alert { 
+      padding: 14px 16px; 
+      border-radius: 10px; 
+      margin-bottom: 20px; 
+      font-size: 14px; 
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .alert-error { 
+      background: #fef2f2; 
+      color: #991b1b; 
+      border: 1px solid #fecaca; 
+    }
+    .alert-success { 
+      background: #f0fdf4; 
+      color: #166534; 
+      border: 1px solid #bbf7d0; 
+    }
+    .alert-info {
+      background: #eff6ff;
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+    }
     .hidden { display: none !important; }
-    .loading { opacity: 0.7; pointer-events: none; }
+    .form-footer {
+      text-align: center;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e9ecef;
+    }
+    .form-footer small {
+      color: #6c757d;
+      font-size: 12px;
+    }
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255,255,255,0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #e9ecef;
+      border-top-color: #2a4d9c;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .input-icon {
+      position: relative;
+    }
+    .input-icon i {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #9ca3af;
+    }
+    .input-icon input {
+      padding-left: 45px;
+    }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: white;
+      text-decoration: none;
+      font-size: 14px;
+      margin-top: 15px;
+      opacity: 0.9;
+      transition: opacity 0.3s;
+    }
+    .back-link:hover { opacity: 1; }
   </style>
 </head>
 <body>
   <div class="login-container">
     <div class="login-header">
+      <i class="fas fa-chart-line"></i>
       <h1>UPSEN Accounting</h1>
-      <p>Sistema de Gestão de Documentos</p>
+      <p>Sistema de Gestión Financiera</p>
+      <a href="index.html" class="back-link">
+        <i class="fas fa-arrow-left"></i> Volver al inicio
+      </a>
     </div>
-    <div id="errorMessage" class="alert alert-error hidden"></div>
-    <div id="successMessage" class="alert alert-success hidden"></div>
-    <form id="loginForm">
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" placeholder="Seu email" required>
+    
+    <div class="form-container">
+      <!-- Mensajes -->
+      <div id="message" class="alert alert-info hidden">
+        <i class="fas fa-info-circle"></i>
+        <span id="messageText"></span>
       </div>
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" placeholder="Sua password" required>
-      </div>
-      <button type="submit" class="login-btn" id="loginBtn">Entrar</button>
-    </form>
-    <div class="demo-accounts">
-      <h6>Contas Demonstração</h6>
-      <div class="demo-account" onclick="fillDemoLogin('admin@demo.com', 'demo123')">
-        <strong>Administrador</strong>
-        <small>admin@demo.com / demo123</small>
-      </div>
-      <div class="demo-account" onclick="fillDemoLogin('test@example.com', '123456')">
-        <strong>Utilizador Teste</strong>
-        <small>test@example.com / 123456</small>
+      
+      <!-- Formulario de LOGIN -->
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email"><i class="fas fa-envelope me-2"></i>Correo electrónico</label>
+          <div class="input-icon">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="email" placeholder="Tu correo electrónico" required>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="password"><i class="fas fa-lock me-2"></i>Contraseña</label>
+          <div class="input-icon">
+            <i class="fas fa-lock"></i>
+            <input type="password" id="password" placeholder="Tu contraseña" required>
+          </div>
+        </div>
+        
+        <button type="submit" class="login-btn" id="loginBtn">
+          <i class="fas fa-sign-in-alt me-2"></i>Iniciar sesión
+        </button>
+        
+        <div class="form-footer">
+          <p>¿No tienes cuenta? <button type="button" class="toggle-btn" onclick="showRegister()">Crear cuenta</button></p>
+        </div>
+      </form>
+      
+      <!-- Formulario de REGISTRO -->
+      <form id="registerForm" class="hidden">
+        <div class="form-group">
+          <label for="regName"><i class="fas fa-user me-2"></i>Nombre completo</label>
+          <div class="input-icon">
+            <i class="fas fa-user"></i>
+            <input type="text" id="regName" placeholder="Tu nombre" required>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="regCompany"><i class="fas fa-building me-2"></i>Empresa</label>
+          <div class="input-icon">
+            <i class="fas fa-building"></i>
+            <input type="text" id="regCompany" placeholder="Nombre de la empresa" required>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="regEmail"><i class="fas fa-envelope me-2"></i>Correo electrónico</label>
+          <div class="input-icon">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="regEmail" placeholder="Tu correo electrónico" required>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="regPhone"><i class="fas fa-phone me-2"></i>Teléfono (opcional)</label>
+          <div class="input-icon">
+            <i class="fas fa-phone"></i>
+            <input type="tel" id="regPhone" placeholder="Tu teléfono">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="regPassword"><i class="fas fa-lock me-2"></i>Contraseña</label>
+          <div class="input-icon">
+            <i class="fas fa-lock"></i>
+            <input type="password" id="regPassword" placeholder="Mínimo 6 caracteres" required minlength="6">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="regPasswordConfirm"><i class="fas fa-lock me-2"></i>Confirmar contraseña</label>
+          <div class="input-icon">
+            <i class="fas fa-lock"></i>
+            <input type="password" id="regPasswordConfirm" placeholder="Repetir contraseña" required>
+          </div>
+        </div>
+        
+        <button type="submit" class="login-btn" id="registerBtn">
+          <i class="fas fa-user-plus me-2"></i>Crear cuenta
+        </button>
+        
+        <div class="form-footer">
+          <p>¿Ya tienes cuenta? <button type="button" class="toggle-btn" onclick="showLogin()">Iniciar sesión</button></p>
+        </div>
+      </form>
+      
+      <!-- Cuentas Demo -->
+      <div id="demoSection">
+        <div class="divider"><span>o probar</span></div>
+        
+        <div class="demo-accounts">
+          <h6><i class="fas fa-flask me-2"></i>Cuentas de demostración</h6>
+          
+          <div class="demo-account" onclick="fillDemoLogin('admin@demo.com', 'demo123')">
+            <i class="fas fa-user-shield"></i>
+            <div>
+              <strong>Administrador</strong>
+              <small>admin@demo.com / demo123</small>
+            </div>
+          </div>
+          
+          <div class="demo-account" onclick="fillDemoLogin('test@example.com', '123456')">
+            <i class="fas fa-user"></i>
+            <div>
+              <strong>Usuario Prueba</strong>
+              <small>test@example.com / 123456</small>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
-  <script src="shared/auth-new.js"></script>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay hidden">
+    <div class="spinner"></div>
+  </div>
+
+  <script src="shared/auth-system.js"></script>
   <script>
+    // Elementos
     const loginForm = document.getElementById('loginForm');
-    const errorMessage = document.getElementById('errorMessage');
-    const successMessage = document.getElementById('successMessage');
-    const loginBtn = document.getElementById('loginBtn');
-    if (Auth.isLoggedIn()) { window.location.href = 'frontPage/frontPage.html'; }
-    function fillDemoLogin(email, password) { document.getElementById('email').value = email; document.getElementById('password').value = password; }
-    function redirectToDashboard() { window.location.href = 'frontPage/frontPage.html'; }
-    function showError(message) { errorMessage.textContent = message; errorMessage.classList.remove('hidden'); successMessage.classList.add('hidden'); }
-    function hideMessages() { errorMessage.classList.add('hidden'); successMessage.classList.add('hidden'); }
+    const registerForm = document.getElementById('registerForm');
+    const messageDiv = document.getElementById('message');
+    const messageText = document.getElementById('messageText');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const demoSection = document.getElementById('demoSection');
+    
+    // Verificar si ya está logueado
+    if (AuthSystem.isLoggedIn()) {
+      window.location.href = 'frontPage/frontPage.html';
+    }
+    
+    // Funciones de UI
+    function showMessage(text, type = 'info') {
+      messageText.textContent = text;
+      messageDiv.className = `alert alert-${type}`;
+      messageDiv.classList.remove('hidden');
+      
+      // Auto-hide después de 5 segundos
+      setTimeout(() => {
+        messageDiv.classList.add('hidden');
+      }, 5000);
+    }
+    
+    function hideMessage() {
+      messageDiv.classList.add('hidden');
+    }
+    
+    function showLoading() {
+      loadingOverlay.classList.remove('hidden');
+    }
+    
+    function hideLoading() {
+      loadingOverlay.classList.add('hidden');
+    }
+    
+    function showLogin() {
+      hideMessage();
+      loginForm.classList.remove('hidden');
+      registerForm.classList.add('hidden');
+      demoSection.classList.remove('hidden');
+    }
+    
+    function showRegister() {
+      hideMessage();
+      loginForm.classList.add('hidden');
+      registerForm.classList.remove('hidden');
+      demoSection.classList.add('hidden');
+    }
+    
+    function fillDemoLogin(email, password) {
+      document.getElementById('email').value = email;
+      document.getElementById('password').value = password;
+      showMessage('Credenciales preenchidas. Haz clic en "Iniciar sesión" para continuar.', 'info');
+    }
+    
+    function redirectToDashboard() {
+      window.location.href = 'frontPage/frontPage.html';
+    }
+    
+    // Login
     loginForm.addEventListener('submit', function(e) {
-      e.preventDefault(); hideMessages();
+      e.preventDefault();
+      hideMessage();
+      
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
-      if (!email || !password) { showError('Por favor, preencha todos os campos.'); return; }
-      loginBtn.classList.add('loading'); loginBtn.textContent = 'A entrar...';
+      
+      if (!email || !password) {
+        showMessage('Por favor, completa todos los campos.', 'error');
+        return;
+      }
+      
+      showLoading();
+      document.getElementById('loginBtn').disabled = true;
+      
+      // Simular delay para mejor UX
       setTimeout(() => {
-        const result = Auth.login(email, password);
-        loginBtn.classList.remove('loading');
-        if (result.success) { showSuccess('Login realizado com sucesso!'); setTimeout(redirectToDashboard, 1000); }
-        else { showError(result.message || 'Email ou password incorretos.'); loginBtn.textContent = 'Entrar'; }
-      }, 500);
+        const result = AuthSystem.login(email, password);
+        hideLoading();
+        document.getElementById('loginBtn').disabled = false;
+        
+        if (result.success) {
+          showMessage(`¡Bienvenido, ${result.user.name}!`, 'success');
+          setTimeout(redirectToDashboard, 1000);
+        } else {
+          showMessage(result.message || 'Correo o contraseña incorrectos.', 'error');
+        }
+      }, 600);
     });
+    
+    // Registro
+    registerForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      hideMessage();
+      
+      const name = document.getElementById('regName').value.trim();
+      const company = document.getElementById('regCompany').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const phone = document.getElementById('regPhone').value.trim();
+      const password = document.getElementById('regPassword').value;
+      const passwordConfirm = document.getElementById('regPasswordConfirm').value;
+      
+      // Validaciones
+      if (!name || !company || !email || !password) {
+        showMessage('Por favor, completa todos los campos obligatorios.', 'error');
+        return;
+      }
+      
+      if (password !== passwordConfirm) {
+        showMessage('Las contraseñas no coinciden.', 'error');
+        return;
+      }
+      
+      if (password.length < 6) {
+        showMessage('La contraseña debe tener al menos 6 caracteres.', 'error');
+        return;
+      }
+      
+      showLoading();
+      document.getElementById('registerBtn').disabled = true;
+      
+      setTimeout(() => {
+        const result = AuthSystem.register(name, email, password, company, phone);
+        hideLoading();
+        document.getElementById('registerBtn').disabled = false;
+        
+        if (result.success) {
+          showMessage('¡Cuenta creada con éxito! ¡Bienvenido a UPSEN Accounting!', 'success');
+          setTimeout(redirectToDashboard, 1500);
+        } else {
+          showMessage(result.message || 'Error al crear la cuenta.', 'error');
+        }
+      }, 600);
+    });
+    
+    // Mostrar mensaje inicial
+    showMessage('Sistema UPSEN Accounting - Inicia sesión para continuar', 'info');
   </script>
 </body>
 </html>

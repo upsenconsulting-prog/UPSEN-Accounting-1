@@ -653,21 +653,26 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="../shared/store.js"></script>
+  <script src="../shared/auth-system.js"></script>
 </head>
 <body>
   <!-- Login Screen -->
   <div class="login-container" id="loginScreen">
     <div class="login-form">
       <h2>Iniciar sesión en Accounting</h2>
+      <div id="loginError" class="status-message" style="display: none;"></div>
       <div class="form-group">
         <label for="email">Correo electrónico</label>
-        <input type="email" id="email" placeholder="Tu dirección de correo electrónico" value="test@example.com">
+        <input type="email" id="email" placeholder="Tu dirección de correo electrónico">
       </div>
       <div class="form-group">
         <label for="password">Contraseña</label>
-        <input type="password" id="password" placeholder="Tu contraseña" value="123456">
+        <input type="password" id="password" placeholder="Tu contraseña">
       </div>
       <button class="login-btn" id="loginBtn">Iniciar sesión</button>
+      <p style="margin-top: 15px; text-align: center;">
+        <a href="../login.html" style="color: #2a4d9c;">Ir a página de login completa →</a>
+      </p>
     </div>
   </div>
 
@@ -883,39 +888,76 @@
   </div>
 
   <script>
-    // PRÜFE BEIM LADEN DER SEITE OB BEREITS EINGELOGGT
+    // Verificar autenticação ao carregar
     window.addEventListener("load", function () {
-      const isLoggedIn = localStorage.getItem("isLoggedIn");
-
-      if (isLoggedIn === "true") {
-        document.getElementById("loginScreen").style.display = "none";
-        document.getElementById("appContainer").style.display = "flex";
-
-        if (typeof markActivePage === "function") {
-          markActivePage();
-        }
+      // Verificar se está logado
+      if (AuthSystem.isLoggedIn()) {
+        showApp();
+        updateUserInfo();
       } else {
-        document.getElementById("email").value = "test@example.com";
-        document.getElementById("password").value = "123456";
+        showLogin();
       }
     });
 
+    function showLogin() {
+      document.getElementById("loginScreen").style.display = "flex";
+      document.getElementById("appContainer").style.display = "none";
+    }
+
+    function showApp() {
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("appContainer").style.display = "flex";
+    }
+
+    function updateUserInfo() {
+      const user = AuthSystem.getCurrentUser();
+      if (user) {
+        // Atualizar nome do usuário
+        const userNameEl = document.querySelector('.user-profile span');
+        if (userNameEl) {
+          userNameEl.textContent = user.name || user.email;
+        }
+        // Atualizar iniciais do avatar
+        const avatarEl = document.getElementById('userMenuBtn');
+        if (avatarEl) {
+          const initials = (user.name || user.email).split('@')[0].substring(0, 2).toUpperCase();
+          avatarEl.textContent = initials;
+        }
+      }
+    }
+
     // Login functionality
     document.getElementById("loginBtn").addEventListener("click", function () {
-      const email = document.getElementById("email").value;
+      const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
+      const errorEl = document.getElementById("loginError");
 
-      if (email && password) {
-        localStorage.setItem("isLoggedIn", "true");
+      if (!email || !password) {
+        errorEl.textContent = "Introduce email y contraseña";
+        errorEl.style.display = "block";
+        return;
+      }
 
-        document.getElementById("loginScreen").style.display = "none";
-        document.getElementById("appContainer").style.display = "flex";
-
+      const result = AuthSystem.login(email, password);
+      
+      if (result.success) {
+        errorEl.style.display = "none";
+        showApp();
+        updateUserInfo();
+        
         if (typeof markActivePage === "function") {
           markActivePage();
         }
       } else {
-        alert("Introduce email y contraseña");
+        errorEl.textContent = result.message || "Email o contraseña incorrectos";
+        errorEl.style.display = "block";
+      }
+    });
+
+    // Allow Enter key for login
+    document.getElementById("password").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") {
+        document.getElementById("loginBtn").click();
       }
     });
 
@@ -926,18 +968,19 @@
 
     // Logout functionality
     document.getElementById('logoutBtn').addEventListener('click', function() {
-      localStorage.removeItem('isLoggedIn');
-
-      document.getElementById('appContainer').style.display = 'none';
-      document.getElementById('loginScreen').style.display = 'flex';
+      AuthSystem.logout();
+      showLogin();
       document.getElementById('userDropdown').classList.remove('show');
+      document.getElementById('email').value = '';
+      document.getElementById('password').value = '';
+      document.getElementById('loginError').style.display = 'none';
     });
 
     // Close dropdown when clicking outside
     window.addEventListener('click', function(e) {
       if (!e.target.matches('#userMenuBtn')) {
         const dropdown = document.getElementById('userDropdown');
-        if (dropdown.classList.contains('show')) {
+        if (dropdown && dropdown.classList.contains('show')) {
           dropdown.classList.remove('show');
         }
       }
