@@ -2,17 +2,14 @@
  * Firebase Emulators Setup Script
  * UPSEN Accounting - Development Only
  * 
- * Este script cria o utilizador demo John Smith nos Firebase Emulators
- * 
- * Como usar:
- * 1. Execute: firebase emulators:start
- * 2. Execute este script: node setup-demo-user.js
- * 3. Ou adicione manualmente através da UI: http://localhost:4000
+ * Usage:
+ * 1. Run: firebase emulators:start
+ * 2. Run this script: node setup-demo-user.js
  */
 
-const { getAuth } = require('firebase/auth');
+const { getAuth } = require('firebase-auth');
+const { getFirestore, doc, setDoc, collection } = require('firebase-firestore');
 const { initializeApp } = require('firebase-app');
-const { getFirestore, collection, doc, setDoc } = require('firebase-firestore');
 
 // Configuração (mesma que em public/shared/firebase-config.js)
 const firebaseConfig = {
@@ -24,25 +21,11 @@ const firebaseConfig = {
   appId: "1:123456789:web:abcdef"
 };
 
-// Nota: Emulators usam URLs especiais
-const EMULATOR_URL = {
-  auth: 'http://localhost:9099',
-  firestore: 'http://localhost:8080'
-};
-
 async function setupDemoUser() {
   console.log('🔧 Configurando Firebase Emulators...\n');
 
-  // Inicializar Firebase
   const app = initializeApp(firebaseConfig, 'setup');
-  const auth = getAuth(app);
   const db = getFirestore(app);
-
-  // Configurar para usar emulators
-  if (process.env.FIRESTORE_EMULATOR_HOST) {
-    connectAuthEmulator(auth, EMULATOR_URL.auth);
-    connectFirestoreEmulator(db, EMULATOR_URL.firestore);
-  }
 
   const demoUser = {
     uid: 'demo_admin',
@@ -53,10 +36,6 @@ async function setupDemoUser() {
   console.log('📝 Criando utilizador demo:', demoUser.email);
 
   try {
-    // Criar utilizador no Auth Emulator
-    // Nota: Nos emulators, podemos criar utilizadores diretamente
-    // através da UI em http://localhost:4000/auth
-    
     // Criar documento do utilizador na Firestore
     const userDoc = {
       id: demoUser.uid,
@@ -99,10 +78,5 @@ async function setupDemoUser() {
   }
 }
 
-// Se não tiver Firebase SDK instalado localmente
-if (require.main === module) {
-  setupDemoUser();
-}
-
-module.exports = { setupDemoUser };
+setupDemoUser();
 

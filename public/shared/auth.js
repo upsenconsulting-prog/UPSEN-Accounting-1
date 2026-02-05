@@ -1,32 +1,26 @@
 /**
  * Sistema de Autenticação - UPSEN Accounting
- * Versão localStorage - funciona instantaneamente!
- * Cada empresa/utilizador tem os seus próprios dados isolados
+ * Versão simples com localStorage - funciona instantaneamente!
  */
 
 const AuthManager = {
   currentUser: null,
   
-  // Inicializar sistema
   init() {
-    // Tentar obter utilizador do localStorage
     const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {
       try {
         this.currentUser = JSON.parse(savedUser);
         return true;
       } catch {
-        // JSON inválido, limpar
         localStorage.removeItem('currentUser');
       }
     }
     
-    // Criar utilizador demo se não existir
     this.createDemoUser();
     return false;
   },
   
-  // Login com localStorage
   login(email, password) {
     const users = this.getUsers();
     const user = users.find(u => u.email === email && u.password === this.hash(password));
@@ -41,7 +35,6 @@ const AuthManager = {
     return { success: false, message: 'Email ou password incorretos' };
   },
   
-  // Registar nova empresa
   register(companyName, email, password, phone) {
     const users = this.getUsers();
     
@@ -73,26 +66,20 @@ const AuthManager = {
     return { success: true, user: newUser };
   },
   
-  // Logout
   logout() {
     this.currentUser = null;
     localStorage.removeItem('currentUser');
-    
-    // Redirecionar para login
-    window.location.href = '../frontPage/frontPage.html';
+    window.location.reload();
   },
   
-  // Obter utilizador atual
   getCurrentUser() {
     return this.currentUser;
   },
   
-  // Verificar se está logado
   isLoggedIn() {
     return this.currentUser !== null;
   },
   
-  // Obter todos os utilizadores
   getUsers() {
     try {
       return JSON.parse(localStorage.getItem('auth_users')) || [];
@@ -101,7 +88,6 @@ const AuthManager = {
     }
   },
   
-  // Inicializar dados do utilizador
   initUserData(userId) {
     const dataKeys = [
       'upsen_invoices_received',
@@ -118,7 +104,6 @@ const AuthManager = {
     });
   },
   
-  // Obter dados do utilizador
   getUserData(key) {
     if (!this.currentUser) return [];
     
@@ -130,7 +115,6 @@ const AuthManager = {
     }
   },
   
-  // Guardar dados do utilizador
   saveUserData(key, data) {
     if (!this.currentUser) return;
     
@@ -138,7 +122,6 @@ const AuthManager = {
     localStorage.setItem(userDataKey, JSON.stringify(data));
   },
   
-  // Adicionar documento
   addDocument(key, docData) {
     if (!this.currentUser) return null;
     
@@ -156,7 +139,6 @@ const AuthManager = {
     return newDoc;
   },
   
-  // Eliminar documento
   deleteDocument(key, docId) {
     if (!this.currentUser) return false;
     
@@ -168,7 +150,6 @@ const AuthManager = {
     return true;
   },
   
-  // Atualizar documento
   updateDocument(key, docId, updates) {
     if (!this.currentUser) return null;
     
@@ -185,7 +166,6 @@ const AuthManager = {
     return null;
   },
   
-  // Hash simples para passwords
   hash(str) {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
@@ -196,11 +176,18 @@ const AuthManager = {
     return hash.toString(16);
   },
   
-  // Criar utilizador demo (John Smith)
+  generateId() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    return 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+  },
+  
   createDemoUser() {
     const users = this.getUsers();
     
     if (users.length === 0) {
+      // John Smith (administrador)
       const demoUser = {
         id: 'demo_admin',
         companyName: 'John Smith (Demo)',
@@ -216,16 +203,38 @@ const AuthManager = {
         }
       };
       
-      users.push(demoUser);
-      localStorage.setItem('auth_users', JSON.stringify(users));
-      this.initUserData(demoUser.id);
-      this.createDemoData(demoUser.id);
+      // Test user (para testes)
+      const testUser = {
+        id: 'test_user',
+        companyName: 'Test User',
+        email: 'test@example.com',
+        password: this.hash('123456'),
+        phone: '+351 000 000 000',
+        role: 'admin',
+        createdAt: new Date().toISOString(),
+        settings: {
+          currency: 'EUR',
+          language: 'pt',
+          theme: 'light'
+        }
+      };
       
-      console.log('✅ Utilizador demo criado: admin@demo.com / demo123');
+      users.push(demoUser);
+      users.push(testUser);
+      localStorage.setItem('auth_users', JSON.stringify(users));
+      
+      this.initUserData(demoUser.id);
+      this.initUserData(testUser.id);
+      
+      this.createDemoData(demoUser.id);
+      this.createDemoData(testUser.id);
+      
+      console.log('Utilizadores demo criados:');
+      console.log('  - admin@demo.com / demo123');
+      console.log('  - test@example.com / 123456');
     }
   },
   
-  // Criar dados demo
   createDemoData(userId) {
     const demoInvoices = [
       { id: 'inv_1', invoiceNumber: 'FR-2025-001', supplier: 'Fornecedor ABC', invoiceDate: '2025-01-15', amount: 1500, state: 'Pago', description: 'Serviços de consultoria' },
@@ -259,34 +268,32 @@ const AuthManager = {
     localStorage.setItem(`upsen_budgets_${userId}`, JSON.stringify(demoBudgets));
   },
   
-  // Atualizar perfil
-  updateProfile(updates) {
+  async updateProfile(updates) {
     if (!this.currentUser) return { success: false, message: 'Não está logado' };
     
     const users = this.getUsers();
     const index = users.findIndex(u => u.id === this.currentUser.id);
     
-    if (index === -1) return { success: false, message: 'Utilizador não encontrado' };
-    
-    users[index] = {
-      ...users[index],
-      companyName: updates.companyName || users[index].companyName,
-      phone: updates.phone || users[index].phone,
-      settings: {
-        ...users[index].settings,
-        ...updates.settings
-      }
-    };
-    
-    localStorage.setItem('auth_users', JSON.stringify(users));
-    this.currentUser = users[index];
-    localStorage.setItem('currentUser', JSON.stringify(users[index]));
+    if (index !== -1) {
+      users[index] = {
+        ...users[index],
+        companyName: updates.companyName || users[index].companyName,
+        phone: updates.phone || users[index].phone,
+        settings: {
+          ...users[index].settings,
+          ...updates.settings
+        }
+      };
+      
+      localStorage.setItem('auth_users', JSON.stringify(users));
+      this.currentUser = users[index];
+      localStorage.setItem('currentUser', JSON.stringify(users[index]));
+    }
     
     return { success: true };
   },
   
-  // Mudar password
-  changePassword(currentPassword, newPassword) {
+  async changePassword(currentPassword, newPassword) {
     if (!this.currentUser) return { success: false, message: 'Não está logado' };
     
     const users = this.getUsers();
@@ -304,8 +311,7 @@ const AuthManager = {
     return { success: true };
   },
   
-  // Exportar dados
-  exportUserData() {
+  async exportUserData() {
     if (!this.currentUser) return null;
     
     return {
@@ -318,20 +324,14 @@ const AuthManager = {
     };
   },
   
-  // Eliminar conta
-  deleteAccount() {
+  async deleteAccount() {
     if (!this.currentUser) return { success: false };
     
     const users = this.getUsers();
     const filtered = users.filter(u => u.id !== this.currentUser.id);
     localStorage.setItem('auth_users', JSON.stringify(filtered));
     
-    const dataKeys = [
-      'upsen_invoices_received',
-      'upsen_invoices_issued',
-      'upsen_expenses',
-      'upsen_budgets'
-    ];
+    const dataKeys = ['upsen_invoices_received', 'upsen_invoices_issued', 'upsen_expenses', 'upsen_budgets'];
     
     dataKeys.forEach(key => {
       localStorage.removeItem(`${key}_${this.currentUser.id}`);
@@ -341,12 +341,8 @@ const AuthManager = {
     return { success: true };
   },
   
-  // Gerar ID único
-  generateId() {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-      return crypto.randomUUID();
-    }
-    return 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+  isUsingFirebase() {
+    return false;
   }
 };
 

@@ -1,0 +1,104 @@
+<parameter name="content">/**
+ * Sistema de Autenticacao NOVO e LIMPO - UPSEN Accounting
+ */
+
+const Auth = {
+  CURRENT_USER_KEY: 'upsen_current_user',
+  USERS_KEY: 'upsen_users',
+  
+  init() {
+    this.createDemoUsers();
+    return this.isLoggedIn();
+  },
+  
+  createDemoUsers() {
+    const users = this.getUsers();
+    if (users.length === 0) {
+      users.push({
+        id: 'demo_admin',
+        email: 'admin@demo.com',
+        password: this.hash('demo123'),
+        name: 'John Smith',
+        company: 'John Smith (Demo)',
+        role: 'admin'
+      });
+      users.push({
+        id: 'test_user',
+        email: 'test@example.com',
+        password: this.hash('123456'),
+        name: 'Test User',
+        company: 'Test Company',
+        role: 'user'
+      });
+      localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
+    }
+  },
+  
+  getUsers() {
+    try { return JSON.parse(localStorage.getItem(this.USERS_KEY)) || []; } 
+    catch { return []; }
+  },
+  
+  getCurrentUser() {
+    try { return JSON.parse(localStorage.getItem(this.CURRENT_USER_KEY)); } 
+    catch { return null; }
+  },
+  
+  isLoggedIn() { return this.getCurrentUser() !== null; },
+  
+  hash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return hash.toString(16);
+  },
+  
+  login(email, password) {
+    const users = this.getUsers();
+    const user = users.find(u => u.email === email && u.password === this.hash(password));
+    if (user) {
+      localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(user));
+      return { success: true, user };
+    }
+    return { success: false, message: 'Email ou password incorretos' };
+  },
+  
+  logout() {
+    localStorage.removeItem(this.CURRENT_USER_KEY);
+    return { success: true };
+  },
+  
+  switchUser(userId) {
+    const users = this.getUsers();
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(user));
+      return { success: true, user };
+    }
+    return { success: false, message: 'Utilizador nao encontrado' };
+  },
+  
+  getAllUsers() {
+    return this.getUsers().map(u => ({ id: u.id, name: u.name, email: u.email, company: u.company }));
+  },
+  
+  updateProfile(updates) {
+    const currentUser = this.getCurrentUser();
+    if (!currentUser) return { success: false };
+    const users = this.getUsers();
+    const index = users.findIndex(u => u.id === currentUser.id);
+    if (index !== -1) {
+      users[index] = { ...users[index], ...updates };
+      localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
+      localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(users[index]));
+    }
+    return { success: true };
+  }
+};
+
+Auth.init();
+window.Auth = Auth;
+</parameter>

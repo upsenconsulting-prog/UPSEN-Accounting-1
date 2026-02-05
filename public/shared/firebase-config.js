@@ -1,6 +1,5 @@
 /**
  * Firebase Configuration - UPSEN Accounting
- * Configuração completa para Authentication e Firestore
  * 
  * DESENVOLVIMENTO LOCAL:
  * - Execute: firebase emulators:start

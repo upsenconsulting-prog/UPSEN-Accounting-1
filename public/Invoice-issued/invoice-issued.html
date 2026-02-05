@@ -2,199 +2,972 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Accounting - Facturas Emitidas</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #eef1f7; min-height: 100vh; }
+    /* Basis-Styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
     
-    .sidebar { width: 250px; background: #2c3e50; color: white; min-height: 100vh; position: fixed; }
-    .sidebar-header { padding: 20px; font-size: 1.4em; font-weight: bold; background: #1a252f; text-align: center; }
-    .sidebar-menu { list-style: none; padding: 0; margin: 0; }
-    .sidebar-menu li { padding: 15px 20px; cursor: pointer; }
-    .sidebar-menu li:hover { background: #1abc9c; }
-    .sidebar-menu li.active { background: #1abc9c; }
-    .sidebar-link { color: inherit; text-decoration: none; display: block; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background-color: #eef1f7;
+      color: #333;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Login Screen */
+    .login-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: linear-gradient(135deg, #3a6cd6 0%, #1e3a8a 100%);
+    }
     
-    .main-content { margin-left: 250px; padding: 30px; }
+    .login-form {
+      background: white;
+      padding: 35px;
+      border-radius: 12px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+      width: 100%;
+      max-width: 420px;
+    }
     
-    .page-title { font-size: 26px; font-weight: 700; color: #2c3e50; margin-bottom: 25px; }
+    .login-form h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #2a4d9c;
+    }
     
-    .btn { padding: 10px 18px; border-radius: 6px; border: none; cursor: pointer; font-weight: 500; }
-    .btn-primary { background-color: #2a4d9c; color: white; }
-    .btn-secondary { background-color: #e9ecef; color: #495057; }
-    .btn-success { background-color: #28a745; color: white; }
+    .form-group {
+      margin-bottom: 18px;
+    }
     
-    .card { background: white; border-radius: 12px; padding: 22px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
-    .card-header { font-size: 18px; font-weight: 600; margin-bottom: 15px; color: #2c3e50; }
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
     
-    .summary-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); text-align: center; margin-bottom: 20px; }
-    .summary-card h2 { font-size: 16px; color: #6c757d; margin-bottom: 10px; }
-    .summary-card p { font-size: 24px; font-weight: bold; color: #2c3e50; }
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+    }
     
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e9ecef; }
-    th { background-color: #f8f9fa; font-weight: 600; }
+    .login-btn {
+      width: 100%;
+      padding: 12px;
+      background-color: #2a4d9c;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background 0.2s;
+    }
     
-    .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-    .status-paid { background-color: #d4edda; color: #155724; }
-    .status-pending { background-color: #fff3cd; color: #856404; }
-    .status-overdue { background-color: #f8d7da; color: #721c24; }
-    
-    .chart-container { position: relative; height: 250px; }
-    
-    /* Modal Styles */
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 10000; justify-content: center; align-items: center; }
-    .modal.show { display: flex; }
-    .modal-content { background: white; border-radius: 12px; width: 90%; max-width: 550px; max-height: 90vh; overflow-y: auto; box-shadow: 0 15px 40px rgba(0,0,0,0.25); }
-    .modal-header { padding: 20px 25px; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #2a4d9c 0%, #3a6cd6 100%); color: white; border-radius: 12px 12px 0 0; }
-    .modal-title { font-size: 18px; font-weight: 600; }
-    .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: white; opacity: 0.9; }
-    .modal-body { padding: 25px; background: #f6f8fc; }
-    .modal-footer { padding: 20px 25px; border-top: 1px solid #e9ecef; display: flex; justify-content: flex-end; gap: 10px; background: #f6f8fc; border-radius: 0 0 12px 12px; }
-    .form-label { display: block; margin-bottom: 6px; font-weight: 500; color: #2c3e50; }
-    .form-control, .form-select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background-color: white; }
-    .mb-3 { margin-bottom: 18px; }
-    
+    .login-btn:hover {
+      background-color: #1e3a8a;
+    }
+
+    /* App Layout */
+    .app-container {
+      display: none;
+      height: 100vh;
+      flex-direction: column;
+    }
+
+    /* Top Navigation */
+    .top-nav {
+      background-color: #2a4d9c;
+      padding: 0 25px;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: white;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-size: 26px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .nav-items {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background-color: white;
+      color: #2a4d9c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 55px;
+      right: 0;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      width: 170px;
+      display: none;
+      z-index: 1000;
+      overflow: hidden;
+    }
+
+    .dropdown-menu.show {
+      display: block;
+    }
+
+    .dropdown-item {
+      padding: 14px 16px;
+      cursor: pointer;
+      color: #333;
+      font-size: 15px;
+    }
+
+    .dropdown-item:hover {
+      background-color: #f0f4ff;
+      color: #2a4d9c;
+    }
+
+    /* Main Content Layout */
+    .main-content {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 250px;
+      background: #2c3e50;
+      color: white;
+      overflow-y: auto;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    .sidebar-header {
+      padding: 20px;
+      font-size: 1.4em;
+      font-weight: bold;
+      background: #1a252f;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .accordion {
+      padding: 10px 0;
+    }
+
+    .accordion-item {
+      border-bottom: 1px solid #34495e;
+    }
+
+    .accordion-header {
+      background: #2c3e50;
+      color: #ecf0f1;
+      cursor: pointer;
+      padding: 15px 20px;
+      font-size: 1.05em;
+      font-weight: 600;
+      transition: background 0.3s;
+    }
+
+    .accordion-header:hover {
+      background: #1abc9c;
+    }
+
+    .accordion-content {
+      display: none;
+      background: #34495e;
+    }
+
+    .accordion-content.open {
+      display: block;
+    }
+
+    .accordion-content ul {
+      margin: 0;
+      padding: 10px 0;
+      list-style: none;
+    }
+
+    .accordion-content li {
+      padding: 10px 20px 10px 40px;
+      font-size: 0.95em;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .accordion-content li:hover {
+      background: #2c3e50;
+      color: #1abc9c;
+    }
+
+    /* Aktive Seite markieren */
+    .accordion-content li.active {
+      background: #1abc9c;
+      color: white;
+    }
+
+    .accordion-content li.active a {
+      color: white;
+    }
+
+    /* Link Styles */
+    .sidebar-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      width: 100%;
+    }
+
+    .sidebar-link:hover {
+      color: inherit;
+    }
+
+    /* Content Area */
+    .content {
+      flex: 1;
+      padding: 25px;
+      overflow-y: auto;
+    }
+
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+
+    .page-title {
+      font-size: 26px;
+      font-weight: 700;
+      color: #2c3e50;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 10px 18px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      transition: transform 0.15s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-primary {
+      background-color: #2a4d9c;
+      color: white;
+    }
+
+    .btn-secondary {
+      background-color: #e9ecef;
+      color: #495057;
+    }
+
+    .btn-success {
+      background-color: #28a745;
+      color: white;
+    }
+
+    /* Dashboard Cards */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 22px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+
+    .card-header {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: #2c3e50;
+      display: flex;
+      justify-content: between;
+      align-items: center;
+    }
+
+    /* Summary Cards */
+    .cards-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .summary-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+
+    .summary-card h2 {
+      font-size: 16px;
+      color: #6c757d;
+      margin-bottom: 10px;
+    }
+
+    .summary-card p {
+      font-size: 24px;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    /* Status Badges */
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .status-paid {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .status-pending {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+
+    .status-overdue {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    /* Table Styles */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+
+    tr:hover {
+      background-color: #f8f9fa;
+    }
+
+    /* Chart Placeholder */
+    .chart-placeholder {
+      height: 200px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6c757d;
+      margin-top: 15px;
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 250px;
+    }
+
+    /* ========== MODAL STYLES ========== */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 10000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 550px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-header {
+      padding: 20px 25px;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, #2a4d9c 0%, #3a6cd6 100%);
+      color: white;
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: white;
+      opacity: 0.9;
+    }
+
+    .modal-close:hover {
+      opacity: 1;
+    }
+
+    .modal-body {
+      padding: 25px;
+      background: #f6f8fc;
+    }
+
+    .modal-footer {
+      padding: 20px 25px;
+      border-top: 1px solid #e9ecef;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      background: #f6f8fc;
+      border-bottom-left-radius: 12px;
+      border-bottom-right-radius: 12px;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      color: #2c3e50;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .form-select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      background-color: white;
+    }
+
+    .mb-3 {
+      margin-bottom: 18px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .dashboard-grid,
+      .cards-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
     @media (max-width: 768px) {
-      .sidebar { position: fixed; left: -250px; height: 100%; z-index: 100; transition: left 0.3s; }
-      .sidebar.open { left: 0; }
-      .main-content { margin-left: 0; }
+      .sidebar {
+        position: fixed;
+        left: -250px;
+        height: 100%;
+        z-index: 100;
+        transition: left 0.3s;
+      }
+      
+      .sidebar.open {
+        left: 0;
+      }
+      
+      .nav-items {
+        display: none;
+      }
     }
   </style>
 </head>
 <body>
-<div class="container-fluid">
-  <div class="row">
-    <aside class="sidebar">
-      <div class="sidebar-header">Accounting</div>
-      <ul class="sidebar-menu">
-        <li><a href="../frontPage/frontPage.html" class="sidebar-link">Panel de control</a></li>
-        <li><a href="../expense/expense.html" class="sidebar-link">Gastos</a></li>
-        <li class="active"><a href="invoice-issued.html" class="sidebar-link">Facturas emitidas</a></li>
-        <li><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link">Facturas recibidas</a></li>
-        <li><a href="../budgetPage/budget.html" class="sidebar-link">Presupuestos</a></li>
-        <li><a href="../profile/profile.html" class="sidebar-link">Perfil</a></li>
-        <li><a href="../profile/settings.html" class="sidebar-link">Configuración</a></li>
-      </ul>
-    </aside>
-    
-    <main class="main-content col-md-9">
-      <h1 class="page-title">Facturas emitidas</h1>
-      
-      <div class="row">
-        <div class="col-md-3">
-          <div class="summary-card">
+  <!-- Login Screen -->
+  <div class="login-container" id="loginScreen">
+    <div class="login-form">
+      <h2>Iniciar sesión en Accounting</h2>
+      <div class="form-group">
+        <label for="email">Correo electrónico</label>
+        <input type="email" id="email" placeholder="Tu dirección de correo electrónico" value="test@example.com">
+      </div>
+      <div class="form-group">
+        <label for="password">Contraseña</label>
+        <input type="password" id="password" placeholder="Tu contraseña" value="123456">
+      </div>
+      <button class="login-btn" id="loginBtn">Iniciar sesión</button>
+    </div>
+  </div>
+
+  <!-- App Container -->
+  <div class="app-container" id="appContainer">
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+      <div class="logo">Accounting</div>
+      <div class="nav-items">
+        <div class="user-profile">
+          <div class="avatar" id="userMenuBtn">JS</div>
+          <span>John Smith</span>
+          <div class="dropdown-menu" id="userDropdown">
+            <div class="dropdown-item">Perfil</div>
+            <div class="dropdown-item">Configuración</div>
+            <div class="dropdown-item" id="logoutBtn">Cerrar sesión</div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-header">Menú</div>
+        <div class="accordion">
+          <div class="accordion-item">
+            <div class="accordion-header">Accounting</div>
+            <div class="accordion-content open">
+                <ul class="sidebar-menu">
+                    <li><a href="../frontPage/frontPage.html" class="sidebar-link">Painel de Control</a></li>
+                    <li><a href="../expense/expense.html" class="sidebar-link">Gastos</a></li>
+                    <li class="active"><a href="invoice-issued.html" class="sidebar-link">Facturas Emitidas</a></li>
+                    <li><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link">Facturas recibidas</a></li>
+                    <li><a href="../budgetPage/budget.html" class="sidebar-link">Presupuestos</a></li>
+                    <li><a href="#help" class="sidebar-link">Ayuda</a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+      <!-- Content Area -->
+      <main class="content">
+        <div class="dashboard-header">
+          <h1 class="page-title">Facturas emitidas</h1>
+          <div class="action-buttons">
+            <button class="btn btn-primary" id="newInvoiceBtn">
+              <span>+</span> Nueva factura
+            </button>
+            <button class="btn btn-success" id="exportBtn">
+              <span>📊</span> Exportar
+            </button>
+            <button class="btn btn-secondary" id="refreshBtn">
+              <span>↻</span> Actualizar
+            </button>
+          </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="cards-container">
+          <div class="card summary-card">
             <h2>Pagos pendientes</h2>
             <p><strong id="pendingTotal">€0,00</strong></p>
           </div>
-        </div>
-        <div class="col-md-3">
-          <div class="summary-card">
+          <div class="card summary-card">
             <h2>Facturas vencidas</h2>
             <p><strong id="overdueTotal">€0,00</strong></p>
           </div>
-        </div>
-        <div class="col-md-3">
-          <div class="summary-card">
+          <div class="card summary-card">
             <h2>Creadas este mes</h2>
-            <p><strong id="monthlyCount">0</strong></p>
+            <p><strong id="monthlyCount">0 facturas</strong></p>
           </div>
-        </div>
-        <div class="col-md-3">
-          <div class="summary-card">
+          <div class="card summary-card">
             <h2>Importe promedio</h2>
             <p><strong id="averageAmount">€0,00</strong></p>
           </div>
         </div>
-      </div>
 
-      <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-          <h2 class="card-header" style="margin-bottom: 0;">Facturas emitidas</h2>
-          <button class="btn btn-primary" id="newInvoiceBtn">
-            <span>+</span> Nueva factura
-          </button>
+        <!-- Invoice Table -->
+        <div class="card">
+          <h2 class="card-header">Facturas emitidas</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Número de factura</th>
+                <th>Cliente</th>
+                <th>Fecha</th>
+                <th>Vence el</th>
+                <th>Importe</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="invoiceTbody">
+              <tr>
+                <td>INV-2025-001</td>
+                <td>Max Mustermann GmbH</td>
+                <td>01.09.2025</td>
+                <td>15.09.2025</td>
+                <td>€450,00</td>
+                <td><span class="status-badge status-paid">Pagada</span></td>
+                <td>
+                  <button class="btn" style="padding: 4px 8px; font-size: 12px;">Ver</button>
+                </td>
+              </tr>
+              <tr>
+                <td>INV-2025-002</td>
+                <td>WebDesign AG</td>
+                <td>05.09.2025</td>
+                <td>20.09.2025</td>
+                <td>€890,00</td>
+                <td><span class="status-badge status-pending">Pendiente</span></td>
+                <td>
+                  <button class="btn" style="padding: 4px 8px; font-size: 12px;">Ver</button>
+                </td>
+              </tr>
+              <tr>
+                <td>INV-2025-003</td>
+                <td>Tech Solutions Ltd.</td>
+                <td>10.09.2025</td>
+                <td>25.09.2025</td>
+                <td>€1.200,00</td>
+                <td><span class="status-badge status-pending">Pendiente</span></td>
+                <td>
+                  <button class="btn" style="padding: 4px 8px; font-size: 12px;">Ver</button>
+                </td>
+              </tr>
+              <tr>
+                <td>INV-2025-004</td>
+                <td>Consulting Partners</td>
+                <td>15.08.2025</td>
+                <td>30.08.2025</td>
+                <td>€670,00</td>
+                <td><span class="status-badge status-overdue">Vencida</span></td>
+                <td>
+                  <button class="btn" style="padding: 4px 8px; font-size: 12px;">Ver</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Número</th>
-              <th>Cliente</th>
-              <th>Fecha</th>
-              <th>Vence</th>
-              <th>Importe</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="invoiceTbody">
-            <tr><td colspan="7" class="text-center text-muted">Cargando...</td></tr>
-          </tbody>
-        </table>
-      </div>
 
-      <div class="card">
-        <h2 class="card-header">Evolución de ingresos</h2>
-        <div class="chart-container">
-          <canvas id="issuedChartCanvas"></canvas>
+        <!-- Charts -->
+        <div class="card">
+          <h2 class="card-header">Evolución de ingresos</h2>
+          <div class="chart-container" style="height: 250px;">
+            <canvas id="issuedChartCanvas"></canvas>
+          </div>
         </div>
-      </div>
-    </main>
-  </div>
-</div>
-
-<!-- Modal Nueva Factura -->
-<div class="modal" id="modalNewInvoiceIssued">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h5 class="modal-title">Nueva factura emitida</h5>
-      <button type="button" class="modal-close" id="closeInvoiceIssuedModal">&times;</button>
+      </main>
     </div>
-    <div class="modal-body">
-      <form id="formNewInvoiceIssued">
+  </div>
+
+  <!-- Modal Exportar Facturas -->
+  <div class="modal" id="modalExport">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Exportar Facturas</h5>
+        <button type="button" class="modal-close" id="closeExportModal">&times;</button>
+      </div>
+      <div class="modal-body">
         <div class="mb-3">
-          <label class="form-label">Número de factura</label>
-          <input type="text" name="invoiceNumber" class="form-control" placeholder="Ej: INV-2025-001" required />
+          <label class="form-label">Formato de exportacíon</label>
+          <select id="exportFormat" class="form-select">
+            <option value="pdf">PDF</option>
+            <option value="csv">CSV</option>
+            <option value="excel">Excel</option>
+          </select>
         </div>
         <div class="mb-3">
-          <label class="form-label">Cliente</label>
-          <input type="text" name="customer" class="form-control" placeholder="Nombre del cliente" required />
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Fecha</label>
-          <input type="date" name="invoiceDate" class="form-control" required />
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Vence el</label>
-          <input type="date" name="dueDate" class="form-control" required />
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Importe (€)</label>
-          <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required />
+          <label class="form-label">Período</label>
+          <select id="exportPeriod" class="form-select">
+            <option value="all">Todas las facturas</option>
+            <option value="month">Este mes</option>
+            <option value="quarter">Este trimestre</option>
+            <option value="year">Este año</option>
+          </select>
         </div>
         <div class="mb-3">
           <label class="form-label">Estado</label>
-          <select name="state" class="form-select">
-            <option value="Pagada">Pagada</option>
-            <option value="Pendiente" selected>Pendiente</option>
-            <option value="Vencida">Vencida</option>
+          <select id="exportState" class="form-select">
+            <option value="all">Todos los estados</option>
+            <option value="Pagada">Pagadas</option>
+            <option value="Pendiente">Pendientes</option>
+            <option value="Vencida">Vencidas</option>
           </select>
         </div>
-      </form>
-    </div>
-    <div class="modal-footer">
-      <button type="button" class="btn btn-secondary" id="cancelInvoiceIssuedBtn">Cancelar</button>
-      <button type="button" class="btn btn-primary" id="saveInvoiceIssuedBtn">Guardar</button>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancelExportBtn">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="confirmExportBtn">Exportar</button>
+      </div>
     </div>
   </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="../shared/auth.js"></script>
-<script type="module" src="./invoice-issued.js"></script>
+  <!-- Modal Nueva Factura Emitida -->
+  <div class="modal" id="modalNewInvoiceIssued">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Nueva factura emitida</h5>
+        <button type="button" class="modal-close" id="closeInvoiceIssuedModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="formNewInvoiceIssued">
+          <div class="mb-3">
+            <label class="form-label">Número de factura</label>
+            <input type="text" name="invoiceNumber" class="form-control" placeholder="Ej: INV-2025-001" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Cliente</label>
+            <input type="text" name="customer" class="form-control" placeholder="Nombre del cliente" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fecha</label>
+            <input type="date" name="invoiceDate" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Vence el</label>
+            <input type="date" name="dueDate" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Importe (€)</label>
+            <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Estado</label>
+            <select name="state" class="form-select">
+              <option value="Pagada">Pagada</option>
+              <option value="Pendiente" selected>Pendiente</option>
+              <option value="Vencida">Vencida</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancelInvoiceIssuedBtn">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="saveInvoiceIssuedBtn">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="../shared/store.js"></script>
+  
+  <script>
+    // PRÜFE BEIM LADEN DER SEITE OB BEREITS EINGELOGGT
+    window.addEventListener("load", function () {
+      const isLoggedIn = localStorage.getItem("isLoggedIn");
+
+      if (isLoggedIn === "true") {
+        document.getElementById("loginScreen").style.display = "none";
+        document.getElementById("appContainer").style.display = "flex";
+      } else {
+        document.getElementById("email").value = "test@example.com";
+        document.getElementById("password").value = "123456";
+      }
+    });
+
+    // Login functionality
+    document.getElementById("loginBtn").addEventListener("click", function () {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      if (email && password) {
+        localStorage.setItem("isLoggedIn", "true");
+        document.getElementById("loginScreen").style.display = "none";
+        document.getElementById("appContainer").style.display = "flex";
+      } else {
+        alert("Introduce email y contraseña");
+      }
+    });
+
+    // User menu functionality
+    document.getElementById('userMenuBtn').addEventListener('click', function() {
+      document.getElementById('userDropdown').classList.toggle('show');
+    });
+    
+    // Logout functionality
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+      localStorage.removeItem('isLoggedIn');
+      document.getElementById('appContainer').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('userDropdown').classList.remove('show');
+    });
+    
+    // Close dropdown when clicking outside
+    window.addEventListener('click', function(e) {
+      if (!e.target.matches('#userMenuBtn')) {
+        const dropdown = document.getElementById('userDropdown');
+        if (dropdown.classList.contains('show')) {
+          dropdown.classList.remove('show');
+        }
+      }
+    });
+    
+    // Accordion functionality
+    document.querySelectorAll('.accordion-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const content = header.nextElementSibling;
+        content.classList.toggle("open");
+      });
+    });
+
+    // Modal elements
+    const modalNewInvoice = document.getElementById('modalNewInvoiceIssued');
+    const closeInvoiceModal = document.getElementById('closeInvoiceIssuedModal');
+    const cancelInvoiceBtn = document.getElementById('cancelInvoiceIssuedBtn');
+
+    // New Invoice Button - ABRIR MODAL
+    document.getElementById('newInvoiceBtn').addEventListener('click', function() {
+      modalNewInvoice.classList.add('show');
+    });
+
+    // Close modal buttons
+    closeInvoiceModal.addEventListener('click', function() {
+      modalNewInvoice.classList.remove('show');
+    });
+
+    cancelInvoiceBtn.addEventListener('click', function() {
+      modalNewInvoice.classList.remove('show');
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(e) {
+      if (e.target === modalNewInvoice) {
+        modalNewInvoice.classList.remove('show');
+      }
+    });
+
+    // Export Button - ABRIR MODAL
+    document.getElementById('exportBtn').addEventListener('click', function() {
+      document.getElementById('modalExport').classList.add('show');
+    });
+
+    // Modal Export elements
+    const modalExport = document.getElementById('modalExport');
+    const closeExportModal = document.getElementById('closeExportModal');
+    const cancelExportBtn = document.getElementById('cancelExportBtn');
+
+    // Close export modal
+    closeExportModal.addEventListener('click', function() {
+      modalExport.classList.remove('show');
+    });
+
+    cancelExportBtn.addEventListener('click', function() {
+      modalExport.classList.remove('show');
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(e) {
+      if (e.target === modalExport) {
+        modalExport.classList.remove('show');
+      }
+    });
+
+    // Confirm Export
+    document.getElementById('confirmExportBtn').addEventListener('click', function() {
+      const format = document.getElementById('exportFormat').value;
+      const period = document.getElementById('exportPeriod').value;
+      const state = document.getElementById('exportState').value;
+      
+      alert(`Exportando em formato ${format.toUpperCase()}\nPeríodo: ${period}\nEstado: ${state}`);
+      modalExport.classList.remove('show');
+    });
+
+    // Refresh button
+    document.getElementById('refreshBtn').addEventListener('click', function() {
+      location.reload();
+    });
+
+    // Sidebar link handling
+    document.querySelectorAll('.sidebar-link').forEach(link => {
+      link.addEventListener('click', function(e) {
+        const href = this.getAttribute('href');
+        if (href.startsWith('#')) {
+          return;
+        }
+        e.preventDefault();
+        window.location.href = href;
+      });
+    });
+
+    // Accordion padrão aberto
+    document.querySelector('.accordion-content').classList.add('open');
+  </script>
+  
+  <script src="./invoice-issued.js"></script>
 </body>
 </html>
-

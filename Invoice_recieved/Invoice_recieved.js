@@ -101,3 +101,4 @@ function updateTable() {
 document.addEventListener('DOMContentLoaded', () => {
   updateTable();
 });
+

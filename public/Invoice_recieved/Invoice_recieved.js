@@ -1,9 +1,4 @@
-// public/Invoice_recieved/Invoice_recieved.js
-import {
-  getInvoicesReceived,
-  addInvoiceReceived,
-  deleteInvoiceReceived
-} from "../shared/store.js";
+// Funções do store.js já estão disponíveis globalmente via window
 
 function $(id) {
   const el = document.getElementById(id);
@@ -44,7 +39,7 @@ function populatePeriodSelector() {
   const select = $("periodSelect");
   if (!select) return;
   
-  const invoices = getInvoicesReceived();
+  const invoices = window.getInvoicesReceived();
   const periods = new Set();
   
   // Collect all periods from invoices
@@ -147,7 +142,7 @@ function renderTable() {
   const tbody = $("invoiceTbody");
   if (!tbody) return;
 
-  const all = getInvoicesReceived().map(inv => ({
+  const all = window.getInvoicesReceived().map(inv => ({
     ...inv,
     period: inv.period || getQuarterPeriod(inv.invoiceDate)
   }));
@@ -183,7 +178,7 @@ function renderTable() {
 
   tbody.querySelectorAll("[data-del]").forEach(btn => {
     btn.addEventListener("click", () => {
-      deleteInvoiceReceived(btn.getAttribute("data-del"));
+      window.deleteInvoiceReceived(btn.getAttribute("data-del"));
       renderTable();
       renderChart();
       renderSummaryCards();
@@ -194,7 +189,7 @@ function renderTable() {
 
 // ---------- PDF (print-to-PDF MVP) ----------
 function downloadPDF() {
-  const all = getInvoicesReceived().map(inv => ({
+  const all = window.getInvoicesReceived().map(inv => ({
     ...inv,
     period: inv.period || getQuarterPeriod(inv.invoiceDate)
   }));
@@ -251,7 +246,7 @@ function downloadPDF() {
 
 // ---------- Summary Cards ----------
 function renderSummaryCards() {
-  const all = getInvoicesReceived().map(inv => ({
+  const all = window.getInvoicesReceived().map(inv => ({
     ...inv,
     period: inv.period || getQuarterPeriod(inv.invoiceDate)
   }));
@@ -314,7 +309,7 @@ function renderChart() {
   const chartContainer = document.getElementById('receivedChartCanvas');
   if (!chartContainer) return;
 
-  const all = getInvoicesReceived().map(inv => ({
+  const all = window.getInvoicesReceived().map(inv => ({
     ...inv,
     period: inv.period || getQuarterPeriod(inv.invoiceDate)
   }));
@@ -393,7 +388,7 @@ function saveOCRMock() {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  addInvoiceReceived({
+  window.addInvoiceReceived({
     invoiceNumber: "OCR-" + Date.now(),
     invoiceDate: today,
     supplier: file.name.replace(/\.[^/.]+$/, ""),
@@ -458,7 +453,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    addInvoiceReceived({
+    window.addInvoiceReceived({
       invoiceNumber,
       invoiceDate,
       supplier,

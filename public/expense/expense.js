@@ -1,4 +1,4 @@
-import { getExpenses, addExpense, deleteExpense } from "../shared/store.js";
+// Funções do store.js já estão disponíveis globalmente via window
 
 function $(id) {
   return document.getElementById(id);
@@ -26,7 +26,7 @@ function markActivePage() {
 let expenseChart = null;
 
 function renderSummaryCards() {
-  const list = getExpenses();
+  const list = window.getExpenses();
   
   // Calculate monthly total (current month)
   const now = new Date();
@@ -87,7 +87,7 @@ function renderChart() {
   const chartContainer = document.getElementById('expenseChartCanvas');
   if (!chartContainer) return;
 
-  const list = getExpenses();
+  const list = window.getExpenses();
   
   // Calculate totals by category
   const categoryTotals = {};
@@ -110,7 +110,7 @@ function renderChart() {
   expenseChart = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: labels.length ? labels : ['Sin datos'],
+      labels: labels.length ? labels : ['Sem dados'],
       datasets: [{
         label: 'Gastos por categoría',
         data: data.length ? data : [0],
@@ -147,13 +147,13 @@ function renderExpenses() {
   const tbody = $("expenseTBody");
   if (!tbody) return;
 
-  const list = getExpenses();
+  const list = window.getExpenses();
   tbody.innerHTML = "";
 
   if (!list.length) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="5" class="text-center text-muted">
+        <td colspan="4" class="text-center text-muted">
           No hay gastos registrados todavía.
         </td>
       </tr>
@@ -167,9 +167,9 @@ function renderExpenses() {
       <td>${e.date || "-"}</td>
       <td>${e.category || "-"}</td>
       <td>${moneyEUR(e.amount)}</td>
-      <td>${e.description || ""}</td>
       <td>
-        <button class="btn btn-sm btn-outline-danger" data-del="${e.id}">
+        <span>${e.notes || ""}</span>
+        <button class="btn btn-sm btn-outline-danger" data-del="${e.id}" style="float:right;">
           Eliminar
         </button>
       </td>
@@ -179,128 +179,54 @@ function renderExpenses() {
 
   tbody.querySelectorAll("[data-del]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      if (confirm('¿Eliminar este gasto?')) {
-        deleteExpense(btn.getAttribute("data-del"));
-        renderExpenses();
-        renderChart();
-        renderSummaryCards();
-      }
+      window.deleteExpense(btn.getAttribute("data-del"));
+      renderExpenses();
+      renderChart();
+      renderSummaryCards();
     });
   });
 }
 
-// ========== MODAL FUNCTIONS ==========
-function openExpenseModal() {
-  const modal = $("modalNewExpense");
-  if (modal) {
-    modal.classList.add('show');
-    // Set today's date
-    const today = new Date().toISOString().split('T')[0];
-    document.querySelector('[name="date"]').value = today;
-  }
-}
 
-function closeExpenseModal() {
-  const modal = $("modalNewExpense");
-  if (modal) {
-    modal.classList.remove('show');
-    document.getElementById('formNewExpense').reset();
-  }
-}
-
-function saveNewExpense() {
-  const date = document.querySelector('[name="date"]').value;
-  const category = document.querySelector('[name="category"]').value;
-  const amount = document.querySelector('[name="amount"]').value;
-  const description = document.querySelector('[name="description"]').value;
-
-  if (!date || !category || !amount) {
-    alert("Completa: fecha, categoría e importe.");
-    return;
-  }
-
-  addExpense({ date, category, amount, description, paymentMethod: 'Efectivo' });
-  
-  closeExpenseModal();
-  renderExpenses();
-  renderChart();
-  renderSummaryCards();
-}
-
-// ========== INITIALIZATION ==========
 document.addEventListener("DOMContentLoaded", () => {
-  // Initialize AuthManager first
-  AuthManager.init();
-  
-  // Check if logged in
-  if (!AuthManager.isLoggedIn()) {
-    window.location.href = '../frontPage/frontPage.html';
-    return;
-  }
-  
   // Mark current page as active
   markActivePage();
   
-  // Update user info in sidebar
-  const user = AuthManager.getCurrentUser();
-  const avatarEl = document.getElementById('userMenuBtn');
-  const nameEl = document.querySelector('.user-profile span');
-  if (avatarEl && user) {
-    avatarEl.textContent = user.companyName ? user.companyName.charAt(0).toUpperCase() : 'U';
+  // Guardar gasto
+  const saveBtn = $("saveExpenseBtn");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", () => {
+      const form = $("formNewExpense");
+      if (!form) return;
+
+      const fd = new FormData(form);
+      const date = String(fd.get("date") || "");
+      const category = String(fd.get("category") || "");
+      const amount = String(fd.get("amount") || "");
+      const notes = String(fd.get("notes") || "");
+
+      if (!date || !category || !amount) {
+        alert("Completa: fecha, categoría e importe.");
+        return;
+      }
+
+      window.addExpense({ date, category, amount, notes });
+
+      // fechar modal - usar classe .show
+      const el = $("modalNewExpense");
+      if (el) {
+        el.classList.remove("show");
+      }
+
+      form.reset();
+      renderExpenses();
+      renderChart();
+      renderSummaryCards();
+    });
   }
-  if (nameEl && user) {
-    nameEl.textContent = user.companyName || user.email;
-  }
-  
-  // Render UI
+
   renderExpenses();
   renderChart();
   renderSummaryCards();
-  
-  // Modal event listeners
-  const newExpenseBtn = $("newExpenseBtn");
-  if (newExpenseBtn) {
-    newExpenseBtn.addEventListener('click', openExpenseModal);
-  }
-  
-  const closeModalBtn = $("closeExpenseModal");
-  if (closeModalBtn) {
-    closeModalBtn.addEventListener('click', closeExpenseModal);
-  }
-  
-  const cancelBtn = $("cancelExpenseBtn");
-  if (cancelBtn) {
-    cancelBtn.addEventListener('click', closeExpenseModal);
-  }
-  
-  const saveBtn = $("saveExpenseBtn");
-  if (saveBtn) {
-    saveBtn.addEventListener('click', saveNewExpense);
-  }
-  
-  // Close modal when clicking outside
-  window.addEventListener('click', (e) => {
-    const modal = $("modalNewExpense");
-    if (modal && e.target === modal) {
-      closeExpenseModal();
-    }
-  });
-  
-  // Sidebar link handling
-  document.querySelectorAll('.sidebar-link').forEach(link => {
-    link.addEventListener('click', function(e) {
-      const href = this.getAttribute('href');
-      if (href.startsWith('#')) {
-        return;
-      }
-      e.preventDefault();
-      window.location.href = href;
-    });
-  });
 });
-
-// Export functions for onclick handlers
-window.openExpenseModal = openExpenseModal;
-window.closeExpenseModal = closeExpenseModal;
-window.saveNewExpense = saveNewExpense;
 

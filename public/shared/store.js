@@ -1,168 +1,175 @@
-/**
- * Store - UPSEN Accounting
- * Sistema de gestão de documentos
- * Dados isolados por empresa (userId)
- */
-
-import AuthManager from './auth.js';
+// public/shared/store.js
+// Store MVP (localStorage) - sem duplicações
+// Módulos: Invoices Received, Invoices Issued, Expenses, Budgets
+//所有函数都暴露在window对象上，以便在传统<script>标签中使用
 
 // ===== Utils =====
-function uid() {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
+function safeParse(json, fallback) {
+  try {
+    const v = JSON.parse(json);
+    return v ?? fallback;
+  } catch {
+    return fallback;
   }
-  return 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+}
+
+function read(key) {
+  return safeParse(localStorage.getItem(key), []);
+}
+
+function write(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+function uid() {
+  // crypto.randomUUID() é o ideal, mas nem todos os browsers antigos suportam
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+  return "id-" + Date.now() + "-" + Math.random().toString(16).slice(2);
 }
 
 // ===== Keys =====
 const KEYS = {
-  invoicesReceived: 'upsen_invoices_received',
-  invoicesIssued: 'upsen_invoices_issued',
-  expenses: 'upsen_expenses',
-  budgets: 'upsen_budgets',
+  invoicesReceived: "upsen_invoices_received",
+  invoicesIssued: "upsen_invoices_issued",
+  expenses: "upsen_expenses",
+  budgets: "upsen_budgets",
 };
 
 // ======================================================
-// INVOICES RECEIVED (Faturas Recebidas)
+// INVOICES RECEIVED
 // ======================================================
-export function getInvoicesReceived() {
-  return AuthManager.getUserData(KEYS.invoicesReceived);
+function getInvoicesReceived() {
+  return read(KEYS.invoicesReceived);
 }
 
-export function addInvoiceReceived(invoice) {
+function addInvoiceReceived(invoice) {
+  const list = getInvoicesReceived();
   const item = {
     id: uid(),
-    invoiceNumber: invoice.invoiceNumber ?? '',
-    invoiceDate: invoice.invoiceDate ?? '',
-    supplier: invoice.supplier ?? '',
+    invoiceNumber: invoice.invoiceNumber ?? "",
+    invoiceDate: invoice.invoiceDate ?? "",
+    supplier: invoice.supplier ?? "",
     amount: Number(invoice.amount ?? 0),
-    state: invoice.state ?? 'Pendiente',
-    description: invoice.description ?? '',
+    state: invoice.state ?? "Pendiente",
     createdAt: new Date().toISOString(),
   };
-  
-  AuthManager.addDocument(KEYS.invoicesReceived, item);
+  list.push(item);
+  write(KEYS.invoicesReceived, list);
   return item;
 }
 
-export function deleteInvoiceReceived(id) {
-  AuthManager.deleteDocument(KEYS.invoicesReceived, id);
-}
-
-export function updateInvoiceReceived(id, updates) {
-  return AuthManager.updateDocument(KEYS.invoicesReceived, id, updates);
+function deleteInvoiceReceived(id) {
+  const list = getInvoicesReceived().filter((x) => x.id !== id);
+  write(KEYS.invoicesReceived, list);
 }
 
 // ======================================================
-// INVOICES ISSUED (Faturas Emitidas)
+// INVOICES ISSUED
 // ======================================================
-export function getInvoicesIssued() {
-  return AuthManager.getUserData(KEYS.invoicesIssued);
+function getInvoicesIssued() {
+  return read(KEYS.invoicesIssued);
 }
 
-export function addInvoiceIssued(invoice) {
+function addInvoiceIssued(invoice) {
+  const list = getInvoicesIssued();
   const item = {
     id: uid(),
-    invoiceNumber: invoice.invoiceNumber ?? '',
-    customer: invoice.customer ?? '',
-    invoiceDate: invoice.invoiceDate ?? '',
-    dueDate: invoice.dueDate ?? '',
+    invoiceNumber: invoice.invoiceNumber ?? "",
+    customer: invoice.customer ?? "",
+    invoiceDate: invoice.invoiceDate ?? "",
+    dueDate: invoice.dueDate ?? "",
     amount: Number(invoice.amount ?? 0),
-    state: invoice.state ?? 'Pendiente',
-    description: invoice.description ?? '',
+    state: invoice.state ?? "Pendiente",
     createdAt: new Date().toISOString(),
   };
-  
-  AuthManager.addDocument(KEYS.invoicesIssued, item);
+  list.push(item);
+  write(KEYS.invoicesIssued, list);
   return item;
 }
 
-export function deleteInvoiceIssued(id) {
-  AuthManager.deleteDocument(KEYS.invoicesIssued, id);
-}
-
-export function updateInvoiceIssued(id, updates) {
-  return AuthManager.updateDocument(KEYS.invoicesIssued, id, updates);
+function deleteInvoiceIssued(id) {
+  const list = getInvoicesIssued().filter((x) => x.id !== id);
+  write(KEYS.invoicesIssued, list);
 }
 
 // ======================================================
-// EXPENSES (Gastos)
+// EXPENSES
 // ======================================================
-export function getExpenses() {
-  return AuthManager.getUserData(KEYS.expenses);
+function getExpenses() {
+  return read(KEYS.expenses);
 }
 
-export function addExpense(expense) {
+function addExpense(expense) {
+  const list = getExpenses();
   const item = {
     id: uid(),
-    date: expense.date ?? '',
-    category: expense.category ?? '',
-    description: expense.description ?? '',
+    date: expense.date ?? "",
+    category: expense.category ?? "",
+    description: expense.description ?? "",
     amount: Number(expense.amount ?? 0),
-    paymentMethod: expense.paymentMethod ?? '',
     createdAt: new Date().toISOString(),
   };
-  
-  AuthManager.addDocument(KEYS.expenses, item);
+  list.push(item);
+  write(KEYS.expenses, list);
   return item;
 }
 
-export function deleteExpense(id) {
-  AuthManager.deleteDocument(KEYS.expenses, id);
-}
-
-export function updateExpense(id, updates) {
-  return AuthManager.updateDocument(KEYS.expenses, id, updates);
+function deleteExpense(id) {
+  const list = getExpenses().filter((x) => x.id !== id);
+  write(KEYS.expenses, list);
 }
 
 // ======================================================
-// BUDGETS (Orçamentos)
+// BUDGETS - Para presupuestos/budgets
 // ======================================================
-export function getBudgets() {
-  return AuthManager.getUserData(KEYS.budgets);
+function getBudgets() {
+  return read(KEYS.budgets);
 }
 
-export function addBudget(budget) {
+function addBudget(budget) {
+  const list = getBudgets();
   const item = {
     id: uid(),
-    number: budget.number ?? '',
-    date: budget.date ?? '',
-    validity: budget.validity ?? '',
-    customer: budget.customer ?? '',
-    notes: budget.notes ?? '',
-    retention: budget.retention ?? '',
-    status: budget.status ?? 'pending',
-    tags: budget.tags ?? '',
+    number: budget.number ?? "",
+    series: budget.series ?? "Presupuestos",
+    date: budget.date ?? "",
+    validity: budget.validity ?? "",
+    customer: budget.customer ?? "",
+    notes: budget.notes ?? "",
+    retention: budget.retention ?? "",
+    status: budget.status ?? "pending",
+    tags: budget.tags ?? "",
     items: budget.items ?? [],
     total: Number(budget.total ?? 0),
-    period: budget.period ?? '',
     createdAt: new Date().toISOString(),
   };
-  
-  AuthManager.addDocument(KEYS.budgets, item);
+  list.push(item);
+  write(KEYS.budgets, list);
   return item;
 }
 
-export function deleteBudget(id) {
-  AuthManager.deleteDocument(KEYS.budgets, id);
+function updateBudget(id, updates) {
+  const list = getBudgets();
+  const index = list.findIndex((x) => x.id === id);
+  if (index !== -1) {
+    list[index] = { ...list[index], ...updates };
+    write(KEYS.budgets, list);
+  }
 }
 
-export function updateBudget(id, updates) {
-  return AuthManager.updateDocument(KEYS.budgets, id, updates);
+function deleteBudget(id) {
+  const list = getBudgets().filter((x) => x.id !== id);
+  write(KEYS.budgets, list);
 }
 
 // ======================================================
-// DASHBOARD HELPERS (Resumo)
+// DASHBOARD HELPERS (totais simples)
 // ======================================================
-export function getTotals() {
-  const invoicesReceived = getInvoicesReceived();
-  const invoicesIssued = getInvoicesIssued();
-  const expenses = getExpenses();
-  
-  const receivedTotal = invoicesReceived.reduce((sum, x) => sum + (Number(x.amount) || 0), 0);
-  const issuedTotal = invoicesIssued.reduce((sum, x) => sum + (Number(x.amount) || 0), 0);
-  const expensesTotal = expenses.reduce((sum, x) => sum + (Number(x.amount) || 0), 0);
-  
+function getTotals() {
+  const receivedTotal = getInvoicesReceived().reduce((s, x) => s + (Number(x.amount) || 0), 0);
+  const issuedTotal = getInvoicesIssued().reduce((s, x) => s + (Number(x.amount) || 0), 0);
+  const expensesTotal = getExpenses().reduce((s, x) => s + (Number(x.amount) || 0), 0);
+
   return {
     receivedTotal,
     issuedTotal,
@@ -174,7 +181,7 @@ export function getTotals() {
 // ======================================================
 // DASHBOARD KPI FUNCTIONS
 // ======================================================
-export function sumInvoicesReceivedMonth(year, month) {
+function sumInvoicesReceivedMonth(year, month) {
   const invoices = getInvoicesReceived();
   return invoices.reduce((sum, inv) => {
     if (!inv.invoiceDate) return sum;
@@ -186,7 +193,7 @@ export function sumInvoicesReceivedMonth(year, month) {
   }, 0);
 }
 
-export function countInvoicesReceivedMonth(year, month) {
+function countInvoicesReceivedMonth(year, month) {
   const invoices = getInvoicesReceived();
   return invoices.filter(inv => {
     if (!inv.invoiceDate) return false;
@@ -195,12 +202,12 @@ export function countInvoicesReceivedMonth(year, month) {
   }).length;
 }
 
-export function countInvoicesReceivedPending() {
+function countInvoicesReceivedPending() {
   const invoices = getInvoicesReceived();
-  return invoices.filter(inv => (inv.state || '').toLowerCase() === 'pendiente').length;
+  return invoices.filter(inv => (inv.state || "").toLowerCase() === "pendiente").length;
 }
 
-export function sumInvoicesIssuedMonth(year, month) {
+function sumInvoicesIssuedMonth(year, month) {
   const invoices = getInvoicesIssued();
   return invoices.reduce((sum, inv) => {
     if (!inv.invoiceDate) return sum;
@@ -212,7 +219,7 @@ export function sumInvoicesIssuedMonth(year, month) {
   }, 0);
 }
 
-export function countInvoicesIssuedMonth(year, month) {
+function countInvoicesIssuedMonth(year, month) {
   const invoices = getInvoicesIssued();
   return invoices.filter(inv => {
     if (!inv.invoiceDate) return false;
@@ -221,12 +228,12 @@ export function countInvoicesIssuedMonth(year, month) {
   }).length;
 }
 
-export function countInvoicesIssuedPending() {
+function countInvoicesIssuedPending() {
   const invoices = getInvoicesIssued();
-  return invoices.filter(inv => (inv.state || '').toLowerCase() === 'pendiente').length;
+  return invoices.filter(inv => (inv.state || "").toLowerCase() === "pendiente").length;
 }
 
-export function sumExpensesMonth(year, month) {
+function sumExpensesMonth(year, month) {
   const expenses = getExpenses();
   return expenses.reduce((sum, exp) => {
     if (!exp.date) return sum;
@@ -238,7 +245,7 @@ export function sumExpensesMonth(year, month) {
   }, 0);
 }
 
-export function countExpensesMonth(year, month) {
+function countExpensesMonth(year, month) {
   const expenses = getExpenses();
   return expenses.filter(exp => {
     if (!exp.date) return false;
@@ -247,7 +254,7 @@ export function countExpensesMonth(year, month) {
   }).length;
 }
 
-export function getTopExpenseCategory(year, month) {
+function getTopExpenseCategory(year, month) {
   const expenses = getExpenses();
   const categoryTotals = {};
   
@@ -255,20 +262,20 @@ export function getTopExpenseCategory(year, month) {
     if (!exp.date) return;
     const [y, m, d] = exp.date.split('-').map(Number);
     if (y === year && m - 1 === month) {
-      const cat = exp.category || 'Sem categoria';
+      const cat = exp.category || "Sin categoría";
       categoryTotals[cat] = (categoryTotals[cat] || 0) + (Number(exp.amount) || 0);
     }
   });
   
-  if (Object.keys(categoryTotals).length === 0) return '';
+  if (Object.keys(categoryTotals).length === 0) return "";
   
   const top = Object.entries(categoryTotals)
     .sort((a, b) => b[1] - a[1])[0];
   
-  return top ? top[0] : '';
+  return top ? top[0] : "";
 }
 
-export function getExpensesMonth(year, month) {
+function getExpensesMonth(year, month) {
   const expenses = getExpenses();
   return expenses.filter(exp => {
     if (!exp.date) return false;
@@ -277,7 +284,7 @@ export function getExpensesMonth(year, month) {
   });
 }
 
-export function getExpensesByCategory(year, month) {
+function getExpensesByCategory(year, month) {
   const expenses = getExpenses();
   const categoryTotals = {};
   
@@ -285,7 +292,7 @@ export function getExpensesByCategory(year, month) {
     if (!exp.date) return;
     const [y, m] = exp.date.split('-').map(Number);
     if (y === year && m - 1 === month) {
-      const cat = exp.category || 'Sem categoria';
+      const cat = exp.category || "Sin categoría";
       categoryTotals[cat] = (categoryTotals[cat] || 0) + (Number(exp.amount) || 0);
     }
   });
@@ -294,51 +301,38 @@ export function getExpensesByCategory(year, month) {
 }
 
 // ======================================================
-// BUDGET KPI FUNCTIONS
-// ======================================================
-export function sumBudgetsMonth(year, month) {
-  const budgets = getBudgets();
-  return budgets.reduce((sum, budget) => {
-    if (!budget.date) return sum;
-    const [y, m] = budget.date.split('-').map(Number);
-    if (y === year && m - 1 === month) {
-      return sum + (Number(budget.total) || 0);
-    }
-    return sum;
-  }, 0);
-}
-
-export function countBudgetsPending() {
-  const budgets = getBudgets();
-  return budgets.filter(b => (b.status || '').toLowerCase() === 'pending').length;
-}
-
-export function countBudgetsApproved() {
-  const budgets = getBudgets();
-  return budgets.filter(b => (b.status || '').toLowerCase() === 'approved').length;
-}
-
-export function getRecentBudgets(limitCount = 5) {
-  const budgets = getBudgets();
-  return budgets
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, limitCount);
-}
-
-// ======================================================
 // RESET (para testes)
 // ======================================================
-export function resetAll() {
-  if (!AuthManager.isLoggedIn()) return;
-  
-  const userId = AuthManager.getCurrentUser().id;
-  Object.values(KEYS).forEach((k) => localStorage.removeItem(`${k}_${userId}`));
+function resetAll() {
+  Object.values(KEYS).forEach((k) => localStorage.removeItem(k));
 }
 
 // ======================================================
-// EXPORTAR DADOS
+// EXPOR TODAS AS FUNÇÕES PARA window (para uso em scripts tradicionais)
 // ======================================================
-export function exportAllData() {
-  return AuthManager.exportUserData();
-}
-
+window.getInvoicesReceived = getInvoicesReceived;
+window.addInvoiceReceived = addInvoiceReceived;
+window.deleteInvoiceReceived = deleteInvoiceReceived;
+window.getInvoicesIssued = getInvoicesIssued;
+window.addInvoiceIssued = addInvoiceIssued;
+window.deleteInvoiceIssued = deleteInvoiceIssued;
+window.getExpenses = getExpenses;
+window.addExpense = addExpense;
+window.deleteExpense = deleteExpense;
+window.getBudgets = getBudgets;
+window.addBudget = addBudget;
+window.updateBudget = updateBudget;
+window.deleteBudget = deleteBudget;
+window.getTotals = getTotals;
+window.sumInvoicesReceivedMonth = sumInvoicesReceivedMonth;
+window.countInvoicesReceivedMonth = countInvoicesReceivedMonth;
+window.countInvoicesReceivedPending = countInvoicesReceivedPending;
+window.sumInvoicesIssuedMonth = sumInvoicesIssuedMonth;
+window.countInvoicesIssuedMonth = countInvoicesIssuedMonth;
+window.countInvoicesIssuedPending = countInvoicesIssuedPending;
+window.sumExpensesMonth = sumExpensesMonth;
+window.countExpensesMonth = countExpensesMonth;
+window.getTopExpenseCategory = getTopExpenseCategory;
+window.getExpensesMonth = getExpensesMonth;
+window.getExpensesByCategory = getExpensesByCategory;
+window.resetAll = resetAll;

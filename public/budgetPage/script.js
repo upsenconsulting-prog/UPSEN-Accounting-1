@@ -1,4 +1,5 @@
-import { getBudgets, addBudget, deleteBudget, updateBudget } from "../shared/store.js";
+// Funções do store.js já estão disponíveis globalmente via window
+// Ex: window.getBudgets(), window.addBudget(), window.deleteBudget(), window.updateBudget()
 
 function $(id) {
   return document.getElementById(id);
@@ -10,7 +11,7 @@ function moneyEUR(n) {
 }
 
 function generateBudgetNumber() {
-  const budgets = getBudgets();
+  const budgets = window.getBudgets();
   if (budgets.length === 0) {
     return "BUD-001";
   }
@@ -181,7 +182,7 @@ if (saveBtn) {
       return;
     }
     
-    addBudget(data);
+    window.addBudget(data);
     alert("Presupuesto guardado correctamente!");
     clearForm();
   });
@@ -217,7 +218,7 @@ function loadSavedBudgets() {
   const tbody = $('budgetsTbody');
   if (!tbody) return;
   
-  const budgets = getBudgets();
+  const budgets = window.getBudgets();
   console.log('Loaded budgets:', budgets);
   
   if (budgets.length === 0) {
@@ -266,7 +267,7 @@ function loadSavedBudgets() {
 
 // Make functions globally accessible for onclick handlers
 window.viewBudget = function(id) {
-  const budget = getBudgets().find(b => b.id === id);
+  const budget = window.getBudgets().find(b => b.id === id);
   if (!budget) return;
   
   const itemsHtml = budget.items?.map(item => `
@@ -339,11 +340,11 @@ window.viewBudget = function(id) {
 };
 
 window.deleteBudgetPrompt = function(id) {
-  const budget = getBudgets().find(b => b.id === id);
+  const budget = window.getBudgets().find(b => b.id === id);
   if (!budget) return;
   
   if (confirm(`¿Está seguro de eliminar el presupuesto ${budget.number}?\n\nEsta acción no se puede deshacer.`)) {
-    deleteBudget(id);
+    window.deleteBudget(id);
     loadSavedBudgets();
     alert('Presupuesto eliminado correctamente.');
   }
@@ -351,7 +352,7 @@ window.deleteBudgetPrompt = function(id) {
 
 // Change budget status
 window.changeBudgetStatus = function(id, newStatus) {
-  const budget = getBudgets().find(b => b.id === id);
+  const budget = window.getBudgets().find(b => b.id === id);
   if (!budget) return;
   
   const statusLabels = {
@@ -361,7 +362,7 @@ window.changeBudgetStatus = function(id, newStatus) {
   };
   
   if (confirm(`¿Cambiar estado de "${budget.number}" a ${statusLabels[newStatus]}?`)) {
-    updateBudget(id, { status: newStatus });
+    window.updateBudget(id, { status: newStatus });
     loadSavedBudgets();
     alert('Estado actualizado correctamente.');
   }
