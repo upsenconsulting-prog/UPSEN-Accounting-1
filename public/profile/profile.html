@@ -3,166 +3,637 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Perfil - Accounting</title>
+  <title>Perfil - UPSEN Accounting</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
+    * { box-sizing: border-box; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #eef1f7; min-height: 100vh; }
-    .sidebar { width: 250px; background: #2c3e50; color: white; min-height: 100vh; position: fixed; }
-    .sidebar-header { padding: 20px; font-size: 1.4em; font-weight: bold; background: #1a252f; text-align: center; }
+    
+    /* Sidebar */
+    .sidebar { width: 250px; background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%); color: white; min-height: 100vh; position: fixed; }
+    .sidebar-header { padding: 25px 20px; font-size: 1.5em; font-weight: bold; background: rgba(0,0,0,0.2); text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .sidebar-menu { list-style: none; padding: 0; margin: 0; }
-    .sidebar-menu li { padding: 15px 20px; cursor: pointer; }
-    .sidebar-menu li:hover { background: #1abc9c; }
-    .sidebar-menu li.active { background: #1abc9c; }
-    .sidebar-link { color: inherit; text-decoration: none; display: block; }
+    .sidebar-menu li { padding: 15px 20px; cursor: pointer; transition: all 0.3s; border-left: 4px solid transparent; }
+    .sidebar-menu li:hover { background: rgba(26, 188, 156, 0.2); border-left-color: #1abc9c; }
+    .sidebar-menu li.active { background: rgba(26, 188, 156, 0.2); border-left-color: #1abc9c; }
+    .sidebar-link { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 12px; }
+    .sidebar-link i { width: 20px; text-align: center; }
+    
+    /* Main Content */
     .main-content { margin-left: 250px; padding: 30px; }
-    .profile-card { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
-    .user-avatar { width: 100px; height: 100px; border-radius: 50%; background: #2a4d9c; color: white; display: flex; align-items: center; justify-content: center; font-size: 2.5em; margin: 0 auto 20px; }
-    .user-name { text-align: center; font-size: 1.5em; font-weight: 600; color: #2c3e50; margin-bottom: 5px; }
-    .user-email { text-align: center; color: #6c757d; margin-bottom: 20px; }
-    .info-label { color: #6c757d; font-size: 0.9em; }
-    .info-value { font-weight: 500; }
+    
+    /* Cards */
+    .profile-card { background: white; border-radius: 16px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 25px; transition: transform 0.3s; }
+    .profile-card:hover { transform: translateY(-2px); }
+    
+    /* Avatar */
+    .user-avatar { 
+      width: 120px; 
+      height: 120px; 
+      border-radius: 50%; 
+      background: linear-gradient(135deg, #2a4d9c 0%, #3a6cd6 100%); 
+      color: white; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 3em; 
+      margin: 0 auto 20px; 
+      box-shadow: 0 8px 25px rgba(42, 77, 156, 0.3);
+    }
+    .user-name { text-align: center; font-size: 1.8em; font-weight: 600; color: #2c3e50; margin-bottom: 5px; }
+    .user-email { text-align: center; color: #6c757d; margin-bottom: 10px; }
+    .user-role { 
+      display: inline-block; 
+      padding: 5px 15px; 
+      background: linear-gradient(135deg, #1abc9c, #16a085); 
+      color: white; 
+      border-radius: 20px; 
+      font-size: 0.85em; 
+      font-weight: 500; 
+    }
+    
+    /* Section Titles */
+    .section-title { 
+      color: #2a4d9c; 
+      font-weight: 600; 
+      margin-bottom: 25px; 
+      padding-bottom: 12px; 
+      border-bottom: 2px solid #e9ecef; 
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title i { color: #1abc9c; }
+    
+    /* Info Items */
+    .info-label { color: #6c757d; font-size: 0.9em; margin-bottom: 5px; }
+    .info-value { font-weight: 500; color: #2c3e50; }
+    
+    /* Form Controls */
+    .form-control, .form-select {
+      border-radius: 10px;
+      padding: 12px 15px;
+      border: 2px solid #e9ecef;
+      transition: all 0.3s;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: #2a4d9c;
+      box-shadow: 0 0 0 4px rgba(42, 77, 156, 0.1);
+    }
+    
+    /* Buttons */
+    .btn { border-radius: 10px; padding: 12px 25px; font-weight: 500; transition: all 0.3s; }
+    .btn-primary { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); border: none; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(42, 77, 156, 0.4); }
+    .btn-success { background: linear-gradient(135deg, #1abc9c, #16a085); border: none; }
+    .btn-success:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(26, 188, 156, 0.4); }
+    .btn-danger { background: linear-gradient(135deg, #e74c3c, #c0392b); border: none; }
+    .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4); }
+    .btn-secondary { background: #e9ecef; border: none; color: #495057; }
+    .btn-secondary:hover { background: #dee2e6; }
+    
+    /* Stats Cards */
+    .stat-card {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      border: 1px solid #e9ecef;
+      transition: all 0.3s;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+    .stat-icon { 
+      width: 50px; 
+      height: 50px; 
+      border-radius: 12px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      margin: 0 auto 15px; 
+      font-size: 1.5em;
+    }
+    .stat-icon.blue { background: rgba(42, 77, 156, 0.1); color: #2a4d9c; }
+    .stat-icon.green { background: rgba(26, 188, 156, 0.1); color: #1abc9c; }
+    .stat-icon.red { background: rgba(231, 76, 60, 0.1); color: #e74c3c; }
+    .stat-icon.purple { background: rgba(155, 89, 182, 0.1); color: #9b59b6; }
+    .stat-value { font-size: 2em; font-weight: 700; color: #2c3e50; }
+    .stat-label { color: #6c757d; font-size: 0.9em; }
+    
+    /* Alert Messages */
+    .alert { border-radius: 10px; padding: 15px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    
+    /* Modal */
+    .modal-content { border-radius: 16px; overflow: hidden; }
+    .modal-header { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); color: white; border: none; padding: 20px 25px; }
+    .modal-header .btn-close { filter: brightness(0) invert(1); }
+    .modal-body { padding: 25px; }
+    .modal-footer { padding: 20px 25px; border-top: 1px solid #e9ecef; }
+    
+    /* Page Header */
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .page-title { font-size: 1.8em; font-weight: 700; color: #2c3e50; }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar { position: relative; width: 100%; min-height: auto; }
+      .main-content { margin-left: 0; }
+    }
+    
+    /* Logout Button */
+    .btn-logout {
+      background: rgba(231, 76, 60, 0.2);
+      color: #e74c3c;
+      border: none;
+      margin-top: 20px;
+      width: 100%;
+    }
+    .btn-logout:hover { background: #e74c3c; color: white; }
   </style>
 </head>
 <body>
 <div class="container-fluid">
   <div class="row">
+    <!-- Sidebar -->
     <aside class="sidebar">
-      <div class="sidebar-header">Accounting</div>
+      <div class="sidebar-header">
+        <i class="fas fa-chart-line me-2"></i>Accounting
+      </div>
       <ul class="sidebar-menu">
-        <li><a href="../frontPage/frontPage.html" class="sidebar-link">Panel de control</a></li>
-        <li><a href="../expense/expense.html" class="sidebar-link">Gastos</a></li>
-        <li><a href="../Invoice-issued/invoice-issued.html" class="sidebar-link">Facturas emitidas</a></li>
-        <li><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link">Facturas recibidas</a></li>
-        <li><a href="../budgetPage/budget.html" class="sidebar-link">Presupuestos</a></li>
-        <li class="active"><a href="profile.html" class="sidebar-link">Perfil</a></li>
-        <li><a href="settings.html" class="sidebar-link">Configuración</a></li>
+        <li><a href="../frontPage/frontPage.html" class="sidebar-link"><i class="fas fa-tachometer-alt"></i> Panel de control</a></li>
+        <li><a href="../expense/expense.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar"></i> Gastos</a></li>
+        <li><a href="../Invoice-issued/invoice-issued.html" class="sidebar-link"><i class="fas fa-file-export"></i> Facturas emitidas</a></li>
+        <li><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link"><i class="fas fa-file-import"></i> Facturas recibidas</a></li>
+        <li><a href="../budgetPage/budget.html" class="sidebar-link"><i class="fas fa-calculator"></i> Presupuestos</a></li>
+        <li class="active"><a href="profile.html" class="sidebar-link"><i class="fas fa-user"></i> Perfil</a></li>
+        <li><a href="settings.html" class="sidebar-link"><i class="fas fa-cog"></i> Configuración</a></li>
       </ul>
+      <div style="padding: 20px;">
+        <button class="btn btn-logout" onclick="logout()">
+          <i class="fas fa-sign-out-alt me-2"></i> Cerrar sesión
+        </button>
+      </div>
     </aside>
+    
+    <!-- Main Content -->
     <main class="main-content col-md-9">
-      <h1 class="mb-4">Mi Perfil</h1>
-      
-      <div class="profile-card">
-        <div class="user-avatar" id="userAvatar">JS</div>
-        <div class="user-name" id="userName">John Smith</div>
-        <div class="user-email" id="userEmail">admin@demo.com</div>
+      <div class="page-header">
+        <h1 class="page-title"><i class="fas fa-user me-3"></i>Mi Perfil</h1>
+        <button class="btn btn-primary" onclick="showEditModal()">
+          <i class="fas fa-edit me-2"></i>Editar Perfil
+        </button>
       </div>
       
+      <!-- Alert Messages -->
+      <div id="alertMessage" class="alert hidden"></div>
+      
+      <!-- Profile Card -->
       <div class="profile-card">
-        <h5 class="section-title" style="color: #2a4d9c; font-weight: 600; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #e9ecef;">Datos de la Empresa</h5>
+        <div class="user-avatar" id="userAvatar">U</div>
+        <div class="user-name" id="userName">Usuario</div>
+        <div class="user-email" id="userEmail">-</div>
+        <span class="user-role" id="userRole">Usuario</span>
+      </div>
+      
+      <!-- Info Card -->
+      <div class="profile-card">
+        <h5 class="section-title"><i class="fas fa-building"></i> Datos de la Empresa</h5>
         <div class="row">
           <div class="col-md-6 mb-3">
-            <div class="info-label">Nombre de la Empresa</div>
+            <div class="info-label"><i class="fas fa-building me-2"></i>Nombre de la Empresa</div>
             <div class="info-value" id="displayCompanyName">-</div>
           </div>
           <div class="col-md-6 mb-3">
-            <div class="info-label">Teléfono</div>
+            <div class="info-label"><i class="fas fa-phone me-2"></i>Teléfono</div>
             <div class="info-value" id="displayPhone">-</div>
           </div>
           <div class="col-md-6 mb-3">
-            <div class="info-label">Email</div>
+            <div class="info-label"><i class="fas fa-envelope me-2"></i>Correo electrónico</div>
             <div class="info-value" id="displayEmail">-</div>
           </div>
           <div class="col-md-6 mb-3">
-            <div class="info-label">Rol</div>
+            <div class="info-label"><i class="fas fa-user-tag me-2"></i>Rol</div>
             <div class="info-value" id="displayRole">-</div>
           </div>
         </div>
       </div>
       
+      <!-- Preferences Card -->
       <div class="profile-card">
-        <h5 class="section-title" style="color: #2a4d9c; font-weight: 600; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #e9ecef;">Preferencias</h5>
+        <h5 class="section-title"><i class="fas fa-sliders-h"></i> Preferencias</h5>
         <div class="row">
-          <div class="col-md-6 mb-3">
-            <div class="info-label">Moneda</div>
+          <div class="col-md-4 mb-3">
+            <div class="info-label"><i class="fas fa-coins me-2"></i>Moneda</div>
             <div class="info-value" id="displayCurrency">-</div>
           </div>
-          <div class="col-md-6 mb-3">
-            <div class="info-label">Idioma</div>
+          <div class="col-md-4 mb-3">
+            <div class="info-label"><i class="fas fa-language me-2"></i>Idioma</div>
             <div class="info-value" id="displayLanguage">-</div>
           </div>
-        </div>
-      </div>
-      
-      <div class="profile-card">
-        <h5 class="section-title" style="color: #2a4d9c; font-weight: 600; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #e9ecef;">Estadísticas</h5>
-        <div class="row text-center">
-          <div class="col-md-3 mb-3">
-            <div style="font-size: 2em; font-weight: bold; color: #2a4d9c;" id="statInvoices">0</div>
-            <div class="info-label">Facturas</div>
-          </div>
-          <div class="col-md-3 mb-3">
-            <div style="font-size: 2em; font-weight: bold; color: #27ae60;" id="statIssued">0</div>
-            <div class="info-label">Emitidas</div>
-          </div>
-          <div class="col-md-3 mb-3">
-            <div style="font-size: 2em; font-weight: bold; color: #e74c3c;" id="statExpenses">0</div>
-            <div class="info-label">Gastos</div>
-          </div>
-          <div class="col-md-3 mb-3">
-            <div style="font-size: 2em; font-weight: bold; color: #9b59b6;" id="statBudgets">0</div>
-            <div class="info-label">Presupuestos</div>
+          <div class="col-md-4 mb-3">
+            <div class="info-label"><i class="fas fa-moon me-2"></i>Tema</div>
+            <div class="info-value" id="displayTheme">-</div>
           </div>
         </div>
       </div>
       
+      <!-- Stats Card -->
       <div class="profile-card">
-        <button class="btn btn-primary me-2" onclick="window.location.href='settings.html'">Configuración</button>
-        <button class="btn btn-danger" onclick="deleteAccount()">Eliminar Cuenta</button>
+        <h5 class="section-title"><i class="fas fa-chart-bar"></i> Estadísticas</h5>
+        <div class="row">
+          <div class="col-md-3 col-6 mb-3">
+            <div class="stat-card">
+              <div class="stat-icon blue"><i class="fas fa-file-invoice"></i></div>
+              <div class="stat-value" id="statInvoices">0</div>
+              <div class="stat-label">Facturas Recibidas</div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6 mb-3">
+            <div class="stat-card">
+              <div class="stat-icon green"><i class="fas fa-file-export"></i></div>
+              <div class="stat-value" id="statIssued">0</div>
+              <div class="stat-label">Facturas Emitidas</div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6 mb-3">
+            <div class="stat-card">
+              <div class="stat-icon red"><i class="fas fa-shopping-cart"></i></div>
+              <div class="stat-value" id="statExpenses">0</div>
+              <div class="stat-label">Gastos</div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6 mb-3">
+            <div class="stat-card">
+              <div class="stat-icon purple"><i class="fas fa-calculator"></i></div>
+              <div class="stat-value" id="statBudgets">0</div>
+              <div class="stat-label">Presupuestos</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Account Info Card -->
+      <div class="profile-card">
+        <h5 class="section-title"><i class="fas fa-info-circle"></i> Información de la Cuenta</h5>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <div class="info-label"><i class="fas fa-calendar-plus me-2"></i>Fecha de registro</div>
+            <div class="info-value" id="displayCreatedAt">-</div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <div class="info-label"><i class="fas fa-clock me-2"></i>Último acceso</div>
+            <div class="info-value" id="displayLastLogin">-</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Actions Card -->
+      <div class="profile-card">
+        <h5 class="section-title"><i class="fas fa-cogs"></i> Acciones</h5>
+        <div class="d-flex flex-wrap gap-3">
+          <button class="btn btn-primary" onclick="showEditModal()">
+            <i class="fas fa-edit me-2"></i>Editar Perfil
+          </button>
+          <button class="btn btn-success" onclick="showPasswordModal()">
+            <i class="fas fa-lock me-2"></i>Cambiar Contraseña
+          </button>
+          <button class="btn btn-info" style="background: #17a2b8; border: none; color: white;" onclick="exportData()">
+            <i class="fas fa-download me-2"></i>Exportar Datos
+          </button>
+          <button class="btn btn-danger" onclick="deleteAccount()">
+            <i class="fas fa-trash me-2"></i>Eliminar Cuenta
+          </button>
+        </div>
       </div>
     </main>
   </div>
 </div>
 
-<script src="../shared/auth.js"></script>
-<script src="../shared/store.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', async function() {
-  // Initialize AuthManager
-  AuthManager.init();
-  
-  if (!AuthManager.isLoggedIn()) {
-    window.location.href = '../frontPage/frontPage.html';
-    return;
-  }
-  
-  const user = AuthManager.getCurrentUser();
-  
-  // Update profile display
-  document.getElementById('userAvatar').textContent = user.companyName ? user.companyName.charAt(0).toUpperCase() : 'U';
-  document.getElementById('userName').textContent = user.companyName || 'Usuario';
-  document.getElementById('userEmail').textContent = user.email || '-';
-  
-  document.getElementById('displayCompanyName').textContent = user.companyName || '-';
-  document.getElementById('displayPhone').textContent = user.phone || '-';
-  document.getElementById('displayEmail').textContent = user.email || '-';
-  document.getElementById('displayRole').textContent = user.role === 'admin' ? 'Administrador' : 'Usuario';
-  
-  document.getElementById('displayCurrency').textContent = user.settings?.currency === 'EUR' ? 'Euro (EUR)' : user.settings?.currency || 'EUR';
-  document.getElementById('displayLanguage').textContent = user.settings?.language === 'pt' ? 'Português' : user.settings?.language === 'en' ? 'English' : 'Español';
-  
-  // Load statistics
-  try {
-    const invoices = getInvoicesReceived();
-    const issued = getInvoicesIssued();
-    const expenses = getExpenses();
-    const budgets = getBudgets();
-    
-    document.getElementById('statInvoices').textContent = invoices.length;
-    document.getElementById('statIssued').textContent = issued.length;
-    document.getElementById('statExpenses').textContent = expenses.length;
-    document.getElementById('statBudgets').textContent = budgets.length;
-  } catch (e) {
-    console.log('Estadísticas no disponibles');
-  }
-});
+<!-- Modal Editar Perfil -->
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-user-edit me-2"></i>Editar Perfil</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="editAlert" class="alert hidden"></div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Nombre completo</label>
+            <input type="text" class="form-control" id="editName" placeholder="Tu nombre">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Empresa</label>
+            <input type="text" class="form-control" id="editCompany" placeholder="Nombre de la empresa">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Teléfono</label>
+            <input type="tel" class="form-control" id="editPhone" placeholder="Tu teléfono">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Correo electrónico</label>
+            <input type="email" class="form-control" id="editEmail" placeholder="Tu correo" readonly>
+            <small class="text-muted">El correo no se puede cambiar</small>
+          </div>
+        </div>
+        <hr>
+        <h6 class="mb-3">Preferencias</h6>
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Moneda</label>
+            <select class="form-select" id="editCurrency">
+              <option value="EUR">Euro (EUR)</option>
+              <option value="USD">Dólar (USD)</option>
+              <option value="GBP">Libra (GBP)</option>
+              <option value="BRL">Real (BRL)</option>
+            </select>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Idioma</label>
+            <select class="form-select" id="editLanguage">
+              <option value="es">Español</option>
+              <option value="pt">Português</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Tema</label>
+            <select class="form-select" id="editTheme">
+              <option value="light">Claro</option>
+              <option value="dark">Oscuro</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="saveProfile()">
+          <i class="fas fa-save me-2"></i>Guardar cambios
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
-function deleteAccount() {
-  if (confirm('¿Está seguro de eliminar su cuenta? Todos los datos se perderán.')) {
-    if (confirm('Esta acción no se puede deshacer.')) {
-      AuthManager.deleteAccount();
+<!-- Modal Cambiar Contraseña -->
+<div class="modal fade" id="passwordModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-lock me-2"></i>Cambiar Contraseña</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="passwordAlert" class="alert hidden"></div>
+        <div class="mb-3">
+          <label class="form-label">Contraseña actual</label>
+          <input type="password" class="form-control" id="currentPassword" placeholder="Tu contraseña actual">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Nueva contraseña</label>
+          <input type="password" class="form-control" id="newPassword" placeholder="Mínimo 6 caracteres" minlength="6">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Confirmar nueva contraseña</label>
+          <input type="password" class="form-control" id="confirmPassword" placeholder="Repetir contraseña">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" onclick="changePassword()">
+          <i class="fas fa-key me-2"></i>Cambiar contraseña
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+  <div class="spinner" style="width: 50px; height: 50px; border: 4px solid #e9ecef; border-top-color: #2a4d9c; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+</div>
+
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="../shared/auth-system.js"></script>
+<script>
+  // Modal instances
+  let editModal = null;
+  let passwordModal = null;
+  
+  document.addEventListener('DOMContentLoaded', async function() {
+    // Initialize modals
+    editModal = new bootstrap.Modal(document.getElementById('editProfileModal'));
+    passwordModal = new bootstrap.Modal(document.getElementById('passwordModal'));
+    
+    // Check authentication
+    if (!AuthSystem.isLoggedIn()) {
+      window.location.href = '../login.html';
+      return;
+    }
+    
+    loadProfile();
+  });
+  
+  function loadProfile() {
+    const user = AuthSystem.getCurrentUser();
+    if (!user) return;
+    
+    // Avatar and basic info
+    const initials = (user.name || user.email || 'U').substring(0, 2).toUpperCase();
+    document.getElementById('userAvatar').textContent = initials;
+    document.getElementById('userName').textContent = user.name || 'Usuario';
+    document.getElementById('userEmail').textContent = user.email || '-';
+    document.getElementById('userRole').textContent = user.role === 'admin' ? 'Administrador' : 'Usuario';
+    
+    // Company info
+    document.getElementById('displayCompanyName').textContent = user.company || '-';
+    document.getElementById('displayPhone').textContent = user.phone || '-';
+    document.getElementById('displayEmail').textContent = user.email || '-';
+    document.getElementById('displayRole').textContent = user.role === 'admin' ? 'Administrador' : 'Usuario';
+    
+    // Preferences
+    const currencyLabels = { 'EUR': 'Euro (EUR)', 'USD': 'Dólar (USD)', 'GBP': 'Libra (GBP)', 'BRL': 'Real (BRL)' };
+    const languageLabels = { 'es': 'Español', 'pt': 'Português', 'en': 'English' };
+    const themeLabels = { 'light': 'Claro', 'dark': 'Oscuro' };
+    
+    document.getElementById('displayCurrency').textContent = currencyLabels[user.settings?.currency] || 'Euro (EUR)';
+    document.getElementById('displayLanguage').textContent = languageLabels[user.settings?.language] || 'Español';
+    document.getElementById('displayTheme').textContent = themeLabels[user.settings?.theme] || 'Claro';
+    
+    // Dates
+    document.getElementById('displayCreatedAt').textContent = formatDate(user.createdAt);
+    document.getElementById('displayLastLogin').textContent = user.lastLogin ? formatDate(user.lastLogin) : 'Primera sesión';
+    
+    // Statistics
+    loadStatistics();
+  }
+  
+  function loadStatistics() {
+    try {
+      const invoices = AuthSystem.getUserData('upsen_invoices_received') || [];
+      const issued = AuthSystem.getUserData('upsen_invoices_issued') || [];
+      const expenses = AuthSystem.getUserData('upsen_expenses') || [];
+      const budgets = AuthSystem.getUserData('upsen_budgets') || [];
+      
+      document.getElementById('statInvoices').textContent = invoices.length;
+      document.getElementById('statIssued').textContent = issued.length;
+      document.getElementById('statExpenses').textContent = expenses.length;
+      document.getElementById('statBudgets').textContent = budgets.length;
+    } catch (e) {
+      console.log('Estadísticas no disponibles');
     }
   }
-}
+  
+  function formatDate(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+  
+  function showAlert(elementId, message, type = 'info') {
+    const el = document.getElementById(elementId);
+    el.textContent = message;
+    el.className = `alert alert-${type}`;
+    el.classList.remove('hidden');
+    
+    setTimeout(() => {
+      el.classList.add('hidden');
+    }, 5000);
+  }
+  
+  function showEditModal() {
+    const user = AuthSystem.getCurrentUser();
+    if (!user) return;
+    
+    document.getElementById('editName').value = user.name || '';
+    document.getElementById('editCompany').value = user.company || '';
+    document.getElementById('editPhone').value = user.phone || '';
+    document.getElementById('editEmail').value = user.email || '';
+    document.getElementById('editCurrency').value = user.settings?.currency || 'EUR';
+    document.getElementById('editLanguage').value = user.settings?.language || 'es';
+    document.getElementById('editTheme').value = user.settings?.theme || 'light';
+    
+    document.getElementById('editAlert').classList.add('hidden');
+    editModal.show();
+  }
+  
+  function showPasswordModal() {
+    document.getElementById('currentPassword').value = '';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmPassword').value = '';
+    document.getElementById('passwordAlert').classList.add('hidden');
+    passwordModal.show();
+  }
+  
+  async function saveProfile() {
+    const name = document.getElementById('editName').value.trim();
+    const company = document.getElementById('editCompany').value.trim();
+    const phone = document.getElementById('editPhone').value.trim();
+    const currency = document.getElementById('editCurrency').value;
+    const language = document.getElementById('editLanguage').value;
+    const theme = document.getElementById('editTheme').value;
+    
+    if (!name || !company) {
+      showAlert('editAlert', 'Por favor completa todos los campos obligatorios.', 'error');
+      return;
+    }
+    
+    const result = await AuthSystem.updateProfile({
+      name,
+      company,
+      phone,
+      settings: { currency, language, theme }
+    });
+    
+    if (result.success) {
+      editModal.hide();
+      loadProfile();
+      showAlert('alertMessage', '¡Perfil actualizado correctamente!', 'success');
+    } else {
+      showAlert('editAlert', result.message || 'Error al guardar.', 'error');
+    }
+  }
+  
+  async function changePassword() {
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      showAlert('passwordAlert', 'Por favor completa todos los campos.', 'error');
+      return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+      showAlert('passwordAlert', 'Las contraseñas no coinciden.', 'error');
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      showAlert('passwordAlert', 'La contraseña debe tener al menos 6 caracteres.', 'error');
+      return;
+    }
+    
+    const result = await AuthSystem.changePassword(currentPassword, newPassword);
+    
+    if (result.success) {
+      passwordModal.hide();
+      showAlert('alertMessage', '¡Contraseña cambiada correctamente!', 'success');
+    } else {
+      showAlert('passwordAlert', result.message || 'Error al cambiar contraseña.', 'error');
+    }
+  }
+  
+  function exportData() {
+    const data = AuthSystem.exportUserData();
+    if (!data) {
+      showAlert('alertMessage', 'Error al exportar datos.', 'error');
+      return;
+    }
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `upsen_backup_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showAlert('alertMessage', '¡Datos exportados correctamente!', 'success');
+  }
+  
+  function deleteAccount() {
+    if (confirm('¿Estás seguro de eliminar tu cuenta? TODOS tus datos se perderán permanentemente.')) {
+      if (confirm('Esta acción NO se puede deshacer. ¿Continuar?')) {
+        const result = AuthSystem.deleteAccount();
+        if (result.success) {
+          window.location.href = '../login.html';
+        }
+      }
+    }
+  }
+  
+  function logout() {
+    AuthSystem.logout();
+    window.location.href = '../login.html';
+  }
 </script>
 </body>
 </html>

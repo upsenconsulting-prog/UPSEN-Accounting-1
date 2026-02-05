@@ -3,178 +3,660 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Configuracion - Accounting</title>
+  <title>Configuración - UPSEN Accounting</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
+    * { box-sizing: border-box; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #eef1f7; min-height: 100vh; }
-    .sidebar { width: 250px; background: #2c3e50; color: white; min-height: 100vh; position: fixed; }
-    .sidebar-header { padding: 20px; font-size: 1.4em; font-weight: bold; background: #1a252f; text-align: center; }
+    
+    /* Sidebar */
+    .sidebar { width: 250px; background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%); color: white; min-height: 100vh; position: fixed; }
+    .sidebar-header { padding: 25px 20px; font-size: 1.5em; font-weight: bold; background: rgba(0,0,0,0.2); text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .sidebar-menu { list-style: none; padding: 0; margin: 0; }
-    .sidebar-menu li { padding: 15px 20px; cursor: pointer; }
-    .sidebar-menu li:hover { background: #1abc9c; }
-    .sidebar-menu li.active { background: #1abc9c; }
-    .sidebar-link { color: inherit; text-decoration: none; display: block; }
+    .sidebar-menu li { padding: 15px 20px; cursor: pointer; transition: all 0.3s; border-left: 4px solid transparent; }
+    .sidebar-menu li:hover { background: rgba(26, 188, 156, 0.2); border-left-color: #1abc9c; }
+    .sidebar-menu li.active { background: rgba(26, 188, 156, 0.2); border-left-color: #1abc9c; }
+    .sidebar-link { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 12px; }
+    .sidebar-link i { width: 20px; text-align: center; }
+    
+    /* Main Content */
     .main-content { margin-left: 250px; padding: 30px; }
-    .settings-card { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
-    .section-title { color: #2a4d9c; font-weight: 600; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #e9ecef; }
-    .danger-zone { border: 1px solid #dc3545; background: #fff5f5; border-radius: 8px; padding: 20px; }
-    .danger-title { color: #dc3545; font-weight: 600; }
+    
+    /* Cards */
+    .settings-card { background: white; border-radius: 16px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 25px; }
+    .settings-card:hover { transform: translateY(-2px); transition: transform 0.3s; }
+    
+    /* Section Titles */
+    .section-title { 
+      color: #2a4d9c; 
+      font-weight: 600; 
+      margin-bottom: 25px; 
+      padding-bottom: 12px; 
+      border-bottom: 2px solid #e9ecef; 
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title i { color: #1abc9c; }
+    
+    /* Form Controls */
+    .form-control, .form-select {
+      border-radius: 10px;
+      padding: 12px 15px;
+      border: 2px solid #e9ecef;
+      transition: all 0.3s;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: #2a4d9c;
+      box-shadow: 0 0 0 4px rgba(42, 77, 156, 0.1);
+    }
+    
+    /* Buttons */
+    .btn { border-radius: 10px; padding: 12px 25px; font-weight: 500; transition: all 0.3s; }
+    .btn-primary { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); border: none; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(42, 77, 156, 0.4); }
+    .btn-success { background: linear-gradient(135deg, #1abc9c, #16a085); border: none; }
+    .btn-success:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(26, 188, 156, 0.4); }
+    .btn-danger { background: linear-gradient(135deg, #e74c3c, #c0392b); border: none; }
+    .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4); }
+    .btn-secondary { background: #e9ecef; border: none; color: #495057; }
+    .btn-secondary:hover { background: #dee2e6; }
+    
+    /* Alert Messages */
+    .alert { border-radius: 10px; padding: 15px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    .alert-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    
+    /* Toggle Switch */
+    .form-check-input:checked { background-color: #2a4d9c; border-color: #2a4d9c; }
+    .form-check-input:focus { box-shadow: 0 0 0 4px rgba(42, 77, 156, 0.2); }
+    
+    /* Page Header */
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .page-title { font-size: 1.8em; font-weight: 700; color: #2c3e50; }
+    
+    /* Info Box */
+    .info-box {
+      background: linear-gradient(135deg, rgba(42, 77, 156, 0.05), rgba(26, 188, 156, 0.05));
+      border: 1px solid rgba(42, 77, 156, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .info-box i { font-size: 2em; color: #2a4d9c; margin-bottom: 10px; }
+    .info-box h6 { color: #2a4d9c; margin-bottom: 5px; }
+    
+    /* Danger Zone */
+    .danger-zone {
+      border: 2px solid #e74c3c;
+      border-radius: 12px;
+      padding: 25px;
+      background: rgba(231, 76, 60, 0.03);
+    }
+    .danger-zone h5 { color: #e74c3c; margin-bottom: 15px; }
+    
+    /* Loading */
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #e9ecef;
+      border-top-color: #2a4d9c;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar { position: relative; width: 100%; min-height: auto; }
+      .main-content { margin-left: 0; }
+    }
+    
+    /* Logout Button */
+    .btn-logout {
+      background: rgba(231, 76, 60, 0.2);
+      color: #e74c3c;
+      border: none;
+      margin-top: 20px;
+      width: 100%;
+    }
+    .btn-logout:hover { background: #e74c3c; color: white; }
   </style>
 </head>
 <body>
 <div class="container-fluid">
   <div class="row">
+    <!-- Sidebar -->
     <aside class="sidebar">
-      <div class="sidebar-header">Accounting</div>
+      <div class="sidebar-header">
+        <i class="fas fa-chart-line me-2"></i>Accounting
+      </div>
       <ul class="sidebar-menu">
-        <li><a href="../frontPage/frontPage.html" class="sidebar-link">Panel de control</a></li>
-        <li><a href="../expense/expense.html" class="sidebar-link">Gastos</a></li>
-        <li><a href="../Invoice-issued/invoice-issued.html" class="sidebar-link">Facturas emitidas</a></li>
-        <li><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link">Facturas recibidas</a></li>
-        <li><a href="../budgetPage/budget.html" class="sidebar-link">Presupuestos</a></li>
-        <li><a href="../profile/profile.html" class="sidebar-link">Perfil</a></li>
-        <li class="active"><a href="settings.html" class="sidebar-link">Configuracion</a></li>
+        <li><a href="../frontPage/frontPage.html" class="sidebar-link"><i class="fas fa-tachometer-alt"></i> Panel de control</a></li>
+        <li><a href="../expense/expense.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar"></i> Gastos</a></li>
+        <li><a href="../Invoice-issued/invoice-issued.html" class="sidebar-link"><i class="fas fa-file-export"></i> Facturas emitidas</a></li>
+        <li><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link"><i class="fas fa-file-import"></i> Facturas recibidas</a></li>
+        <li><a href="../budgetPage/budget.html" class="sidebar-link"><i class="fas fa-calculator"></i> Presupuestos</a></li>
+        <li><a href="profile.html" class="sidebar-link"><i class="fas fa-user"></i> Perfil</a></li>
+        <li class="active"><a href="settings.html" class="sidebar-link"><i class="fas fa-cog"></i> Configuración</a></li>
       </ul>
+      <div style="padding: 20px;">
+        <button class="btn btn-logout" onclick="logout()">
+          <i class="fas fa-sign-out-alt me-2"></i> Cerrar sesión
+        </button>
+      </div>
     </aside>
+    
+    <!-- Main Content -->
     <main class="main-content col-md-9">
-      <h1 class="mb-4">Configuracion</h1>
+      <div class="page-header">
+        <h1 class="page-title"><i class="fas fa-cog me-3"></i>Configuración</h1>
+      </div>
+      
+      <!-- Alert Messages -->
+      <div id="alertMessage" class="alert hidden"></div>
+      
+      <!-- General Settings -->
       <div class="settings-card">
-        <h5 class="section-title">Datos de la Empresa</h5>
-        <form id="profileForm">
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <label class="form-label">Nombre de la Empresa</label>
-              <input type="text" class="form-control" id="companyName">
+        <h5 class="section-title"><i class="fas fa-sliders-h"></i> Configuración General</h5>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Moneda predeterminada</label>
+            <select class="form-select" id="settingCurrency">
+              <option value="EUR">Euro (EUR)</option>
+              <option value="USD">Dólar (USD)</option>
+              <option value="GBP">Libra Esterlina (GBP)</option>
+              <option value="BRL">Real Brasileño (BRL)</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Idioma</label>
+            <select class="form-select" id="settingLanguage">
+              <option value="es">Español</option>
+              <option value="pt">Português</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Tema</label>
+            <select class="form-select" id="settingTheme">
+              <option value="light">Claro</option>
+              <option value="dark">Oscuro</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Zona horaria</label>
+            <select class="form-select" id="settingTimezone">
+              <option value="Europe/Madrid">Madrid (GMT+1)</option>
+              <option value="Europe/Lisbon">Lisboa (GMT+0)</option>
+              <option value="America/Sao_Paulo">São Paulo (GMT-3)</option>
+              <option value="UTC">UTC</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveGeneralSettings()">
+          <i class="fas fa-save me-2"></i>Guardar cambios
+        </button>
+      </div>
+      
+      <!-- Notifications -->
+      <div class="settings-card">
+        <h5 class="section-title"><i class="fas fa-bell"></i> Notificaciones</h5>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="notifyEmail" checked>
+              <label class="form-check-label" for="notifyEmail">Recibir notificaciones por email</label>
             </div>
-            <div class="col-md-6">
-              <label class="form-label">Telefono</label>
-              <input type="text" class="form-control" id="phone">
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="notifyExpiry" checked>
+              <label class="form-check-label" for="notifyExpiry">Aviso de facturas próximas a vencer</label>
             </div>
           </div>
-          <button type="submit" class="btn btn-primary">Guardar cambios</button>
-        </form>
-      </div>
-      <div class="settings-card">
-        <h5 class="section-title">Cambiar Password</h5>
-        <form id="passwordForm">
-          <div class="row mb-3">
-            <div class="col-md-4">
-              <label class="form-label">Password Actual</label>
-              <input type="password" class="form-control" id="currentPassword">
+          <div class="col-md-6 mb-3">
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="notifyWeekly" checked>
+              <label class="form-check-label" for="notifyWeekly">Resumen semanal de actividad</label>
             </div>
-            <div class="col-md-4">
-              <label class="form-label">Nueva Password</label>
-              <input type="password" class="form-control" id="newPassword">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Confirmar Password</label>
-              <input type="password" class="form-control" id="confirmPassword">
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="notifyBudget">
+              <label class="form-check-label" for="notifyBudget">Alertas de presupuesto</label>
             </div>
           </div>
-          <button type="submit" class="btn btn-primary">Cambiar password</button>
-        </form>
+        </div>
+        <button class="btn btn-primary" onclick="saveNotificationSettings()">
+          <i class="fas fa-save me-2"></i>Guardar preferencias
+        </button>
       </div>
+      
+      <!-- Invoice Settings -->
       <div class="settings-card">
-        <h5 class="section-title">Preferencias</h5>
-        <form id="settingsForm">
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <label class="form-label">Moneda</label>
-              <select class="form-select" id="currency">
-                <option value="EUR">Euro (EUR)</option>
-                <option value="USD">Dolar (USD)</option>
-                <option value="GBP">Libra (GBP)</option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Idioma</label>
-              <select class="form-select" id="language">
-                <option value="es">Espanol</option>
-                <option value="en">English</option>
-                <option value="pt">Portugues</option>
-              </select>
+        <h5 class="section-title"><i class="fas fa-file-invoice"></i> Configuración de Facturas</h5>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Prefijo facturas emitidas</label>
+            <input type="text" class="form-control" id="invoicePrefix" value="FV-" placeholder="FV-">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Prefijo facturas recibidas</label>
+            <input type="text" class="form-control" id="receivedPrefix" value="FR-" placeholder="FR-">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Días por defecto para vencimiento</label>
+            <input type="number" class="form-control" id="defaultDueDays" value="30" min="1" max="365">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">IVA por defecto (%)</label>
+            <input type="number" class="form-control" id="defaultVAT" value="21" min="0" max="100">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveInvoiceSettings()">
+          <i class="fas fa-save me-2"></i>Guardar configuración
+        </button>
+      </div>
+      
+      <!-- Data Management -->
+      <div class="settings-card">
+        <h5 class="section-title"><i class="fas fa-database"></i> Gestión de Datos</h5>
+        
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <div class="info-box text-center">
+              <i class="fas fa-file-invoice-dollar"></i>
+              <h6>Facturas</h6>
+              <p class="text-muted mb-2" id="countInvoices">0 registros</p>
+              <button class="btn btn-sm btn-outline-primary" onclick="exportData('invoices')">
+                <i class="fas fa-download me-1"></i>Exportar
+              </button>
             </div>
           </div>
-          <button type="submit" class="btn btn-primary">Guardar preferencias</button>
-        </form>
+          <div class="col-md-4 mb-3">
+            <div class="info-box text-center">
+              <i class="fas fa-shopping-cart"></i>
+              <h6>Gastos</h6>
+              <p class="text-muted mb-2" id="countExpenses">0 registros</p>
+              <button class="btn btn-sm btn-outline-primary" onclick="exportData('expenses')">
+                <i class="fas fa-download me-1"></i>Exportar
+              </button>
+            </div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <div class="info-box text-center">
+              <i class="fas fa-calculator"></i>
+              <h6>Presupuestos</h6>
+              <p class="text-muted mb-2" id="countBudgets">0 registros</p>
+              <button class="btn btn-sm btn-outline-primary" onclick="exportData('budgets')">
+                <i class="fas fa-download me-1"></i>Exportar
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="row mt-3">
+          <div class="col-md-6">
+            <button class="btn btn-success w-100" onclick="exportAllData()">
+              <i class="fas fa-file-export me-2"></i>Exportar todos los datos
+            </button>
+          </div>
+          <div class="col-md-6">
+            <button class="btn btn-warning" onclick="document.getElementById('importFile').click()">
+              <i class="fas fa-file-import me-2"></i>Importar datos
+            </button>
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+          </div>
+        </div>
       </div>
+      
+      <!-- Account Info -->
       <div class="settings-card">
-        <h5 class="section-title">Mis Datos</h5>
-        <button class="btn btn-success me-2" onclick="exportData()">Exportar datos</button>
-        <button class="btn btn-secondary" onclick="downloadBackup()">Descargar backup</button>
+        <h5 class="section-title"><i class="fas fa-user-circle"></i> Información de la Cuenta</h5>
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Usuario</label>
+            <input type="text" class="form-control" id="settingName" readonly>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" id="settingEmail" readonly>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Empresa</label>
+            <input type="text" class="form-control" id="settingCompany" readonly>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="profile.html" class="btn btn-primary">
+            <i class="fas fa-edit me-2"></i>Editar perfil completo
+          </a>
+          <button class="btn btn-success" onclick="showPasswordModal()">
+            <i class="fas fa-lock me-2"></i>Cambiar contraseña
+          </button>
+        </div>
       </div>
+      
+      <!-- Danger Zone -->
       <div class="settings-card danger-zone">
-        <h5 class="danger-title">Zona de Peligro</h5>
-        <p class="text-muted">Estas acciones son irreversibles.</p>
-        <button class="btn btn-danger" onclick="deleteAccount()">Eliminar mi cuenta</button>
+        <h5><i class="fas fa-exclamation-triangle me-2"></i>Zona de Peligro</h5>
+        <p class="text-muted mb-3">Estas acciones son irreversibles. Por favor, procede con cautela.</p>
+        <div class="d-flex flex-wrap gap-3">
+          <button class="btn btn-outline-warning" onclick="clearCache()">
+            <i class="fas fa-trash me-2"></i>Limpiar caché
+          </button>
+          <button class="btn btn-outline-danger" onclick="resetAllData()">
+            <i class="fas fa-redo me-2"></i>Restablecer datos
+          </button>
+          <button class="btn btn-danger" onclick="deleteAccount()">
+            <i class="fas fa-user-times me-2"></i>Eliminar cuenta
+          </button>
+        </div>
+      </div>
+      
+      <!-- System Info -->
+      <div class="settings-card">
+        <h5 class="section-title"><i class="fas fa-info-circle"></i> Información del Sistema</h5>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Versión</label>
+            <input type="text" class="form-control" value="1.0.0" readonly>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Almacenamiento usado</label>
+            <div class="progress mt-2" style="height: 25px;">
+              <div class="progress-bar" id="storageProgress" role="progressbar" style="width: 0%"></div>
+            </div>
+            <small class="text-muted" id="storageInfo">Calculando...</small>
+          </div>
+        </div>
       </div>
     </main>
   </div>
 </div>
-<script src="../shared/auth.js"></script>
+
+<!-- Modal Password -->
+<div class="modal fade" id="passwordModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-lock me-2"></i>Cambiar Contraseña</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="passwordAlert" class="alert hidden"></div>
+        <div class="mb-3">
+          <label class="form-label">Contraseña actual</label>
+          <input type="password" class="form-control" id="currentPassword">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Nueva contraseña</label>
+          <input type="password" class="form-control" id="newPassword" minlength="6">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Confirmar nueva contraseña</label>
+          <input type="password" class="form-control" id="confirmPassword">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" onclick="changePassword()">Cambiar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="../shared/auth-system.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  if (!AuthManager.isLoggedIn()) {
-    window.location.href = '../frontPage/frontPage.html';
-    return;
+  let passwordModal = null;
+  
+  document.addEventListener('DOMContentLoaded', async function() {
+    passwordModal = new bootstrap.Modal(document.getElementById('passwordModal'));
+    
+    if (!AuthSystem.isLoggedIn()) {
+      window.location.href = '../login.html';
+      return;
+    }
+    
+    loadSettings();
+    loadStats();
+    calculateStorage();
+  });
+  
+  function loadSettings() {
+    const user = AuthSystem.getCurrentUser();
+    if (!user) return;
+    
+    document.getElementById('settingName').value = user.name || '';
+    document.getElementById('settingEmail').value = user.email || '';
+    document.getElementById('settingCompany').value = user.company || '';
+    
+    // Load from localStorage or use defaults
+    document.getElementById('settingCurrency').value = localStorage.getItem('settingCurrency') || user.settings?.currency || 'EUR';
+    document.getElementById('settingLanguage').value = localStorage.getItem('settingLanguage') || user.settings?.language || 'es';
+    document.getElementById('settingTheme').value = localStorage.getItem('settingTheme') || user.settings?.theme || 'light';
+    document.getElementById('settingTimezone').value = localStorage.getItem('settingTimezone') || 'Europe/Madrid';
+    
+    // Invoice settings
+    document.getElementById('invoicePrefix').value = localStorage.getItem('invoicePrefix') || 'FV-';
+    document.getElementById('receivedPrefix').value = localStorage.getItem('receivedPrefix') || 'FR-';
+    document.getElementById('defaultDueDays').value = localStorage.getItem('defaultDueDays') || '30';
+    document.getElementById('defaultVAT').value = localStorage.getItem('defaultVAT') || '21';
+    
+    // Notifications
+    document.getElementById('notifyEmail').checked = localStorage.getItem('notifyEmail') !== 'false';
+    document.getElementById('notifyExpiry').checked = localStorage.getItem('notifyExpiry') !== 'false';
+    document.getElementById('notifyWeekly').checked = localStorage.getItem('notifyWeekly') !== 'false';
+    document.getElementById('notifyBudget').checked = localStorage.getItem('notifyBudget') === 'true';
   }
-  var user = AuthManager.getCurrentUser();
-  document.getElementById('companyName').value = user.companyName || '';
-  document.getElementById('phone').value = user.phone || '';
-  document.getElementById('currency').value = user.settings?.currency || 'EUR';
-  document.getElementById('language').value = user.settings?.language || 'es';
   
-  document.getElementById('profileForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    var result = AuthManager.updateProfile({
-      companyName: document.getElementById('companyName').value,
-      phone: document.getElementById('phone').value
-    });
-    alert(result.success ? 'Perfil actualizado' : 'Error: ' + result.message);
-  });
-  
-  document.getElementById('passwordForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    var current = document.getElementById('currentPassword').value;
-    var newPass = document.getElementById('newPassword').value;
-    var confirm = document.getElementById('confirmPassword').value;
-    if (newPass !== confirm) { alert('Las passwords no coinciden'); return; }
-    if (newPass.length < 6) { alert('Minimo 6 caracteres'); return; }
-    var result = AuthManager.changePassword(current, newPass);
-    alert(result.success ? 'Password actualizada' : 'Error: ' + result.message);
-    if (result.success) document.getElementById('passwordForm').reset();
-  });
-  
-  document.getElementById('settingsForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    var result = AuthManager.updateProfile({
-      settings: { currency: document.getElementById('currency').value, language: document.getElementById('language').value }
-    });
-    alert(result.success ? 'Preferencias guardadas' : 'Error: ' + result.message);
-  });
-});
-
-function exportData() {
-  var data = AuthManager.exportUserData();
-  if (data) {
-    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'accounting_backup.json';
-    a.click();
-  }
-}
-
-function downloadBackup() { exportData(); }
-
-function deleteAccount() {
-  if (confirm('Esta seguro de eliminar su cuenta? Todos los datos se perderan.')) {
-    if (confirm('Esta accion no se puede deshacer.')) {
-      AuthManager.deleteAccount();
+  function loadStats() {
+    try {
+      const invoices = AuthSystem.getUserData('upsen_invoices_received') || [];
+      const issued = AuthSystem.getUserData('upsen_invoices_issued') || [];
+      const expenses = AuthSystem.getUserData('upsen_expenses') || [];
+      const budgets = AuthSystem.getUserData('upsen_budgets') || [];
+      
+      document.getElementById('countInvoices').textContent = (invoices.length + issued.length) + ' registros';
+      document.getElementById('countExpenses').textContent = expenses.length + ' registros';
+      document.getElementById('countBudgets').textContent = budgets.length + ' registros';
+    } catch (e) {
+      console.log('Error loading stats');
     }
   }
-}
+  
+  function calculateStorage() {
+    let total = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      total += (localStorage.getItem(key) || '').length * 2; // UTF-16
+    }
+    
+    const usedKB = (total / 1024).toFixed(2);
+    const usedMB = (usedKB / 1024).toFixed(2);
+    const percentage = Math.min((usedKB / 5120) * 100, 100); // Assume 5MB limit
+    
+    document.getElementById('storageProgress').style.width = percentage + '%';
+    document.getElementById('storageProgress').textContent = usedMB + ' MB';
+    document.getElementById('storageInfo').textContent = usedMB + ' MB de ~5 MB utilizados';
+  }
+  
+  function showAlert(message, type = 'info') {
+    const el = document.getElementById('alertMessage');
+    el.textContent = message;
+    el.className = `alert alert-${type}`;
+    el.classList.remove('hidden');
+    
+    setTimeout(() => el.classList.add('hidden'), 5000);
+  }
+  
+  async function saveGeneralSettings() {
+    const settings = {
+      currency: document.getElementById('settingCurrency').value,
+      language: document.getElementById('settingLanguage').value,
+      theme: document.getElementById('settingTheme').value,
+      timezone: document.getElementById('settingTimezone').value
+    };
+    
+    localStorage.setItem('settingCurrency', settings.currency);
+    localStorage.setItem('settingLanguage', settings.language);
+    localStorage.setItem('settingTheme', settings.theme);
+    localStorage.setItem('settingTimezone', settings.timezone);
+    
+    await AuthSystem.updateProfile({ settings });
+    showAlert('¡Configuración guardada correctamente!', 'success');
+  }
+  
+  async function saveNotificationSettings() {
+    localStorage.setItem('notifyEmail', document.getElementById('notifyEmail').checked);
+    localStorage.setItem('notifyExpiry', document.getElementById('notifyExpiry').checked);
+    localStorage.setItem('notifyWeekly', document.getElementById('notifyWeekly').checked);
+    localStorage.setItem('notifyBudget', document.getElementById('notifyBudget').checked);
+    
+    showAlert('¡Preferencias de notificación guardadas!', 'success');
+  }
+  
+  function saveInvoiceSettings() {
+    localStorage.setItem('invoicePrefix', document.getElementById('invoicePrefix').value);
+    localStorage.setItem('receivedPrefix', document.getElementById('receivedPrefix').value);
+    localStorage.setItem('defaultDueDays', document.getElementById('defaultDueDays').value);
+    localStorage.setItem('defaultVAT', document.getElementById('defaultVAT').value);
+    
+    showAlert('¡Configuración de facturas guardada!', 'success');
+  }
+  
+  function showPasswordModal() {
+    document.getElementById('currentPassword').value = '';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmPassword').value = '';
+    document.getElementById('passwordAlert').classList.add('hidden');
+    passwordModal.show();
+  }
+  
+  async function changePassword() {
+    const current = document.getElementById('currentPassword').value;
+    const newPass = document.getElementById('newPassword').value;
+    const confirm = document.getElementById('confirmPassword').value;
+    
+    if (newPass !== confirm) {
+      document.getElementById('passwordAlert').textContent = 'Las contraseñas no coinciden.';
+      document.getElementById('passwordAlert').className = 'alert alert-error';
+      return;
+    }
+    
+    const result = await AuthSystem.changePassword(current, newPass);
+    if (result.success) {
+      passwordModal.hide();
+      showAlert('¡Contraseña cambiada!', 'success');
+    } else {
+      document.getElementById('passwordAlert').textContent = result.message || 'Error.';
+      document.getElementById('passwordAlert').className = 'alert alert-error';
+    }
+  }
+  
+  function exportData(type) {
+    let data = [];
+    switch(type) {
+      case 'invoices':
+        data = {
+          received: AuthSystem.getUserData('upsen_invoices_received'),
+          issued: AuthSystem.getUserData('upsen_invoices_issued'),
+          exportedAt: new Date().toISOString()
+        };
+        break;
+      case 'expenses':
+        data = { expenses: AuthSystem.getUserData('upsen_expenses'), exportedAt: new Date().toISOString() };
+        break;
+      case 'budgets':
+        data = { budgets: AuthSystem.getUserData('upsen_budgets'), exportedAt: new Date().toISOString() };
+        break;
+    }
+    
+    downloadJSON(data, `upsen_${type}_${new Date().toISOString().split('T')[0]}.json`);
+    showAlert(`${type.charAt(0).toUpperCase() + type.slice(1)} exportado!`, 'success');
+  }
+  
+  function exportAllData() {
+    const data = AuthSystem.exportUserData();
+    downloadJSON(data, `upsen_backup_${new Date().toISOString().split('T')[0]}.json`);
+    showAlert('¡Todos los datos exportados!', 'success');
+  }
+  
+  function downloadJSON(data, filename) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  
+  function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = JSON.parse(e.target.result);
+        // Import logic would go here
+        showAlert('Archivo cargado. La importación requiere implementación adicional.', 'info');
+      } catch (err) {
+        showAlert('Error al leer el archivo.', 'error');
+      }
+    };
+    reader.readAsText(file);
+  }
+  
+  function clearCache() {
+    if (confirm('¿Limpiar caché local? Esto no afectará tus datos.')) {
+      const keys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key.startsWith('upsen_') && !key.startsWith('auth_')) {
+          keys.push(key);
+        }
+      }
+      keys.forEach(k => localStorage.removeItem(k));
+      showAlert('¡Caché limpiado!', 'success');
+      loadSettings();
+    }
+  }
+  
+  function resetAllData() {
+    if (confirm('¿Restablecer todos los datos? Esto eliminará todos los documentos guardados.')) {
+      if (confirm('Esta acción eliminará permanentemente todos tus datos. ¿Continuar?')) {
+        const user = AuthSystem.getCurrentUser();
+        if (user) {
+          const keys = ['upsen_invoices_received', 'upsen_invoices_issued', 'upsen_expenses', 'upsen_budgets'];
+          keys.forEach(key => localStorage.removeItem(`${key}_${user.id}`));
+          showAlert('¡Datos restablecidos!', 'success');
+          loadStats();
+        }
+      }
+    }
+  }
+  
+  function deleteAccount() {
+    if (confirm('¿ELIMINAR TU CUENTA? Esto borrará TODOS tus datos permanentemente.')) {
+      if (confirm('Esta acción NO se puede deshacer. ¿Estás absolutamente seguro?')) {
+        AuthSystem.deleteAccount();
+        window.location.href = '../login.html';
+      }
+    }
+  }
+  
+  function logout() {
+    AuthSystem.logout();
+    window.location.href = '../login.html';
+  }
 </script>
 </body>
 </html>
+

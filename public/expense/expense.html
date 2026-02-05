@@ -554,10 +554,10 @@
         <div class="user-profile">
           <div class="avatar" id="userMenuBtn">JS</div>
           <span>John Smith</span>
-          <div class="dropdown-menu" id="userDropdown">
-            <div class="dropdown-item">Perfil</div>
-            <div class="dropdown-item">Configuración</div>
-            <div class="dropdown-item" id="logoutBtn">Cerrar sesión</div>
+<div class="dropdown-menu" id="userDropdown">
+            <a href="../profile/profile.html" class="dropdown-item" style="text-decoration: none; display: block;">Perfil</a>
+            <a href="../profile/settings.html" class="dropdown-item" style="text-decoration: none; display: block;">Configuración</a>
+            <div class="dropdown-item" id="logoutBtn" style="color: #e74c3c;">Cerrar sesión</div>
           </div>
         </div>
       </div>
@@ -707,31 +707,45 @@
   <script src="../shared/auth-system.js"></script>
   
   <script>
-    // ✅ PRÜFE BEIM LADEN DER SEITE OB BEREITS EINGELOGGT
+// ✅ PRÜFE BEIM LADEN DER SEITE OB BEREITS EINGELOGGT
     window.addEventListener('load', function() {
-      const isLoggedIn = localStorage.getItem('isLoggedIn');
-      
-      if (isLoggedIn === 'true') {
+      if (AuthSystem.isLoggedIn()) {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('appContainer').style.display = 'flex';
+        updateUserInfo();
       } else {
-        document.getElementById('email').value = 'test@example.com';
-        document.getElementById('password').value = '123456';
+        document.getElementById('email').value = '';
+        document.getElementById('password').value = '';
       }
     });
+
+    function updateUserInfo() {
+      const user = AuthSystem.getCurrentUser();
+      if (user) {
+        document.querySelector('.user-profile span').textContent = user.name || user.email;
+        const initials = (user.name || user.email).split('@')[0].substring(0, 2).toUpperCase();
+        document.getElementById('userMenuBtn').textContent = initials;
+      }
+    }
 
     // Login functionality
     document.getElementById('loginBtn').addEventListener('click', function() {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       
-      if (email && password) {
-        localStorage.setItem('isLoggedIn', 'true');
+      const result = AuthSystem.login(email, password);
+      if (result.success) {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('appContainer').style.display = 'flex';
+        updateUserInfo();
       } else {
-        alert('Por favor, introduzca el correo electrónico y la contraseña');
+        alert(result.message || 'Email ou contraseña incorrectos');
       }
+    });
+    
+    // Allow Enter key
+    document.getElementById('password').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') document.getElementById('loginBtn').click();
     });
     
     // User menu functionality
@@ -741,10 +755,12 @@
     
     // Logout functionality
     document.getElementById('logoutBtn').addEventListener('click', function() {
-      localStorage.removeItem('isLoggedIn');
+      AuthSystem.logout();
       document.getElementById('appContainer').style.display = 'none';
       document.getElementById('loginScreen').style.display = 'flex';
       document.getElementById('userDropdown').classList.remove('show');
+      document.getElementById('email').value = '';
+      document.getElementById('password').value = '';
     });
     
     // Close dropdown when clicking outside
