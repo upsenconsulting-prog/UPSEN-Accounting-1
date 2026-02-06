@@ -1,19 +1,18 @@
-// Funções do store.js já estão disponíveis globalmente via window
+// invoice-issued.js - Com dados isolados por usuário
 
 function $(id) {
   return document.getElementById(id);
 }
 
-function badge(status) {
-  const s = (status || "").toLowerCase();
-  if (s === "pagada") return `<span class="status-badge status-paid">Pagada</span>`;
-  if (s === "vencida") return `<span class="status-badge status-overdue">Vencida</span>`;
-  return `<span class="status-badge status-pending">Pendiente</span>`;
-}
-
 function moneyEUR(n) {
   const v = Number(n ?? 0);
   return `€${v.toFixed(2)}`;
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  const [y, m, d] = dateStr.split('-');
+  return `${d}.${m}.${y}`;
 }
 
 // ========== MARK ACTIVE PAGE ==========
@@ -32,91 +31,135 @@ function markActivePage() {
 // Chart instance
 let issuedChart = null;
 
+// ========== DADOS DO USUÁRIO LOGADO ==========
+function getUserInvoicesIssued() {
+  return AuthSystem.getUserData('upsen_invoices_issued') || [];
+}
+
+function saveUserInvoiceIssued(invoice) {
+  const list = getUserInvoicesIssued();
+  list.push({
+    id: AuthSystem.generateId(),
+    invoiceNumber: invoice.invoiceNumber || '',
+    customer: invoice.customer || '',
+    invoiceDate: invoice.invoiceDate || '',
+    dueDate: invoice.dueDate || '',
+    amount: Number(invoice.amount || 0),
+    state: invoice.state || 'Pendiente',
+    description: invoice.description || '',
+    createdAt: new Date().toISOString()
+  });
+  AuthSystem.saveUserData('upsen_invoices_issued', list);
+}
+
+function deleteUserInvoiceIssued(id) {
+  const list = getUserInvoicesIssued().filter(i => i.id !== id);
+  AuthSystem.saveUserData('upsen_invoices_issued', list);
+}
+
+function updateUserInvoiceIssued(id, updates) {
+  const list = getUserInvoicesIssued();
+  const index = list.findIndex(i => i.id === id);
+  if (index !== -1) {
+    list[index] = { ...list[index], ...updates };
+    AuthSystem.saveUserData('upsen_invoices_issued', list);
+  }
+}
+
+// ========== RENDER FUNCTIONS ==========
 function renderSummaryCards() {
-  const list = window.getInvoicesIssued();
-  
-  // Calculate totals
-  let pendingTotal = 0;
-  let overdueTotal = 0;
-  let monthlyCount = 0;
+  const list = getUserInvoicesIssued();
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
   
-  // Monthly count - support both invoiceDate and issueDate (legacy)
+  let pendingTotal = 0;
+  let overdueTotal = 0;
+  let monthlyCount = 0;
+  let totalAmount = 0;
+  
   list.forEach(inv => {
-    const state = (inv.state || "").toLowerCase();
     const amount = Number(inv.amount || 0);
+    totalAmount += amount;
     
-    // Pending total
-    if (state === "pendiente") {
+    if (inv.state === 'Pendiente') {
       pendingTotal += amount;
     }
     
-    // Overdue total
-    if (state === "vencida") {
-      overdueTotal += amount;
+    // Check if overdue
+    if (inv.dueDate && inv.state === 'Pendiente') {
+      const dueDate = new Date(inv.dueDate);
+      if (dueDate < now) {
+        overdueTotal += amount;
+      }
     }
     
-    // Monthly count - support both field names
-    const dateField = inv.invoiceDate || inv.issueDate;
-    if (dateField) {
-      const [year, month] = dateField.split('-').map(Number);
+    // Monthly count
+    if (inv.invoiceDate) {
+      const [year, month] = inv.invoiceDate.split('-').map(Number);
       if (year === currentYear && month - 1 === currentMonth) {
         monthlyCount++;
       }
     }
   });
   
-  // Calculate average
-  const averageAmount = list.length > 0 
-    ? list.reduce((sum, inv) => sum + Number(inv.amount || 0), 0) / list.length 
-    : 0;
+  const avgAmount = list.length > 0 ? totalAmount / list.length : 0;
   
   // Update DOM
-  const pendingEl = $("pendingTotal");
-  if (pendingEl) pendingEl.textContent = moneyEUR(pendingTotal);
-  
-  const overdueEl = $("overdueTotal");
-  if (overdueEl) overdueEl.textContent = moneyEUR(overdueTotal);
-  
-  const monthlyEl = $("monthlyCount");
-  if (monthlyEl) monthlyEl.textContent = `${monthlyCount} facturas`;
-  
-  const averageEl = $("averageAmount");
-  if (averageEl) averageEl.textContent = moneyEUR(averageAmount);
+  $('pendingTotal').textContent = moneyEUR(pendingTotal);
+  $('overdueTotal').textContent = moneyEUR(overdueTotal);
+  $('monthlyCount').textContent = `${monthlyCount} facturas`;
+  $('averageAmount').textContent = moneyEUR(avgAmount);
 }
 
 function renderChart() {
   const chartContainer = document.getElementById('issuedChartCanvas');
   if (!chartContainer) return;
 
-  const list = window.getInvoicesIssued();
+  const list = getUserInvoicesIssued();
   
-  // Calculate totals by state
-  const paid = list.filter(inv => (inv.state || "").toLowerCase() === "pagada")
-    .reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
-  const pending = list.filter(inv => (inv.state || "").toLowerCase() === "pendiente")
-    .reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
-  const overdue = list.filter(inv => (inv.state || "").toLowerCase() === "vencida")
-    .reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
+  // Calculate totals by month (last 6 months)
+  const monthlyData = {};
+  const now = new Date();
+  
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    monthlyData[key] = 0;
+  }
+  
+  list.forEach(inv => {
+    if (inv.invoiceDate) {
+      const monthKey = inv.invoiceDate.substring(0, 7);
+      if (monthlyData.hasOwnProperty(monthKey)) {
+        monthlyData[monthKey] += Number(inv.amount || 0);
+      }
+    }
+  });
+
+  const labels = Object.keys(monthlyData).map(k => {
+    const [y, m] = k.split('-');
+    return `${m}/${y.slice(2)}`;
+  });
+  const data = Object.values(monthlyData);
 
   const ctx = chartContainer.getContext('2d');
 
-  // Destroy existing chart
   if (issuedChart) {
     issuedChart.destroy();
   }
 
-  // Create new chart
   issuedChart = new Chart(ctx, {
-    type: 'doughnut',
+    type: 'line',
     data: {
-      labels: ['Pagadas', 'Pendientes', 'Vencidas'],
+      labels: labels,
       datasets: [{
-        data: [paid, pending, overdue],
-        backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
-        borderWidth: 0
+        label: 'Ingresos',
+        data: data,
+        borderColor: '#2a4d9c',
+        backgroundColor: 'rgba(42, 77, 156, 0.1)',
+        fill: true,
+        tension: 0.4
       }]
     },
     options: {
@@ -124,25 +167,35 @@ function renderChart() {
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          position: 'bottom'
+          display: false
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return '€' + value;
+            }
+          }
         }
       }
     }
   });
 }
 
-function renderIssued() {
-  const tbody = $("invoiceTbody");
+function renderInvoices() {
+  const tbody = $('invoiceTbody');
   if (!tbody) return;
 
-  const list = window.getInvoicesIssued();
-  tbody.innerHTML = "";
+  const list = getUserInvoicesIssued();
+  tbody.innerHTML = '';
 
   if (!list.length) {
     tbody.innerHTML = `
       <tr>
         <td colspan="7" class="text-center text-muted">
-          No hay facturas emitidas registradas todavía.
+          No hay facturas emitidas todavía.
         </td>
       </tr>
     `;
@@ -150,296 +203,93 @@ function renderIssued() {
   }
 
   list.forEach((inv) => {
-    const tr = document.createElement("tr");
+    let statusClass = 'status-pending';
+    let statusText = 'Pendiente';
+    
+    if (inv.state === 'Pagada') {
+      statusClass = 'status-paid';
+      statusText = 'Pagada';
+    } else if (inv.state === 'Vencida') {
+      statusClass = 'status-overdue';
+      statusText = 'Vencida';
+    }
+    
+    const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${inv.invoiceNumber || "-"}</td>
-      <td>${inv.customer || "-"}</td>
-      <td>${inv.invoiceDate || inv.issueDate || "-"}</td>
-      <td>${inv.dueDate || "-"}</td>
+      <td>${inv.invoiceNumber || '-'}</td>
+      <td>${inv.customer || '-'}</td>
+      <td>${formatDate(inv.invoiceDate)}</td>
+      <td>${formatDate(inv.dueDate)}</td>
       <td>${moneyEUR(inv.amount)}</td>
-      <td>${badge(inv.state)}</td>
+      <td><span class="status-badge ${statusClass}">${statusText}</span></td>
       <td>
-        <button class="btn btn-sm btn-outline-danger" data-del="${inv.id}">
-          Eliminar
-        </button>
+        <button class="btn btn-sm btn-outline-primary" data-view="${inv.id}">Ver</button>
+        <button class="btn btn-sm btn-outline-success" data-paid="${inv.id}" title="Marcar como pagada">✓</button>
+        <button class="btn btn-sm btn-outline-danger" data-del="${inv.id}" title="Eliminar">X</button>
       </td>
     `;
     tbody.appendChild(tr);
   });
 
-  tbody.querySelectorAll("[data-del]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      window.deleteInvoiceIssued(btn.getAttribute("data-del"));
-      renderIssued();
-      renderChart();
+  tbody.querySelectorAll('[data-del]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (confirm('¿Eliminar factura?')) {
+        deleteUserInvoiceIssued(btn.getAttribute('data-del'));
+        renderInvoices();
+        renderChart();
+        renderSummaryCards();
+      }
+    });
+  });
+
+  tbody.querySelectorAll('[data-paid]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      updateUserInvoiceIssued(btn.getAttribute('data-paid'), { state: 'Pagada' });
+      renderInvoices();
       renderSummaryCards();
     });
   });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  // Mark current page as active
+
+document.addEventListener('DOMContentLoaded', () => {
   markActivePage();
   
-  const modalEl = $("modalNewInvoiceIssued");
-  
-  // Abrir modal - usando classes .show
-  const newBtn = $("newInvoiceBtn");
-  if (newBtn) {
-    newBtn.addEventListener("click", () => {
-      if (modalEl) {
-        modalEl.classList.add("show");
-      }
-    });
-  }
-
-  // Fechar modal com botão X
-  const closeBtn = $("closeInvoiceIssuedModal");
-  if (closeBtn) {
-    closeBtn.addEventListener("click", () => {
-      if (modalEl) {
-        modalEl.classList.remove("show");
-      }
-    });
-  }
-
-  // Fechar modal com Cancelar
-  const cancelBtn = $("cancelInvoiceIssuedBtn");
-  if (cancelBtn) {
-    cancelBtn.addEventListener("click", () => {
-      if (modalEl) {
-        modalEl.classList.remove("show");
-      }
-    });
-  }
-
-  // Fechar modal ao clicar fora
-  window.addEventListener("click", (e) => {
-    if (e.target === modalEl) {
-      modalEl.classList.remove("show");
-    }
-  });
-
   // Guardar nova factura
-  const saveBtn = $("saveInvoiceIssuedBtn");
+  const saveBtn = $('saveInvoiceIssuedBtn');
   if (saveBtn) {
-    saveBtn.addEventListener("click", () => {
-      const form = $("formNewInvoiceIssued");
+    saveBtn.addEventListener('click', () => {
+      const form = $('formNewInvoiceIssued');
       if (!form) return;
 
       const fd = new FormData(form);
-      const invoiceNumber = String(fd.get("invoiceNumber") || "");
-      const customer = String(fd.get("customer") || "");
-      const invoiceDate = String(fd.get("invoiceDate") || "");
-      const dueDate = String(fd.get("dueDate") || "");
-      const amount = String(fd.get("amount") || "");
-      const state = String(fd.get("state") || "Pendiente");
+      const data = {
+        invoiceNumber: String(fd.get('invoiceNumber') || ''),
+        customer: String(fd.get('customer') || ''),
+        invoiceDate: String(fd.get('invoiceDate') || ''),
+        dueDate: String(fd.get('dueDate') || ''),
+        amount: String(fd.get('amount') || ''),
+        state: String(fd.get('state') || 'Pendiente')
+      };
 
-      if (!invoiceNumber || !customer || !invoiceDate || !dueDate || !amount) {
-        alert("Completa todos los campos obligatorios.");
+      if (!data.invoiceNumber || !data.customer || !data.invoiceDate || !data.dueDate || !data.amount) {
+        alert('Completa todos los campos.');
         return;
       }
 
-      window.addInvoiceIssued({ invoiceNumber, customer, invoiceDate, dueDate, amount, state });
+      saveUserInvoiceIssued(data);
 
-      if (modalEl) {
-        modalEl.classList.remove("show");
-      }
-
+      const modal = $('modalNewInvoiceIssued');
+      if (modal) modal.classList.remove('show');
+      
       form.reset();
-      renderIssued();
+      renderInvoices();
       renderChart();
       renderSummaryCards();
     });
   }
 
-  renderIssued();
+  renderInvoices();
   renderChart();
   renderSummaryCards();
 });
-
-// Export functions
-function exportToCSV(invoices) {
-  const headers = ['Número', 'Cliente', 'Fecha', 'Vence', 'Importe', 'Estado'];
-  const rows = invoices.map(inv => [
-    inv.invoiceNumber || '',
-    inv.customer || '',
-    inv.invoiceDate || inv.issueDate || '',
-    inv.dueDate || '',
-    Number(inv.amount || 0).toFixed(2),
-    inv.state || ''
-  ]);
-  
-  const csvContent = [
-    headers.join(','),
-    ...rows.map(row => row.join(','))
-  ].join('\n');
-  
-  downloadFile(csvContent, 'facturas_emitidas.csv', 'text/csv');
-}
-
-function exportToExcel(invoices) {
-  // Create a simple XML-based Excel file
-  const headers = ['Número', 'Cliente', 'Fecha', 'Vence', 'Importe', 'Estado'];
-  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-  xml += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"\n';
-  xml += ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n';
-  xml += '<Worksheet ss:Name="Facturas">\n';
-  xml += '<Table>\n';
-  
-  // Header row
-  xml += '<Row>\n';
-  headers.forEach(h => {
-    xml += `<Cell><Data ss:Type="String">${h}</Data></Cell>\n`;
-  });
-  xml += '</Row>\n';
-  
-  // Data rows
-  invoices.forEach(inv => {
-    xml += '<Row>\n';
-    xml += `<Cell><Data ss:Type="String">${inv.invoiceNumber || ''}</Data></Cell>\n`;
-    xml += `<Cell><Data ss:Type="String">${inv.customer || ''}</Data></Cell>\n`;
-    xml += `<Cell><Data ss:Type="String">${inv.invoiceDate || inv.issueDate || ''}</Data></Cell>\n`;
-    xml += `<Cell><Data ss:Type="String">${inv.dueDate || ''}</Data></Cell>\n`;
-    xml += `<Cell><Data ss:Type="Number">${Number(inv.amount || 0).toFixed(2)}</Data></Cell>\n`;
-    xml += `<Cell><Data ss:Type="String">${inv.state || ''}</Data></Cell>\n`;
-    xml += '</Row>\n';
-  });
-  
-  xml += '</Table>\n</Worksheet>\n</Workbook>';
-  
-  downloadFile(xml, 'facturas_emitidas.xls', 'application/vnd.ms-excel');
-}
-
-function exportToPDF(invoices) {
-  const rows = invoices.map(inv => `
-    <tr>
-      <td style="border:1px solid #ddd;padding:8px;">${inv.invoiceNumber || '-'}</td>
-      <td style="border:1px solid #ddd;padding:8px;">${inv.customer || '-'}</td>
-      <td style="border:1px solid #ddd;padding:8px;">${inv.invoiceDate || inv.issueDate || '-'}</td>
-      <td style="border:1px solid #ddd;padding:8px;">${inv.dueDate || '-'}</td>
-      <td style="border:1px solid #ddd;padding:8px;text-align:right;">€${Number(inv.amount || 0).toFixed(2)}</td>
-      <td style="border:1px solid #ddd;padding:8px;">${inv.state || '-'}</td>
-    </tr>
-  `).join('');
-  
-  const total = invoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
-  
-  const win = window.open('', '_blank');
-  win.document.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Facturas Emitidas</title>
-      <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        h1 { color: #2a4d9c; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { background: #2a4d9c; color: white; padding: 10px; text-align: left; }
-        .total { margin-top: 20px; font-size: 18px; font-weight: bold; }
-      </style>
-    </head>
-    <body>
-      <h1>Facturas Emitidas</h1>
-      <p>Fecha de exportación: ${new Date().toLocaleDateString()}</p>
-      <p>Total de facturas: ${invoices.length}</p>
-      
-      <table>
-        <thead>
-          <tr>
-            <th>Número</th>
-            <th>Cliente</th>
-            <th>Fecha</th>
-            <th>Vence</th>
-            <th style="text-align:right;">Importe</th>
-            <th>Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows || '<tr><td colspan="6" style="padding:20px;text-align:center;">Sin datos</td></tr>'}
-        </tbody>
-      </table>
-      
-      <p class="total">Total: €${total.toFixed(2)}</p>
-      
-      <script>
-        window.onload = function() { window.print(); };
-      </script>
-    </body>
-    </html>
-  `);
-  win.document.close();
-}
-
-function downloadFile(content, filename, mimeType) {
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-function getFilteredInvoices() {
-  const modalExport = document.getElementById('modalExport');
-  const period = document.getElementById('exportPeriod')?.value || 'all';
-  const state = document.getElementById('exportState')?.value || 'all';
-  
-  let list = window.getInvoicesIssued();
-  
-  // Filter by state
-  if (state !== 'all') {
-    list = list.filter(inv => (inv.state || '').toLowerCase() === state.toLowerCase());
-  }
-  
-  // Filter by period
-  const now = new Date();
-  if (period !== 'all') {
-    list = list.filter(inv => {
-      const dateField = inv.invoiceDate || inv.issueDate;
-      if (!dateField) return false;
-      const invDate = new Date(dateField);
-      const diffTime = Math.abs(now - invDate);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (period === 'month') return diffDays <= 30;
-      if (period === 'quarter') return diffDays <= 90;
-      if (period === 'year') return diffDays <= 365;
-      return true;
-    });
-  }
-  
-  return list;
-}
-
-// Handle export confirmation
-document.getElementById('confirmExportBtn')?.addEventListener('click', function() {
-  const format = document.getElementById('exportFormat')?.value;
-  const invoices = getFilteredInvoices();
-  
-  if (invoices.length === 0) {
-    alert('No hay facturas para exportar con los filtros seleccionados.');
-    return;
-  }
-  
-  switch (format) {
-    case 'csv':
-      exportToCSV(invoices);
-      break;
-    case 'excel':
-      exportToExcel(invoices);
-      break;
-    case 'pdf':
-      exportToPDF(invoices);
-      break;
-  }
-  
-  const modalExport = document.getElementById('modalExport');
-  if (modalExport) {
-    modalExport.classList.remove('show');
-  }
-});
-

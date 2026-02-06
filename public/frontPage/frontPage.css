@@ -5,9 +5,9 @@ body {
   height: 100vh;
 }
 
-/* Sidebar */
+/* Sidebar - reduzido */
 .sidebar {
-  width: 250px;
+  width: 220px;
   background: #2c3e50;
   color: white;
   display: flex;
@@ -19,10 +19,10 @@ body {
   overflow-y: auto;
 }
 
-/* Sidebar-Header */
+/* Sidebar-Header - reduzido */
 .sidebar-header {
-  padding: 20px;
-  font-size: 1.4em;
+  padding: 15px;
+  font-size: 1.2em;
   font-weight: bold;
   background: #1a252f;
   text-align: center;
@@ -41,8 +41,8 @@ body {
   background: #2c3e50;
   color: #ecf0f1;
   cursor: pointer;
-  padding: 15px 20px;
-  font-size: 1.1em;
+  padding: 12px 15px;
+  font-size: 1em;
   font-weight: bold;
   transition: background 0.3s;
 }
@@ -56,44 +56,45 @@ body {
   overflow: hidden;
   transition: max-height 0.4s ease;
   background: #34495e;
-  padding: 0 20px;
+  padding: 0 15px;
 }
 
 .accordion-content.open {
   max-height: 200px;
   overflow-y: auto;
-  padding: 10px 20px;
+  padding: 8px 15px;
 }
 
 .accordion-content ul {
-  margin: 10px 0;
+  margin: 8px 0;
   padding: 0;
   list-style: none;
 }
 
 .accordion-content li {
-  padding: 8px 0;
-  font-size: 0.95em;
+  padding: 6px 0;
+  font-size: 0.9em;
 }
 
-/* Werbung Bereich */
+/* Werbung Bereich - reduzido */
 .ad-container {
-  padding: 15px;
+  padding: 12px;
   text-align: center;
   border-top: 2px solid #34495e;
 }
 
 .ad-image {
   width: 100%;
-  max-width: 200px;
+  max-width: 180px;
   height: auto;
   border-radius: 6px;
 }
 
-/* Content rechts */
+/* Content rechts - reduzido */
 .content {
-  margin-left: 250px;
-  padding: 20px;
+  margin-left: 220px;
+  padding: 15px;
   flex-grow: 1;
   background: #ecf0f1;
 }
+

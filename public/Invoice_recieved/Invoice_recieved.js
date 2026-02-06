@@ -1,9 +1,18 @@
-// Funções do store.js já estão disponíveis globalmente via window
+// Invoice_recieved.js - Com dados isolados por usuário
 
 function $(id) {
-  const el = document.getElementById(id);
-  if (!el) console.warn(`[Invoice_recieved] Elemento não encontrado: #${id}`);
-  return el;
+  return document.getElementById(id);
+}
+
+function moneyEUR(n) {
+  const v = Number(n ?? 0);
+  return `€${v.toFixed(2)}`;
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  const [y, m, d] = dateStr.split('-');
+  return `${d}.${m}.${y}`;
 }
 
 // ========== MARK ACTIVE PAGE ==========
@@ -19,334 +28,121 @@ function markActivePage() {
   });
 }
 
-// ---------- Period helper ----------
-function getQuarterPeriod(dateStr) {
-  if (!dateStr || !dateStr.includes("-")) return "";
-  const [y, m] = dateStr.split("-").map(Number);
-  if (!y || !m) return "";
-  const q = Math.ceil(m / 3);
-  return `${y}-Q${q}`;
+// Chart instance
+let receivedChart = null;
+
+// ========== DADOS DO USUÁRIO LOGADO ==========
+function getUserInvoicesReceived() {
+  return AuthSystem.getUserData('upsen_invoices_received') || [];
 }
 
-function parseDate(dateStr) {
-  if (!dateStr) return null;
-  const d = new Date(dateStr + "T00:00:00");
-  return isNaN(d.getTime()) ? null : d;
+function saveUserInvoiceReceived(invoice) {
+  const list = getUserInvoicesReceived();
+  list.push({
+    id: AuthSystem.generateId(),
+    invoiceNumber: invoice.invoiceNumber || '',
+    supplier: invoice.supplier || '',
+    invoiceDate: invoice.invoiceDate || '',
+    amount: Number(invoice.amount || 0),
+    state: invoice.state || 'Pendiente',
+    description: invoice.description || '',
+    createdAt: new Date().toISOString()
+  });
+  AuthSystem.saveUserData('upsen_invoices_received', list);
 }
 
-// ---------- Dynamic Period Selector ----------
-function populatePeriodSelector() {
-  const select = $("periodSelect");
-  if (!select) return;
-  
-  const invoices = window.getInvoicesReceived();
-  const periods = new Set();
-  
-  // Collect all periods from invoices
-  invoices.forEach(inv => {
-    if (inv.period) {
-      periods.add(inv.period);
-    } else if (inv.invoiceDate) {
-      periods.add(getQuarterPeriod(inv.invoiceDate));
-    }
-  });
-  
-  // Always add current and previous year quarters
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  for (let y = currentYear - 1; y <= currentYear + 1; y++) {
-    for (let q = 1; q <= 4; q++) {
-      periods.add(`${y}-Q${q}`);
-    }
-  }
-  
-  // Sort periods (descending - most recent first)
-  const sortedPeriods = Array.from(periods).sort((a, b) => {
-    const [yearA, qA] = a.split('-Q').map(Number);
-    const [yearB, qB] = b.split('-Q').map(Number);
-    if (yearA !== yearB) return yearB - yearA;
-    return qB - qA;
-  });
-  
-  // Save current selection
-  const currentSelection = select.value;
-  
-  // Rebuild options
-  select.innerHTML = '<option value="">Todos los períodos</option>';
-  sortedPeriods.forEach(period => {
-    const option = document.createElement("option");
-    option.value = period;
-    option.textContent = period;
-    select.appendChild(option);
-  });
-  
-  // Restore selection if still exists
-  if (currentSelection && sortedPeriods.includes(currentSelection)) {
-    select.value = currentSelection;
-  } else {
-    // Default to current quarter
-    const currentPeriod = getQuarterPeriod(now.toISOString().slice(0, 10));
-    if (sortedPeriods.includes(currentPeriod)) {
-      select.value = currentPeriod;
-    }
+function deleteUserInvoiceReceived(id) {
+  const list = getUserInvoicesReceived().filter(i => i.id !== id);
+  AuthSystem.saveUserData('upsen_invoices_received', list);
+}
+
+function updateUserInvoiceReceived(id, updates) {
+  const list = getUserInvoicesReceived();
+  const index = list.findIndex(i => i.id === id);
+  if (index !== -1) {
+    list[index] = { ...list[index], ...updates };
+    AuthSystem.saveUserData('upsen_invoices_received', list);
   }
 }
 
-// ---------- Filters ----------
-function getFilters() {
-  const periodSelect = $("periodSelect");
-  const period = periodSelect?.value?.trim() || "";
-
-  const form = $("filterForm");
-  const state = form?.elements?.["state"]?.value?.trim() || "";
-  const dateFrom = form?.elements?.["dateFrom"]?.value?.trim() || "";
-  const dateTo = form?.elements?.["dateTo"]?.value?.trim() || "";
-
-  return { period, state, dateFrom, dateTo };
-}
-
-function applyAllFilters(invoices) {
-  const { period, state, dateFrom, dateTo } = getFilters();
-  let list = [...invoices];
-
-  // Period filter
-  if (period) {
-    list = list.filter(inv => {
-      const invPeriod = inv.period || getQuarterPeriod(inv.invoiceDate);
-      return invPeriod === period;
-    });
-  }
-
-  // state
-  if (state) list = list.filter(inv => (inv.state || "").toLowerCase() === state.toLowerCase());
-
-  // date range
-  const fromD = parseDate(dateFrom);
-  const toD = parseDate(dateTo);
-
-  if (fromD) list = list.filter(inv => {
-    const d = parseDate(inv.invoiceDate);
-    return d ? d >= fromD : false;
-  });
-
-  if (toD) list = list.filter(inv => {
-    const d = parseDate(inv.invoiceDate);
-    return d ? d <= toD : false;
-  });
-
-  return list;
-}
-
-// ---------- Render ----------
-function renderTable() {
-  const tbody = $("invoiceTbody");
-  if (!tbody) return;
-
-  const all = window.getInvoicesReceived().map(inv => ({
-    ...inv,
-    period: inv.period || getQuarterPeriod(inv.invoiceDate)
-  }));
-
-  const invoices = applyAllFilters(all);
-
-  tbody.innerHTML = "";
-
-  if (!invoices.length) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="6" class="text-center text-muted">
-          No hay facturas para el período/filtro seleccionado.
-        </td>
-      </tr>`;
-    return;
-  }
-
-  invoices.forEach(inv => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${inv.invoiceNumber || "-"}</td>
-      <td>${inv.state || "-"}</td>
-      <td>${inv.invoiceDate || "-"}</td>
-      <td>${inv.supplier || "-"}</td>
-      <td>${Number(inv.amount ?? 0).toFixed(2)} €</td>
-      <td class="text-center">
-        <button class="btn btn-sm btn-outline-danger" data-del="${inv.id}">Eliminar</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-
-  tbody.querySelectorAll("[data-del]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      window.deleteInvoiceReceived(btn.getAttribute("data-del"));
-      renderTable();
-      renderChart();
-      renderSummaryCards();
-      populatePeriodSelector();
-    });
-  });
-}
-
-// ---------- PDF (print-to-PDF MVP) ----------
-function downloadPDF() {
-  const all = window.getInvoicesReceived().map(inv => ({
-    ...inv,
-    period: inv.period || getQuarterPeriod(inv.invoiceDate)
-  }));
-  const invoices = applyAllFilters(all);
-
-  const rows = invoices.map(inv => `
-    <tr>
-      <td>${inv.invoiceNumber || "-"}</td>
-      <td>${inv.state || "-"}</td>
-      <td>${inv.invoiceDate || "-"}</td>
-      <td>${inv.supplier || "-"}</td>
-      <td style="text-align:right">${Number(inv.amount ?? 0).toFixed(2)} €</td>
-    </tr>
-  `).join("");
-
-  const period = $("periodSelect")?.value || "-";
-
-  const win = window.open("", "_blank");
-  win.document.write(`
-    <html>
-    <head>
-      <title>Facturas recibidas - ${period}</title>
-      <style>
-        body{font-family:Arial;padding:24px}
-        h2{margin:0 0 10px}
-        table{width:100%;border-collapse:collapse;margin-top:12px}
-        th,td{border:1px solid #ddd;padding:10px;font-size:13px}
-        th{background:#f4f6fb;text-align:left}
-      </style>
-    </head>
-    <body>
-      <h2>Registro de facturas recibidas</h2>
-      <div>Período: <b>${period}</b> · Total: <b>${invoices.length}</b></div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Nº</th><th>Estado</th><th>Fecha</th><th>Proveedor</th><th style="text-align:right">Importe</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows || `<tr><td colspan="5">Sin datos</td></tr>`}
-        </tbody>
-      </table>
-
-      <script>
-        window.onload = () => window.print();
-      </script>
-    </body>
-    </html>
-  `);
-  win.document.close();
-}
-
-// ---------- Summary Cards ----------
+// ========== RENDER FUNCTIONS ==========
 function renderSummaryCards() {
-  const all = window.getInvoicesReceived().map(inv => ({
-    ...inv,
-    period: inv.period || getQuarterPeriod(inv.invoiceDate)
-  }));
-  const invoices = applyAllFilters(all);
-  
-  // Calculate totals
-  let pendingTotal = 0;
-  let overdueTotal = 0;
+  const list = getUserInvoicesReceived();
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
-  let monthlyCount = 0;
   
-  invoices.forEach(inv => {
-    const state = (inv.state || "").toLowerCase();
+  let pendingTotal = 0;
+  let paidTotal = 0;
+  let monthlyTotal = 0;
+  let overdueCount = 0;
+  
+  list.forEach(inv => {
     const amount = Number(inv.amount || 0);
     
-    // Pending total
-    if (state === "pendiente") {
+    if (inv.state === 'Pendiente') {
       pendingTotal += amount;
+      
+      // Check if overdue (assume due date is 30 days after invoice date)
+      if (inv.invoiceDate) {
+        const invoiceDate = new Date(inv.invoiceDate);
+        const dueDate = new Date(invoiceDate);
+        dueDate.setDate(dueDate.getDate() + 30);
+        if (dueDate < now) {
+          overdueCount++;
+        }
+      }
+    } else if (inv.state === 'Pagada') {
+      paidTotal += amount;
     }
     
-    // Overdue total
-    if (state === "vencida") {
-      overdueTotal += amount;
-    }
-    
-    // Monthly count
+    // Monthly total
     if (inv.invoiceDate) {
       const [year, month] = inv.invoiceDate.split('-').map(Number);
       if (year === currentYear && month - 1 === currentMonth) {
-        monthlyCount++;
+        monthlyTotal += amount;
       }
     }
   });
   
-  // Calculate average
-  const averageAmount = invoices.length > 0 
-    ? invoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0) / invoices.length 
-    : 0;
-  
   // Update DOM
-  const pendingEl = $("pendingTotal");
-  if (pendingEl) pendingEl.textContent = `€${pendingTotal.toFixed(2)}`;
-  
-  const overdueEl = $("overdueTotal");
-  if (overdueEl) overdueEl.textContent = `€${overdueTotal.toFixed(2)}`;
-  
-  const monthlyEl = $("monthlyCount");
-  if (monthlyEl) monthlyEl.textContent = `${monthlyCount} facturas`;
-  
-  const averageEl = $("averageAmount");
-  if (averageEl) averageEl.textContent = `€${averageAmount.toFixed(2)}`;
+  $('pendingTotal').textContent = moneyEUR(pendingTotal);
+  $('paidTotal').textContent = moneyEUR(paidTotal);
+  $('monthlyTotal').textContent = moneyEUR(monthlyTotal);
+  $('overdueCount').textContent = overdueCount;
 }
-
-// ---------- Chart ----------
-let receivedChart = null;
 
 function renderChart() {
   const chartContainer = document.getElementById('receivedChartCanvas');
   if (!chartContainer) return;
 
-  const all = window.getInvoicesReceived().map(inv => ({
-    ...inv,
-    period: inv.period || getQuarterPeriod(inv.invoiceDate)
-  }));
-  const invoices = applyAllFilters(all);
+  const list = getUserInvoicesReceived();
   
-  // Calculate totals by supplier (top 5)
+  // Calculate totals by supplier
   const supplierTotals = {};
-  invoices.forEach(inv => {
-    const supplier = inv.supplier || "Sin proveedor";
+  list.forEach(inv => {
+    const supplier = inv.supplier || 'Sin proveedor';
     supplierTotals[supplier] = (supplierTotals[supplier] || 0) + Number(inv.amount || 0);
   });
 
-  // Sort by amount and get top 5
-  const sortedSuppliers = Object.entries(supplierTotals)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
-
-  const labels = sortedSuppliers.length ? sortedSuppliers.map(([name]) => name) : ['Sin datos'];
-  const data = sortedSuppliers.length ? sortedSuppliers.map(([, amount]) => amount) : [0];
+  const labels = Object.keys(supplierTotals);
+  const data = Object.values(supplierTotals);
 
   const ctx = chartContainer.getContext('2d');
 
-  // Destroy existing chart
   if (receivedChart) {
     receivedChart.destroy();
   }
 
-  // Create new chart
   receivedChart = new Chart(ctx, {
-    type: 'bar',
+    type: 'doughnut',
     data: {
-      labels: labels,
+      labels: labels.length ? labels : ['Sin datos'],
       datasets: [{
-        label: 'Gastos por proveedor',
-        data: data,
+        data: data.length ? data : [1],
         backgroundColor: [
-          '#2a4d9c', '#3a6cd6', '#1abc9c', '#e74c3c', '#f39c12'
+          '#2a4d9c', '#3a6cd6', '#1abc9c', '#e74c3c', '#f39c12',
+          '#9b59b6', '#3498db', '#1abc9c', '#e67e22', '#34495e'
         ],
         borderWidth: 0
       }]
@@ -356,137 +152,117 @@ function renderChart() {
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          display: false
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: {
-            callback: function(value) {
-              return '€' + value;
-            }
-          }
+          position: 'right'
         }
       }
     }
   });
 }
 
-// ---------- OCR (mock) ----------
-function saveOCRMock() {
-  const form = $("formNewInvoiceOCR");
-  if (!form) return;
+function renderInvoices() {
+  const tbody = $('invoiceTBody');
+  if (!tbody) return;
 
-  const fileInput = form.elements["ocrFile"];
-  const file = fileInput?.files?.[0];
+  const list = getUserInvoicesReceived();
+  tbody.innerHTML = '';
 
-  if (!file) {
-    alert("Selecciona un archivo primero.");
+  if (!list.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="text-center text-muted">
+          No hay facturas recibidas todavía.
+        </td>
+      </tr>
+    `;
     return;
   }
 
-  const today = new Date().toISOString().slice(0, 10);
-
-  window.addInvoiceReceived({
-    invoiceNumber: "OCR-" + Date.now(),
-    invoiceDate: today,
-    supplier: file.name.replace(/\.[^/.]+$/, ""),
-    amount: 0,
-    state: "Pendiente",
-    period: getQuarterPeriod(today)
+  list.forEach((inv) => {
+    let statusClass = 'status-pending';
+    let statusText = 'Pendiente';
+    
+    if (inv.state === 'Pagada') {
+      statusClass = 'status-paid';
+      statusText = 'Pagada';
+    } else if (inv.state === 'Vencida') {
+      statusClass = 'status-overdue';
+      statusText = 'Vencida';
+    }
+    
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${inv.invoiceNumber || '-'}</td>
+      <td>${inv.supplier || '-'}</td>
+      <td>${formatDate(inv.invoiceDate)}</td>
+      <td>${moneyEUR(inv.amount)}</td>
+      <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+      <td>
+        <button class="btn btn-sm btn-outline-primary" data-view="${inv.id}">Ver</button>
+        <button class="btn btn-sm btn-outline-success" data-paid="${inv.id}" title="Marcar como pagada">✓</button>
+        <button class="btn btn-sm btn-outline-danger" data-del="${inv.id}" title="Eliminar">X</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
   });
 
-  form.reset();
-  
-  // Fechar modal - usar classe .show
-  const modalEl = document.getElementById("modalNewInvoiceOCR");
-  if (modalEl) {
-    modalEl.classList.remove("show");
-  }
-  
-  renderTable();
-  renderChart();
-  renderSummaryCards();
-  populatePeriodSelector();
+  tbody.querySelectorAll('[data-del]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (confirm('¿Eliminar factura?')) {
+        deleteUserInvoiceReceived(btn.getAttribute('data-del'));
+        renderInvoices();
+        renderChart();
+        renderSummaryCards();
+      }
+    });
+  });
+
+  tbody.querySelectorAll('[data-paid]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      updateUserInvoiceReceived(btn.getAttribute('data-paid'), { state: 'Pagada' });
+      renderInvoices();
+      renderSummaryCards();
+    });
+  });
 }
 
-// ---------- Init ----------
-document.addEventListener("DOMContentLoaded", () => {
-  // Mark current page as active
+
+document.addEventListener('DOMContentLoaded', () => {
   markActivePage();
   
-  // Populate period selector dynamically
-  populatePeriodSelector();
-  
-  // botão aplicar filtros
-  const applyFilter = document.getElementById("applyFilter");
-  if (applyFilter) {
-    applyFilter.addEventListener("click", function() {
-      renderTable();
+  // Guardar nova factura
+  const saveBtn = $('saveInvoiceReceivedBtn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+      const form = $('formNewInvoiceReceived');
+      if (!form) return;
+
+      const fd = new FormData(form);
+      const data = {
+        invoiceNumber: String(fd.get('invoiceNumber') || ''),
+        supplier: String(fd.get('supplier') || ''),
+        invoiceDate: String(fd.get('invoiceDate') || ''),
+        amount: String(fd.get('amount') || ''),
+        state: String(fd.get('state') || 'Pendiente')
+      };
+
+      if (!data.invoiceNumber || !data.supplier || !data.invoiceDate || !data.amount) {
+        alert('Completa todos los campos.');
+        return;
+      }
+
+      saveUserInvoiceReceived(data);
+
+      const modal = $('modalNewInvoiceReceived');
+      if (modal) modal.classList.remove('show');
+      
+      form.reset();
+      renderInvoices();
       renderChart();
       renderSummaryCards();
     });
   }
 
-  // período - AGORA FILTRA REALMENTE
-  $("periodSelect")?.addEventListener("change", function() {
-    renderTable();
-    renderChart();
-    renderSummaryCards();
-  });
-
-  // salvar nova fatura
-  $("saveInvoiceBtn")?.addEventListener("click", () => {
-    const form = $("formNewInvoice");
-    if (!form) return;
-
-    const fd = new FormData(form);
-    const invoiceNumber = (fd.get("invoiceNumber") || "").toString().trim();
-    const invoiceDate = (fd.get("invoiceDate") || "").toString().trim();
-    const supplier = (fd.get("supplier") || "").toString().trim();
-    const amountStr = (fd.get("amount") || "").toString().trim();
-    const state = (fd.get("state") || "Pendiente").toString().trim();
-
-    if (!invoiceNumber || !invoiceDate || !supplier || !amountStr) {
-      alert("Por favor completa: número, fecha, proveedor y importe.");
-      return;
-    }
-
-    window.addInvoiceReceived({
-      invoiceNumber,
-      invoiceDate,
-      supplier,
-      amount: Number(amountStr),
-      state: state,
-      period: getQuarterPeriod(invoiceDate)
-    });
-
-    form.reset();
-    
-    // Fechar modal - usar classe .show
-    const modalEl = document.getElementById("modalNewInvoice");
-    if (modalEl) {
-      modalEl.classList.remove("show");
-    }
-    
-    renderTable();
-    renderChart();
-    renderSummaryCards();
-    populatePeriodSelector();
-  });
-
-  // OCR
-  $("saveOCRBtn")?.addEventListener("click", function() {
-    saveOCRMock();
-  });
-
-  // PDF
-  $("btnDownload")?.addEventListener("click", downloadPDF);
-
-  renderTable();
+  renderInvoices();
   renderChart();
   renderSummaryCards();
-  populatePeriodSelector();
 });
-

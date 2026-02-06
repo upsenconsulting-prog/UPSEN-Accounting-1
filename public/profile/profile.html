@@ -6,50 +6,51 @@
   <title>Perfil - UPSEN Accounting</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
     * { box-sizing: border-box; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #eef1f7; min-height: 100vh; }
     
-    /* Sidebar */
-    .sidebar { width: 250px; background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%); color: white; min-height: 100vh; position: fixed; }
-    .sidebar-header { padding: 25px 20px; font-size: 1.5em; font-weight: bold; background: rgba(0,0,0,0.2); text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    /* Sidebar - reduzido */
+    .sidebar { width: 220px; background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%); color: white; min-height: 100vh; position: fixed; }
+    .sidebar-header { padding: 18px 15px; font-size: 1.2em; font-weight: bold; background: rgba(0,0,0,0.2); text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .sidebar-menu { list-style: none; padding: 0; margin: 0; }
-    .sidebar-menu li { padding: 15px 20px; cursor: pointer; transition: all 0.3s; border-left: 4px solid transparent; }
+    .sidebar-menu li { padding: 10px 15px; cursor: pointer; transition: all 0.3s; border-left: 4px solid transparent; }
     .sidebar-menu li:hover { background: rgba(26, 188, 156, 0.2); border-left-color: #1abc9c; }
     .sidebar-menu li.active { background: rgba(26, 188, 156, 0.2); border-left-color: #1abc9c; }
-    .sidebar-link { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 12px; }
-    .sidebar-link i { width: 20px; text-align: center; }
+    .sidebar-link { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; font-size: 0.9em; }
+    .sidebar-link i { width: 18px; text-align: center; font-size: 0.9em; }
     
-    /* Main Content */
-    .main-content { margin-left: 250px; padding: 30px; }
+    /* Main Content - reduzido */
+    .main-content { margin-left: 220px; padding: 20px; }
     
-    /* Cards */
-    .profile-card { background: white; border-radius: 16px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 25px; transition: transform 0.3s; }
+    /* Cards - reduzido */
+    .profile-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 15px; transition: transform 0.3s; }
     .profile-card:hover { transform: translateY(-2px); }
     
-    /* Avatar */
+    /* Avatar - reduzido */
     .user-avatar { 
-      width: 120px; 
-      height: 120px; 
+      width: 90px; 
+      height: 90px; 
       border-radius: 50%; 
       background: linear-gradient(135deg, #2a4d9c 0%, #3a6cd6 100%); 
       color: white; 
       display: flex; 
       align-items: center; 
       justify-content: center; 
-      font-size: 3em; 
-      margin: 0 auto 20px; 
-      box-shadow: 0 8px 25px rgba(42, 77, 156, 0.3);
+      font-size: 2em; 
+      margin: 0 auto 15px; 
+      box-shadow: 0 6px 20px rgba(42, 77, 156, 0.3);
     }
-    .user-name { text-align: center; font-size: 1.8em; font-weight: 600; color: #2c3e50; margin-bottom: 5px; }
-    .user-email { text-align: center; color: #6c757d; margin-bottom: 10px; }
+    .user-name { text-align: center; font-size: 1.4em; font-weight: 600; color: #2c3e50; margin-bottom: 3px; }
+    .user-email { text-align: center; color: #6c757d; font-size: 0.85em; margin-bottom: 8px; }
     .user-role { 
       display: inline-block; 
-      padding: 5px 15px; 
+      padding: 4px 12px; 
       background: linear-gradient(135deg, #1abc9c, #16a085); 
       color: white; 
-      border-radius: 20px; 
-      font-size: 0.85em; 
+      border-radius: 15px; 
+      font-size: 0.75em; 
       font-weight: 500; 
     }
     
@@ -57,85 +58,87 @@
     .section-title { 
       color: #2a4d9c; 
       font-weight: 600; 
-      margin-bottom: 25px; 
-      padding-bottom: 12px; 
+      margin-bottom: 15px; 
+      padding-bottom: 8px; 
       border-bottom: 2px solid #e9ecef; 
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
+      font-size: 1em;
     }
-    .section-title i { color: #1abc9c; }
+    .section-title i { color: #1abc9c; font-size: 0.9em; }
     
     /* Info Items */
-    .info-label { color: #6c757d; font-size: 0.9em; margin-bottom: 5px; }
-    .info-value { font-weight: 500; color: #2c3e50; }
+    .info-label { color: #6c757d; font-size: 0.8em; margin-bottom: 3px; }
+    .info-value { font-weight: 500; color: #2c3e50; font-size: 0.9em; }
     
     /* Form Controls */
     .form-control, .form-select {
-      border-radius: 10px;
-      padding: 12px 15px;
+      border-radius: 8px;
+      padding: 10px 12px;
       border: 2px solid #e9ecef;
       transition: all 0.3s;
+      font-size: 0.9em;
     }
     .form-control:focus, .form-select:focus {
       border-color: #2a4d9c;
-      box-shadow: 0 0 0 4px rgba(42, 77, 156, 0.1);
+      box-shadow: 0 0 0 3px rgba(42, 77, 156, 0.1);
     }
     
-    /* Buttons */
-    .btn { border-radius: 10px; padding: 12px 25px; font-weight: 500; transition: all 0.3s; }
+    /* Buttons - reduzido */
+    .btn { border-radius: 8px; padding: 8px 18px; font-weight: 500; transition: all 0.3s; font-size: 0.85em; }
     .btn-primary { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); border: none; }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(42, 77, 156, 0.4); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(42, 77, 156, 0.4); }
     .btn-success { background: linear-gradient(135deg, #1abc9c, #16a085); border: none; }
-    .btn-success:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(26, 188, 156, 0.4); }
+    .btn-success:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(26, 188, 156, 0.4); }
     .btn-danger { background: linear-gradient(135deg, #e74c3c, #c0392b); border: none; }
-    .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4); }
+    .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4); }
     .btn-secondary { background: #e9ecef; border: none; color: #495057; }
     .btn-secondary:hover { background: #dee2e6; }
     
     /* Stats Cards */
     .stat-card {
       background: #f8f9fa;
-      border-radius: 12px;
-      padding: 20px;
+      border-radius: 10px;
+      padding: 15px;
       text-align: center;
       border: 1px solid #e9ecef;
       transition: all 0.3s;
     }
-    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
     .stat-icon { 
-      width: 50px; 
-      height: 50px; 
-      border-radius: 12px; 
+      width: 40px; 
+      height: 40px; 
+      border-radius: 10px; 
       display: flex; 
       align-items: center; 
       justify-content: center; 
-      margin: 0 auto 15px; 
-      font-size: 1.5em;
+      margin: 0 auto 10px; 
+      font-size: 1.1em;
     }
     .stat-icon.blue { background: rgba(42, 77, 156, 0.1); color: #2a4d9c; }
     .stat-icon.green { background: rgba(26, 188, 156, 0.1); color: #1abc9c; }
     .stat-icon.red { background: rgba(231, 76, 60, 0.1); color: #e74c3c; }
     .stat-icon.purple { background: rgba(155, 89, 182, 0.1); color: #9b59b6; }
-    .stat-value { font-size: 2em; font-weight: 700; color: #2c3e50; }
-    .stat-label { color: #6c757d; font-size: 0.9em; }
+    .stat-value { font-size: 1.5em; font-weight: 700; color: #2c3e50; }
+    .stat-label { color: #6c757d; font-size: 0.75em; }
     
     /* Alert Messages */
-    .alert { border-radius: 10px; padding: 15px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .alert { border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; font-size: 0.85em; }
     .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
     .alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
     
     /* Modal */
-    .modal-content { border-radius: 16px; overflow: hidden; }
-    .modal-header { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); color: white; border: none; padding: 20px 25px; }
+    .modal-content { border-radius: 12px; overflow: hidden; }
+    .modal-header { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); color: white; border: none; padding: 15px 20px; font-size: 1em; }
     .modal-header .btn-close { filter: brightness(0) invert(1); }
-    .modal-body { padding: 25px; }
-    .modal-footer { padding: 20px 25px; border-top: 1px solid #e9ecef; }
+    .modal-body { padding: 20px; }
+    .modal-footer { padding: 15px 20px; border-top: 1px solid #e9ecef; }
     
     /* Page Header */
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-    .page-title { font-size: 1.8em; font-weight: 700; color: #2c3e50; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .page-title { font-size: 1.4em; font-weight: 700; color: #2c3e50; }
     
     /* Responsive */
     @media (max-width: 768px) {
@@ -148,10 +151,40 @@
       background: rgba(231, 76, 60, 0.2);
       color: #e74c3c;
       border: none;
-      margin-top: 20px;
+      margin-top: 15px;
       width: 100%;
+      font-size: 0.85em;
+      padding: 8px 15px;
     }
     .btn-logout:hover { background: #e74c3c; color: white; }
+    
+    /* Loading Overlay */
+    #loadingOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255,255,255,0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.3s ease;
+    }
+    #loadingOverlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e9ecef;
+      border-top-color: #2a4d9c;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -290,7 +323,7 @@
         </div>
       </div>
       
-      <!-- Actions Card -->
+<!-- Actions Card -->
       <div class="profile-card">
         <h5 class="section-title"><i class="fas fa-cogs"></i> Acciones</h5>
         <div class="d-flex flex-wrap gap-3">
@@ -298,13 +331,13 @@
             <i class="fas fa-edit me-2"></i>Editar Perfil
           </button>
           <button class="btn btn-success" onclick="showPasswordModal()">
-            <i class="fas fa-lock me-2"></i>Cambiar Contraseña
+            <i class="fas fa-lock me-2"></i>Password
           </button>
-          <button class="btn btn-info" style="background: #17a2b8; border: none; color: white;" onclick="exportData()">
-            <i class="fas fa-download me-2"></i>Exportar Datos
+          <button class="btn btn-info" style="background: #17a2b8; border: none; color: white;" onclick="exportDataPDF()">
+            <i class="fas fa-file-pdf me-2"></i>Exportar PDF
           </button>
           <button class="btn btn-danger" onclick="deleteAccount()">
-            <i class="fas fa-trash me-2"></i>Eliminar Cuenta
+            <i class="fas fa-trash me-2"></i>Eliminar
           </button>
         </div>
       </div>
@@ -414,8 +447,8 @@
 </div>
 
 <!-- Loading Overlay -->
-<div id="loadingOverlay" class="loading-overlay hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center; z-index: 9999;">
-  <div class="spinner" style="width: 50px; height: 50px; border: 4px solid #e9ecef; border-top-color: #2a4d9c; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+<div id="loadingOverlay">
+  <div class="spinner"></div>
 </div>
 
 <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
@@ -429,18 +462,37 @@
   let editModal = null;
   let passwordModal = null;
   
+  // Hide loading function
+  function hideLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+      overlay.style.opacity = '0';
+      overlay.style.pointerEvents = 'none';
+      setTimeout(() => {
+        overlay.style.display = 'none';
+      }, 300);
+    }
+  }
+  
   document.addEventListener('DOMContentLoaded', async function() {
     // Initialize modals
     editModal = new bootstrap.Modal(document.getElementById('editProfileModal'));
     passwordModal = new bootstrap.Modal(document.getElementById('passwordModal'));
     
-    // Check authentication
-    if (!AuthSystem.isLoggedIn()) {
-      window.location.href = '../login.html';
-      return;
-    }
-    
-    loadProfile();
+    // Wait for AuthSystem to be ready
+    setTimeout(function() {
+      // Check authentication
+      if (!AuthSystem.isLoggedIn()) {
+        window.location.href = '../login.html';
+        return;
+      }
+      
+      // Load profile data
+      loadProfile();
+      
+      // Hide loading overlay
+      hideLoading();
+    }, 50);
   });
   
   function loadProfile() {
@@ -599,27 +651,143 @@
     }
   }
   
-  function exportData() {
-    const data = AuthSystem.exportUserData();
-    if (!data) {
-      showAlert('alertMessage', 'Error al exportar datos.', 'error');
+function exportDataPDF() {
+    const user = AuthSystem.getCurrentUser();
+    if (!user) {
+      showAlert('alertMessage', 'Error: Usuario no encontrado.', 'error');
       return;
     }
     
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `upsen_backup_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
     
-    showAlert('alertMessage', '¡Datos exportados correctamente!', 'success');
+    // Cores
+    const primaryColor = [42, 77, 156];
+    const secondaryColor = [26, 188, 156];
+    const textColor = [44, 62, 80];
+    const grayColor = [108, 117, 125];
+    
+    // Header
+    doc.setFillColor(...primaryColor);
+    doc.rect(0, 0, 210, 35, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('UPSEN Accounting', 105, 18, { align: 'center' });
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Perfil de Usuario', 105, 28, { align: 'center' });
+    
+    // Data
+    doc.setTextColor(...grayColor);
+    doc.setFontSize(10);
+    doc.text('Generado: ' + new Date().toLocaleDateString('es-ES'), 195, 45, { align: 'right' });
+    
+    // Linha
+    doc.setDrawColor(...secondaryColor);
+    doc.setLineWidth(0.5);
+    doc.line(15, 40, 195, 40);
+    
+    // Info do Perfil
+    let y = 55;
+    doc.setTextColor(...textColor);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Informacion del Perfil', 15, y);
+    y += 10;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    
+    const profileData = [
+      ['Nombre:', user.name || '-'],
+      ['Empresa:', user.company || '-'],
+      ['Email:', user.email || '-'],
+      ['Telefono:', user.phone || '-'],
+      ['Rol:', user.role === 'admin' ? 'Administrador' : 'Usuario']
+    ];
+    
+    profileData.forEach(([label, value]) => {
+      doc.setTextColor(...grayColor);
+      doc.text(label, 20, y);
+      doc.setTextColor(...textColor);
+      doc.text(value, 60, y);
+      y += 7;
+    });
+    
+    // Preferencias
+    y += 10;
+    doc.setTextColor(...textColor);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Preferencias', 15, y);
+    y += 10;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    
+    const currencyLabels = { 'EUR': 'Euro (EUR)', 'USD': 'Dolar (USD)', 'GBP': 'Libra (GBP)', 'BRL': 'Real (BRL)' };
+    const languageLabels = { 'es': 'Espanol', 'pt': 'Portugues', 'en': 'English' };
+    const themeLabels = { 'light': 'Claro', 'dark': 'Oscuro' };
+    
+    const prefsData = [
+      ['Moneda:', currencyLabels[user.settings?.currency] || 'Euro (EUR)'],
+      ['Idioma:', languageLabels[user.settings?.language] || 'Espanol'],
+      ['Tema:', themeLabels[user.settings?.theme] || 'Claro']
+    ];
+    
+    prefsData.forEach(([label, value]) => {
+      doc.setTextColor(...grayColor);
+      doc.text(label, 20, y);
+      doc.setTextColor(...textColor);
+      doc.text(value, 60, y);
+      y += 7;
+    });
+    
+    // Estatisticas
+    y += 10;
+    doc.setTextColor(...textColor);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Estadisticas', 15, y);
+    y += 10;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    
+    const invoices = AuthSystem.getUserData('upsen_invoices_received') || [];
+    const issued = AuthSystem.getUserData('upsen_invoices_issued') || [];
+    const expenses = AuthSystem.getUserData('upsen_expenses') || [];
+    const budgets = AuthSystem.getUserData('upsen_budgets') || [];
+    
+    const statsData = [
+      ['Facturas Recibidas:', invoices.length.toString()],
+      ['Facturas Emitidas:', issued.length.toString()],
+      ['Gastos:', expenses.length.toString()],
+      ['Presupuestos:', budgets.length.toString()]
+    ];
+    
+    statsData.forEach(([label, value]) => {
+      doc.setTextColor(...grayColor);
+      doc.text(label, 20, y);
+      doc.setTextColor(...textColor);
+      doc.text(value, 80, y);
+      y += 7;
+    });
+    
+    // Footer
+    doc.setFillColor(...primaryColor);
+    doc.rect(0, 277, 210, 20, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(9);
+    doc.text('UPSEN Accounting - Perfil de Usuario', 105, 287, { align: 'center' });
+    
+    // Salvar PDF
+    doc.save(`upsen_perfil_${new Date().toISOString().split('T')[0]}.pdf`);
+    showAlert('alertMessage', 'PDF exportado correctamente!', 'success');
   }
   
-  function deleteAccount() {
+function deleteAccount() {
     if (confirm('¿Estás seguro de eliminar tu cuenta? TODOS tus datos se perderán permanentemente.')) {
       if (confirm('Esta acción NO se puede deshacer. ¿Continuar?')) {
         const result = AuthSystem.deleteAccount();

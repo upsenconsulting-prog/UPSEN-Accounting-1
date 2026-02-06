@@ -1,230 +1,303 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Presupuestos</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<style>
-/* Custom styles */
-body {
-  background-color: #f5f5f5;
-}
-
-.container {
-  max-width: 1200px;
-}
-
-.mb-4.text-center {
-  margin: 30px 0;
-}
-
-#budgetForm {
-  background: white;
-  padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 2px 15px rgba(0,0,0,0.1);
-}
-
-h1 {
-  color: #2a4d9c;
-  font-weight: 700;
-}
-
-h3 {
-  color: #2c3e50;
-  margin-top: 25px;
-  margin-bottom: 15px;
-}
-
-.line-total {
-  font-weight: bold;
-  font-size: 1.1em;
-}
-
-#grandTotal {
-  font-size: 1.5em;
-  font-weight: bold;
-  color: #2a4d9c;
-  padding: 15px 0;
-}
-
-.form-label {
-  font-weight: 500;
-  color: #495057;
-}
-
-.table {
-  margin-top: 15px;
-}
-
-.table th {
-  background-color: #f8f9fa;
-  font-weight: 600;
-}
-
-.btn {
-  font-weight: 500;
-}
-
-.btn-primary {
-  background-color: #2a4d9c;
-  border-color: #2a4d9c;
-}
-
-.btn-primary:hover {
-  background-color: #1e3a8a;
-  border-color: #1e3a8a;
-}
-
-.btn-success {
-  background-color: #198754;
-  border-color: #198754;
-}
-
-/* Modal styles */
-.modal {
-  z-index: 9999;
-}
-
-.modal-content {
-  box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-}
-
-.modal-header {
-  background: linear-gradient(135deg, #2a4d9c, #3a6cd6);
-  color: white;
-}
-
-.modal-header .modal-title {
-  color: white;
-  font-weight: 600;
-}
-
-.btn-close {
-  filter: brightness(0) invert(1);
-}
-
-.table-dark th {
-  background-color: #2a4d9c;
-  color: white;
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Presupuestos - UPSEN Accounting</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #eef1f7; min-height: 100vh; }
+    
+    /* Sidebar Moderno */
+    .sidebar { 
+      width: 260px; 
+      background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%); 
+      color: white; 
+      min-height: 100vh; 
+      position: fixed; 
+      box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+    }
+    .sidebar-header { 
+      padding: 30px 20px; 
+      font-size: 1.6em; 
+      font-weight: bold; 
+      background: rgba(0,0,0,0.2); 
+      text-align: center; 
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .sidebar-header i { color: #1abc9c; }
+    .sidebar-menu { list-style: none; padding: 0; margin: 0; }
+    .sidebar-menu li { padding: 0; transition: all 0.3s; border-left: 4px solid transparent; }
+    .sidebar-menu li:hover { background: rgba(26, 188, 156, 0.15); border-left-color: #1abc9c; }
+    .sidebar-menu li.active { background: rgba(26, 188, 156, 0.2); border-left-color: #1abc9c; }
+    .sidebar-link { 
+      color: inherit; 
+      text-decoration: none; 
+      display: flex; 
+      align-items: center; 
+      gap: 12px; 
+      padding: 15px 20px;
+      transition: all 0.3s;
+    }
+    .sidebar-link:hover { color: #1abc9c; }
+    .sidebar-link i { width: 24px; text-align: center; color: rgba(255,255,255,0.7); transition: color 0.3s; }
+    .sidebar-menu li:hover i, .sidebar-menu li.active i { color: #1abc9c; }
+    
+    /* Main Content */
+    .main-content { margin-left: 260px; padding: 30px; min-height: 100vh; }
+    
+    /* Page Header */
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+    .page-title { font-size: 2em; font-weight: 700; color: #2c3e50; display: flex; align-items: center; gap: 15px; }
+    .page-title i { color: #1abc9c; }
+    
+    /* Cards Modernos */
+    .modern-card { 
+      background: white; 
+      border-radius: 16px; 
+      padding: 25px; 
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
+      margin-bottom: 25px; 
+      transition: all 0.3s;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    .modern-card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
+    
+    /* Buttons */
+    .btn { border-radius: 10px; padding: 12px 25px; font-weight: 500; transition: all 0.3s; border: none; }
+    .btn-primary { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); color: white; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(42, 77, 156, 0.4); color: white; }
+    .btn-success { background: linear-gradient(135deg, #1abc9c, #16a085); color: white; }
+    .btn-success:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(26, 188, 156, 0.4); color: white; }
+    .btn-secondary { background: #e9ecef; border: none; color: #495057; }
+    .btn-secondary:hover { background: #dee2e6; transform: translateY(-2px); }
+    .btn-danger { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
+    .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4); color: white; }
+    .btn-info { background: linear-gradient(135deg, #17a2b8, #138496); color: white; }
+    .btn-info:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(23, 162, 184, 0.4); color: white; }
+    
+    /* Form Controls */
+    .form-control, .form-select {
+      border-radius: 10px;
+      padding: 12px 15px;
+      border: 2px solid #e9ecef;
+      transition: all 0.3s;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: #2a4d9c;
+      box-shadow: 0 0 0 4px rgba(42, 77, 156, 0.1);
+    }
+    .form-label { font-weight: 500; color: #495057; margin-bottom: 8px; }
+    
+    /* Section Titles */
+    .section-title { 
+      color: #2a4d9c; 
+      font-weight: 600; 
+      margin-bottom: 20px; 
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title i { color: #1abc9c; }
+    
+    /* Table Styles */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th { 
+      background: linear-gradient(135deg, #2a4d9c, #3a6cd6); 
+      color: white; 
+      font-weight: 600; 
+      padding: 15px; 
+      text-align: left;
+    }
+    th:first-child { border-radius: 10px 0 0 0; }
+    th:last-child { border-radius: 0 10px 0 0; }
+    td { padding: 15px; border-bottom: 1px solid #e9ecef; color: #2c3e50; }
+    tr:hover td { background: rgba(26, 188, 156, 0.05); }
+    
+    /* Line Total */
+    .line-total { font-weight: bold; font-size: 1.1em; color: #2a4d9c; }
+    
+    /* Grand Total */
+    #grandTotal {
+      font-size: 1.8em;
+      font-weight: bold;
+      color: #2a4d9c;
+      padding: 15px 0;
+    }
+    
+    /* Modal */
+    .modal-content { border-radius: 16px; overflow: hidden; border: none; box-shadow: 0 15px 50px rgba(0,0,0,0.2); }
+    .modal-header { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); color: white; border: none; padding: 20px 25px; }
+    .modal-header .btn-close { filter: brightness(0) invert(1); }
+    .modal-body { padding: 25px; background: #f6f8fc; }
+    .modal-footer { padding: 20px 25px; border-top: 1px solid #e9ecef; background: #f6f8fc; }
+    
+    /* Responsive */
+    @media (max-width: 992px) {
+      .sidebar { position: relative; width: 100%; min-height: auto; }
+      .main-content { margin-left: 0; }
+    }
+    
+    @media (max-width: 768px) {
+      .page-header { flex-direction: column; align-items: flex-start; }
+      .action-buttons { width: 100%; flex-wrap: wrap; }
+      .btn { flex: 1; min-width: 120px; justify-content: center; }
+    }
+  </style>
 </head>
 <body>
 
-<div class="container my-5">
-  <h1 class="text-center mb-4">Presupuestos</h1>
-  
-  <!-- Botones de acción -->
-  <div class="mb-4 text-center">
-    <button class="btn btn-primary me-2" id="newBudgetBtn">+ Nuevo presupuesto</button>
-    <button class="btn btn-info text-white me-2" id="viewBudgetsBtn">Ver presupuestos</button>
-    <a href="../frontPage/frontPage.html" class="btn btn-secondary">← Volver al panel</a>
-  </div>
-  
-  <!-- Formulario de presupuesto -->
-  <form id="budgetForm" class="card p-4">
-    <div class="row g-3">
-      <div class="col-md-3">
-        <label class="form-label">Número</label>
-        <input type="text" id="number" class="form-control" readonly>
+<div class="container-fluid p-0">
+  <div class="row m-0">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <i class="fas fa-chart-line"></i>Accounting
       </div>
-      <div class="col-md-3">
-        <label class="form-label">Serie</label>
-        <select id="series" class="form-select">
-          <option>Presupuestos</option>
-        </select>
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Fecha</label>
-        <input type="date" id="date" class="form-control">
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Validez</label>
-        <input type="date" id="validity" class="form-control">
-      </div>
-    </div>
-
-    <div class="row g-3 mt-3">
-      <div class="col-md-4">
-        <label class="form-label">Cliente *</label>
-        <input type="text" id="customer" class="form-control" placeholder="Nombre del cliente">
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Notas</label>
-        <textarea id="notes" rows="3" class="form-control"></textarea>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Retención</label>
-        <select id="retention" class="form-select">
-          <option>Sin retención</option>
-          <option>10%</option>
-          <option>4%</option>
-          <option>21%</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="row g-3 mt-3">
-      <div class="col-md-4">
-        <label class="form-label">Estado</label>
-        <select id="status" class="form-select">
-          <option value="pending">Pendiente</option>
-          <option value="approved">Aprobado</option>
-          <option value="rejected">Rechazado</option>
-        </select>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Etiquetas</label>
-        <input type="text" id="tags" class="form-control">
-      </div>
-    </div>
-
-    <h3>📦 Artículos</h3>
-    <div class="table-responsive">
-      <table class="table table-bordered" id="itemsTable">
-        <thead>
-          <tr>
-            <th>Descripción</th>
-            <th>Cantidad</th>
-            <th>Coste (€)</th>
-            <th>Total (€)</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="itemsTbody">
-          <tr>
-            <td><input type="text" class="form-control desc" placeholder="Artículo"></td>
-            <td><input type="number" class="form-control qty" value="1" min="1"></td>
-            <td><input type="number" class="form-control unit" value="0" step="0.01"></td>
-            <td class="line-total">0.00</td>
-            <td><button type="button" class="btn btn-danger btn-sm remove-btn">X</button></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <button type="button" class="btn btn-primary mt-3" id="addItem">+ Añadir artículo</button>
+      <ul class="sidebar-menu">
+        <li><a href="../frontPage/frontPage.html" class="sidebar-link"><i class="fas fa-tachometer-alt"></i> Panel de control</a></li>
+        <li><a href="../expense/expense.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar"></i> Gastos</a></li>
+        <li><a href="../Invoice-issued/invoice-issued.html" class="sidebar-link"><i class="fas fa-file-export"></i> Facturas emitidas</a></li>
+        <li><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link"><i class="fas fa-file-import"></i> Facturas recibidas</a></li>
+        <li class="active"><a href="../budgetPage/budget.html" class="sidebar-link"><i class="fas fa-calculator"></i> Presupuestos</a></li>
+        <li><a href="../profile/profile.html" class="sidebar-link"><i class="fas fa-user"></i> Perfil</a></li>
+        <li><a href="../profile/settings.html" class="sidebar-link"><i class="fas fa-cog"></i> Configuración</a></li>
+      </ul>
+    </aside>
     
-    <div class="row mt-4">
-      <div class="col-md-6">
-        <div id="grandTotal" class="text-end mt-3 fs-4 fw-bold" style="color: #2a4d9c;">Total: €0.00</div>
+    <!-- Main Content -->
+    <main class="main-content col">
+      <div class="page-header">
+        <h1 class="page-title"><i class="fas fa-calculator"></i> Presupuestos</h1>
+        <div class="action-buttons">
+          <button class="btn btn-primary" id="newBudgetBtn">
+            <i class="fas fa-plus me-2"></i>Nuevo presupuesto
+          </button>
+          <button class="btn btn-info" id="viewBudgetsBtn">
+            <i class="fas fa-folder-open me-2"></i>Ver presupuestos
+          </button>
+          <a href="../frontPage/frontPage.html" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver
+          </a>
+        </div>
+
+      <!-- Budget Form -->
+      <div class="modern-card">
+        <form id="budgetForm">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label"><i class="fas fa-hashtag me-2"></i>Número</label>
+              <input type="text" id="number" class="form-control" readonly>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label"><i class="fas fa-list me-2"></i>Serie</label>
+              <select id="series" class="form-select">
+                <option>Presupuestos</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label"><i class="fas fa-calendar me-2"></i>Fecha</label>
+              <input type="date" id="date" class="form-control">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label"><i class="fas fa-calendar-check me-2"></i>Validez</label>
+              <input type="date" id="validity" class="form-control">
+            </div>
+
+          <div class="row g-3 mt-3">
+            <div class="col-md-4">
+              <label class="form-label"><i class="fas fa-user me-2"></i>Cliente *</label>
+              <input type="text" id="customer" class="form-control" placeholder="Nombre del cliente">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label"><i class="fas fa-sticky-note me-2"></i>Notas</label>
+              <textarea id="notes" rows="3" class="form-control" placeholder="Notas opcionales"></textarea>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label"><i class="fas fa-percent me-2"></i>Retención</label>
+              <select id="retention" class="form-select">
+                <option>Sin retención</option>
+                <option>10%</option>
+                <option>4%</option>
+                <option>21%</option>
+              </select>
+            </div>
+
+          <div class="row g-3 mt-3">
+            <div class="col-md-4">
+              <label class="form-label"><i class="fas fa-flag me-2"></i>Estado</label>
+              <select id="status" class="form-select">
+                <option value="pending">Pendiente</option>
+                <option value="approved">Aprobado</option>
+                <option value="rejected">Rechazado</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label"><i class="fas fa-tags me-2"></i>Etiquetas</label>
+              <input type="text" id="tags" class="form-control" placeholder="Etiquetas separadas por coma">
+            </div>
+
+          <h4 class="section-title mt-4"><i class="fas fa-box"></i> Artículos</h4>
+          
+          <div class="table-responsive">
+            <table class="table table-bordered" id="itemsTable">
+              <thead>
+                <tr>
+                  <th><i class="fas fa-align-left me-2"></i>Descripción</th>
+                  <th><i class="fas fa-sort-numeric-up me-2"></i>Cantidad</th>
+                  <th><i class="fas fa-euro-sign me-2"></i>Coste (€)</th>
+                  <th><i class="fas fa-calculator me-2"></i>Total (€)</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="itemsTbody">
+                <tr>
+                  <td><input type="text" class="form-control desc" placeholder="Artículo"></td>
+                  <td><input type="number" class="form-control qty" value="1" min="1"></td>
+                  <td><input type="number" class="form-control unit" value="0" step="0.01"></td>
+                  <td class="line-total">0.00</td>
+                  <td><button type="button" class="btn btn-danger btn-sm remove-btn">X</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <button type="button" class="btn btn-primary mt-3" id="addItem">
+            <i class="fas fa-plus me-2"></i>Añadir artículo
+          </button>
+          
+          <div class="row mt-4">
+            <div class="col-md-6">
+              <div id="grandTotal" class="text-end mt-3 fs-4 fw-bold" style="color: #2a4d9c;">Total: €0.00</div>
+            <div class="col-md-6 text-end">
+              <button type="button" class="btn btn-secondary me-2" id="cancelBtn">
+                <i class="fas fa-times me-2"></i>Cancelar
+              </button>
+              <button type="button" class="btn btn-success" id="saveBtn">
+                <i class="fas fa-save me-2"></i>Guardar presupuesto
+              </button>
+            </div>
+        </form>
       </div>
-      <div class="col-md-6 text-end">
-        <button type="button" class="btn btn-secondary me-2" id="cancelBtn">Cancelar</button>
-        <button type="button" class="btn btn-success" id="saveBtn">💾 Guardar presupuesto</button>
-      </div>
-    </div>
-  </form>
-</div>
+    </main>
+  </div>
 
 <!-- Modal presupuestos guardados -->
 <div class="modal fade" id="budgetsModal" tabindex="-1">
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">📋 Presupuestos guardados</h5>
+        <h5 class="modal-title"><i class="fas fa-folder-open me-2"></i>Presupuestos guardados</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
@@ -245,330 +318,27 @@ h3 {
             </tbody>
           </table>
         </div>
-      </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
       </div>
-    </div>
   </div>
-</div>
 
 <!-- Modal ver presupuesto -->
 <div class="modal fade" id="viewBudgetModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">📄 Detalle del presupuesto</h5>
+        <h5 class="modal-title"><i class="fas fa-file-invoice me-2"></i>Detalle del presupuesto</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body" id="viewBudgetContent"></div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
       </div>
-    </div>
   </div>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../shared/auth.js"></script>
-<script src="../shared/store.js"></script>
 <script src="../shared/auth-system.js"></script>
-<script>
-// Usar o sistema integrado do AuthManager e store.js
-// As funções globais já estão disponíveis: window.getBudgets(), window.addBudget(), etc.
-
-function moneyEUR(n) {
-  return '€' + (Number(n) || 0).toFixed(2);
-}
-
-function generateBudgetNumber() {
-  const budgets = window.getBudgets();
-  if (budgets.length === 0) {
-    return 'BUD-001';
-  }
-  const maxNum = budgets.reduce((max, b) => {
-    const num = parseInt((b.number || 'BUD-000').replace('BUD-', '')) || 0;
-    return Math.max(max, num);
-  }, 0);
-  return 'BUD-' + String(maxNum + 1).padStart(3, '0');
-}
-
-// Update totals
-function updateTotals() {
-  const rows = document.querySelectorAll('#itemsTbody tr');
-  let grandTotal = 0;
-  
-  rows.forEach(row => {
-    const qty = parseFloat(row.querySelector('.qty')?.value) || 0;
-    const unit = parseFloat(row.querySelector('.unit')?.value) || 0;
-    const total = qty * unit;
-    
-    const lineTotal = row.querySelector('.line-total');
-    if (lineTotal) {
-      lineTotal.textContent = total.toFixed(2);
-    }
-    grandTotal += total;
-  });
-  
-  const grandTotalEl = document.getElementById('grandTotal');
-  if (grandTotalEl) {
-    grandTotalEl.textContent = 'Total: ' + moneyEUR(grandTotal);
-  }
-  return grandTotal;
-}
-
-// Add new item row
-function addNewItem() {
-  const tbody = document.getElementById('itemsTbody');
-  if (!tbody) return;
-  
-  const newRow = document.createElement('tr');
-  newRow.innerHTML = `
-    <td><input type="text" class="form-control desc" placeholder="Artículo"></td>
-    <td><input type="number" class="form-control qty" value="1" min="1"></td>
-    <td><input type="number" class="form-control unit" value="0" step="0.01"></td>
-    <td class="line-total">0.00</td>
-    <td><button type="button" class="btn btn-danger btn-sm remove-btn">X</button></td>
-  `;
-  tbody.appendChild(newRow);
-}
-
-// Clear form
-function clearForm() {
-  document.getElementById('number').value = generateBudgetNumber();
-  document.getElementById('customer').value = '';
-  document.getElementById('date').value = '';
-  document.getElementById('validity').value = '';
-  document.getElementById('notes').value = '';
-  document.getElementById('tags').value = '';
-  document.getElementById('status').value = 'pending';
-  
-  const tbody = document.getElementById('itemsTbody');
-  if (tbody) {
-    tbody.innerHTML = `
-      <tr>
-        <td><input type="text" class="form-control desc" placeholder="Artículo"></td>
-        <td><input type="number" class="form-control qty" value="1" min="1"></td>
-        <td><input type="number" class="form-control unit" value="0" step="0.01"></td>
-        <td class="line-total">0.00</td>
-        <td><button type="button" class="btn btn-danger btn-sm remove-btn">X</button></td>
-      </tr>
-    `;
-  }
-  updateTotals();
-}
-
-// Save budget
-function saveBudget() {
-  const rows = document.querySelectorAll('#itemsTbody tr');
-  const items = [];
-  
-  rows.forEach(row => {
-    const desc = row.querySelector('.desc')?.value || '';
-    const qty = parseFloat(row.querySelector('.qty')?.value) || 0;
-    const unit = parseFloat(row.querySelector('.unit')?.value) || 0;
-    const total = qty * unit;
-    
-    if (desc.trim()) {
-      items.push({ desc, qty, unit, total });
-    }
-  });
-  
-  const data = {
-    number: document.getElementById('number')?.value || generateBudgetNumber(),
-    date: document.getElementById('date')?.value || '',
-    validity: document.getElementById('validity')?.value || '',
-    customer: document.getElementById('customer')?.value || '',
-    notes: document.getElementById('notes')?.value || '',
-    retention: document.getElementById('retention')?.value || '',
-    status: document.getElementById('status')?.value || 'pending',
-    tags: document.getElementById('tags')?.value || '',
-    items,
-    total: updateTotals()
-  };
-  
-  if (!data.date || !data.customer) {
-    alert('Por favor complete: fecha y cliente.');
-    return;
-  }
-  
-  if (data.items.length === 0) {
-    alert('Por favor añada al menos un artículo.');
-    return;
-  }
-  
-  window.addBudget(data);
-  alert('Presupuesto guardado correctamente!');
-  clearForm();
-}
-
-// Modal instances
-let budgetsModal = null;
-let viewBudgetModal = null;
-
-// Load saved budgets
-function loadSavedBudgets() {
-  const tbody = document.getElementById('budgetsTbody');
-  if (!tbody) return;
-  
-  const budgets = window.getBudgets();
-  
-  if (budgets.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay presupuestos guardados</td></tr>';
-    return;
-  }
-  
-  const sorted = budgets.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-  
-  tbody.innerHTML = sorted.map(budget => {
-    const statusLabel = {
-      'pending': 'Pendiente',
-      'approved': 'Aprobado',
-      'rejected': 'Rechazado'
-    }[budget.status] || 'Pendiente';
-    
-    return `
-    <tr>
-      <td><strong>${budget.number || '-'}</strong></td>
-      <td>${budget.date || '-'}</td>
-      <td>${budget.customer || '-'}</td>
-      <td><strong>${moneyEUR(budget.total)}</strong></td>
-      <td>${statusLabel}</td>
-      <td>
-        <button class="btn btn-primary btn-sm me-1 view-btn" data-id="${budget.id}">Ver</button>
-        <button class="btn btn-danger btn-sm delete-btn" data-id="${budget.id}">X</button>
-      </td>
-    </tr>
-  `}).join('');
-  
-  // Add event listeners
-  tbody.querySelectorAll('.view-btn').forEach(btn => {
-    btn.onclick = () => showViewBudget(btn.dataset.id);
-  });
-  
-  tbody.querySelectorAll('.delete-btn').forEach(btn => {
-    btn.onclick = () => deleteBudgetItem(btn.dataset.id);
-  });
-}
-
-// Show view budget modal
-function showViewBudget(id) {
-  const budget = window.getBudgets().find(b => b.id === id);
-  if (!budget) return;
-  
-  const itemsHtml = budget.items?.map(item => `
-    <tr>
-      <td>${item.desc || ''}</td>
-      <td>${item.qty || 0}</td>
-      <td>${moneyEUR(item.unit)}</td>
-      <td>${moneyEUR(item.total)}</td>
-    </tr>
-  `).join('') || '<tr><td colspan="4" class="text-center">Sin artículos</td></tr>';
-  
-  const statusLabel = {
-    'pending': 'Pendiente',
-    'approved': 'Aprobado',
-    'rejected': 'Rechazado'
-  }[budget.status] || 'Pendiente';
-  
-  const content = document.getElementById('viewBudgetContent');
-  if (content) {
-    content.innerHTML = `
-      <div class="row mb-3">
-        <div class="col-md-6"><strong>Número:</strong> ${budget.number || '-'}</div>
-        <div class="col-md-6"><strong>Fecha:</strong> ${budget.date || '-'}</div>
-      </div>
-      <div class="row mb-3">
-        <div class="col-md-6"><strong>Cliente:</strong> ${budget.customer || '-'}</div>
-        <div class="col-md-6"><strong>Total:</strong> <span class="fs-4 fw-bold">${moneyEUR(budget.total)}</span></div>
-      </div>
-      <div class="row mb-3">
-        <div class="col-md-6"><strong>Estado:</strong> ${statusLabel}</div>
-      </div>
-      ${budget.notes ? `<div class="mb-3"><strong>Notas:</strong> ${budget.notes}</div>` : ''}
-      <h5 class="mt-4">Artículos</h5>
-      <div class="table-responsive">
-        <table class="table table-bordered">
-          <thead class="table-secondary">
-            <tr><th>Descripción</th><th>Cantidad</th><th>Coste</th><th>Total</th></tr>
-          </thead>
-          <tbody>${itemsHtml}</tbody>
-        </table>
-      </div>
-    `;
-  }
-  
-  if (!viewBudgetModal) {
-    viewBudgetModal = new bootstrap.Modal(document.getElementById('viewBudgetModal'));
-  }
-  viewBudgetModal.show();
-}
-
-// Delete budget item
-function deleteBudgetItem(id) {
-  const budget = window.getBudgets().find(b => b.id === id);
-  if (budget && confirm('¿Eliminar presupuesto ' + budget.number + '?')) {
-    window.deleteBudget(id);
-    loadSavedBudgets();
-  }
-}
-
-// Initialize on load
-document.addEventListener('DOMContentLoaded', () => {
-  // Set budget number
-  document.getElementById('number').value = generateBudgetNumber();
-  
-  // Add item button
-  document.getElementById('addItem').onclick = addNewItem;
-  
-  // Remove item button (event delegation)
-  document.getElementById('itemsTbody').onclick = (e) => {
-    if (e.target.classList.contains('remove-btn')) {
-      const row = e.target.closest('tr');
-      if (row && document.querySelectorAll('#itemsTbody tr').length > 1) {
-        row.remove();
-        updateTotals();
-      }
-    }
-  };
-  
-  // Update totals on input change
-  document.getElementById('itemsTbody').oninput = (e) => {
-    if (e.target.classList.contains('qty') || e.target.classList.contains('unit')) {
-      updateTotals();
-    }
-  };
-  
-  // New budget button
-  document.getElementById('newBudgetBtn').onclick = () => {
-    if (confirm('¿Crear nuevo presupuesto? Se limpiará el formulario.')) {
-      clearForm();
-    }
-  };
-  
-  // View budgets button
-  document.getElementById('viewBudgetsBtn').onclick = () => {
-    loadSavedBudgets();
-    if (!budgetsModal) {
-      budgetsModal = new bootstrap.Modal(document.getElementById('budgetsModal'));
-    }
-    budgetsModal.show();
-  };
-  
-  // Save button
-  document.getElementById('saveBtn').onclick = saveBudget;
-  
-  // Cancel button
-  document.getElementById('cancelBtn').onclick = () => {
-    if (confirm('¿Cancelar y limpiar el formulario?')) {
-      clearForm();
-    }
-  };
-  
-  // Initial update
-  updateTotals();
-});
-</script>
+<script src="script.js"></script>
 </body>
 </html>
-

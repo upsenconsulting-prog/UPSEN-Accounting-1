@@ -1,5 +1,4 @@
-// Funções do store.js já estão disponíveis globalmente via window
-// Ex: window.getBudgets(), window.addBudget(), window.deleteBudget(), window.updateBudget()
+// budgetPage/script.js - Com dados isolados por usuário
 
 function $(id) {
   return document.getElementById(id);
@@ -10,8 +9,47 @@ function moneyEUR(n) {
   return '€' + v.toFixed(2);
 }
 
+// ========== DADOS DO USUÁRIO LOGADO ==========
+function getUserBudgets() {
+  return AuthSystem.getUserData('upsen_budgets') || [];
+}
+
+function saveUserBudget(budget) {
+  const list = getUserBudgets();
+  list.push({
+    id: AuthSystem.generateId(),
+    number: budget.number || '',
+    series: budget.series || 'Presupuestos',
+    date: budget.date || '',
+    validity: budget.validity || '',
+    customer: budget.customer || '',
+    notes: budget.notes || '',
+    retention: budget.retention || '',
+    status: budget.status || 'pending',
+    tags: budget.tags || '',
+    items: budget.items || [],
+    total: Number(budget.total || 0),
+    createdAt: new Date().toISOString()
+  });
+  AuthSystem.saveUserData('upsen_budgets', list);
+}
+
+function deleteUserBudget(id) {
+  const list = getUserBudgets().filter(b => b.id !== id);
+  AuthSystem.saveUserData('upsen_budgets', list);
+}
+
+function updateUserBudget(id, updates) {
+  const list = getUserBudgets();
+  const index = list.findIndex(b => b.id === id);
+  if (index !== -1) {
+    list[index] = { ...list[index], ...updates };
+    AuthSystem.saveUserData('upsen_budgets', list);
+  }
+}
+
 function generateBudgetNumber() {
-  const budgets = window.getBudgets();
+  const budgets = getUserBudgets();
   if (budgets.length === 0) {
     return "BUD-001";
   }
@@ -182,7 +220,7 @@ if (saveBtn) {
       return;
     }
     
-    window.addBudget(data);
+    saveUserBudget(data);
     alert("Presupuesto guardado correctamente!");
     clearForm();
   });
@@ -218,7 +256,7 @@ function loadSavedBudgets() {
   const tbody = $('budgetsTbody');
   if (!tbody) return;
   
-  const budgets = window.getBudgets();
+  const budgets = getUserBudgets();
   console.log('Loaded budgets:', budgets);
   
   if (budgets.length === 0) {
@@ -267,7 +305,7 @@ function loadSavedBudgets() {
 
 // Make functions globally accessible for onclick handlers
 window.viewBudget = function(id) {
-  const budget = window.getBudgets().find(b => b.id === id);
+  const budget = getUserBudgets().find(b => b.id === id);
   if (!budget) return;
   
   const itemsHtml = budget.items?.map(item => `
@@ -340,11 +378,11 @@ window.viewBudget = function(id) {
 };
 
 window.deleteBudgetPrompt = function(id) {
-  const budget = window.getBudgets().find(b => b.id === id);
+  const budget = getUserBudgets().find(b => b.id === id);
   if (!budget) return;
   
   if (confirm(`¿Está seguro de eliminar el presupuesto ${budget.number}?\n\nEsta acción no se puede deshacer.`)) {
-    window.deleteBudget(id);
+    deleteUserBudget(id);
     loadSavedBudgets();
     alert('Presupuesto eliminado correctamente.');
   }
@@ -352,7 +390,7 @@ window.deleteBudgetPrompt = function(id) {
 
 // Change budget status
 window.changeBudgetStatus = function(id, newStatus) {
-  const budget = window.getBudgets().find(b => b.id === id);
+  const budget = getUserBudgets().find(b => b.id === id);
   if (!budget) return;
   
   const statusLabels = {
@@ -362,9 +400,8 @@ window.changeBudgetStatus = function(id, newStatus) {
   };
   
   if (confirm(`¿Cambiar estado de "${budget.number}" a ${statusLabels[newStatus]}?`)) {
-    window.updateBudget(id, { status: newStatus });
+    updateUserBudget(id, { status: newStatus });
     loadSavedBudgets();
     alert('Estado actualizado correctamente.');
   }
 };
-

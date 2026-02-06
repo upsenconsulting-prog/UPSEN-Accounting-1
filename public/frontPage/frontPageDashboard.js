@@ -1,5 +1,4 @@
-// Funções do store.js já estão disponíveis globalmente via window
-// Todas as funções são acessadas como window.sumInvoicesReceivedMonth(), etc.
+// frontPageDashboard.js - Com dados isolados por usuário
 
 function $(id) {
   return document.getElementById(id);
@@ -29,6 +28,128 @@ function markActivePage() {
   });
 }
 
+// ========== DADOS DO USUÁRIO LOGADO ==========
+function getUserExpenses() {
+  return AuthSystem.getUserData('upsen_expenses') || [];
+}
+
+function getUserInvoicesIssued() {
+  return AuthSystem.getUserData('upsen_invoices_issued') || [];
+}
+
+function getUserInvoicesReceived() {
+  return AuthSystem.getUserData('upsen_invoices_received') || [];
+}
+
+// ========== KPI HELPERS ==========
+function sumInvoicesReceivedMonthYear(year, month) {
+  return getUserInvoicesReceived().reduce((sum, inv) => {
+    if (!inv.invoiceDate) return sum;
+    const [y, m] = inv.invoiceDate.split('-').map(Number);
+    if (y === year && m - 1 === month) {
+      return sum + (Number(inv.amount) || 0);
+    }
+    return sum;
+  }, 0);
+}
+
+function countInvoicesReceivedMonthYear(year, month) {
+  return getUserInvoicesReceived().filter(inv => {
+    if (!inv.invoiceDate) return false;
+    const [y, m] = inv.invoiceDate.split('-').map(Number);
+    return y === year && m - 1 === month;
+  }).length;
+}
+
+function countInvoicesReceivedPending() {
+  return getUserInvoicesReceived().filter(inv => (inv.state || "").toLowerCase() === "pendiente").length;
+}
+
+function sumInvoicesIssuedMonthYear(year, month) {
+  return getUserInvoicesIssued().reduce((sum, inv) => {
+    if (!inv.invoiceDate) return sum;
+    const [y, m] = inv.invoiceDate.split('-').map(Number);
+    if (y === year && m - 1 === month) {
+      return sum + (Number(inv.amount) || 0);
+    }
+    return sum;
+  }, 0);
+}
+
+function countInvoicesIssuedMonthYear(year, month) {
+  return getUserInvoicesIssued().filter(inv => {
+    if (!inv.invoiceDate) return false;
+    const [y, m] = inv.invoiceDate.split('-').map(Number);
+    return y === year && m - 1 === month;
+  }).length;
+}
+
+function countInvoicesIssuedPending() {
+  return getUserInvoicesIssued().filter(inv => (inv.state || "").toLowerCase() === "pendiente").length;
+}
+
+function sumExpensesMonthYear(year, month) {
+  return getUserExpenses().reduce((sum, exp) => {
+    if (!exp.date) return sum;
+    const [y, m, d] = exp.date.split('-').map(Number);
+    if (y === year && m - 1 === month) {
+      return sum + (Number(exp.amount) || 0);
+    }
+    return sum;
+  }, 0);
+}
+
+function countExpensesMonthYear(year, month) {
+  return getUserExpenses().filter(exp => {
+    if (!exp.date) return false;
+    const [y, m, d] = exp.date.split('-').map(Number);
+    return y === year && m - 1 === month;
+  }).length;
+}
+
+function getTopExpenseCategory(year, month) {
+  const categoryTotals = {};
+  
+  getUserExpenses().forEach(exp => {
+    if (!exp.date) return;
+    const [y, m, d] = exp.date.split('-').map(Number);
+    if (y === year && m - 1 === month) {
+      const cat = exp.category || "Sin categoría";
+      categoryTotals[cat] = (categoryTotals[cat] || 0) + (Number(exp.amount) || 0);
+    }
+  });
+  
+  if (Object.keys(categoryTotals).length === 0) return "";
+  
+  const top = Object.entries(categoryTotals)
+    .sort((a, b) => b[1] - a[1])[0];
+  
+  return top ? top[0] : "";
+}
+
+function getExpensesMonthYear(year, month) {
+  return getUserExpenses().filter(exp => {
+    if (!exp.date) return false;
+    const [y, m, d] = exp.date.split('-').map(Number);
+    return y === year && m - 1 === month;
+  });
+}
+
+function getExpensesByCategory(year, month) {
+  const categoryTotals = {};
+  
+  getUserExpenses().forEach(exp => {
+    if (!exp.date) return;
+    const [y, m] = exp.date.split('-').map(Number);
+    if (y === year && m - 1 === month) {
+      const cat = exp.category || "Sin categoría";
+      categoryTotals[cat] = (categoryTotals[cat] || 0) + (Number(exp.amount) || 0);
+    }
+  });
+  
+  return categoryTotals;
+}
+
 // ========== KPI DASHBOARD ==========
 function renderDashboardKPIs() {
   const now = new Date();
@@ -36,19 +157,19 @@ function renderDashboardKPIs() {
   const m = now.getMonth();
 
   // Received KPIs
-  const totalReceived = window.sumInvoicesReceivedMonth(y, m);
-  const countReceived = window.countInvoicesReceivedMonth(y, m);
-  const pendingReceived = window.countInvoicesReceivedPending();
+  const totalReceived = sumInvoicesReceivedMonthYear(y, m);
+  const countReceived = countInvoicesReceivedMonthYear(y, m);
+  const pendingReceived = countInvoicesReceivedPending();
 
   // Issued KPIs
-  const totalIssued = window.sumInvoicesIssuedMonth(y, m);
-  const countIssued = window.countInvoicesIssuedMonth(y, m);
-  const pendingIssued = window.countInvoicesIssuedPending();
+  const totalIssued = sumInvoicesIssuedMonthYear(y, m);
+  const countIssued = countInvoicesIssuedMonthYear(y, m);
+  const pendingIssued = countInvoicesIssuedPending();
 
   // Expenses KPIs
-  const totalExpenses = window.sumExpensesMonth(y, m);
-  const countExpenses = window.countExpensesMonth(y, m);
-  const topCategory = window.getTopExpenseCategory(y, m);
+  const totalExpenses = sumExpensesMonthYear(y, m);
+  const countExpenses = countExpensesMonthYear(y, m);
+  const topCategory = getTopExpenseCategory(y, m);
 
   // Update Received KPIs
   const elReceivedTotal = $("kpi-received-total");
@@ -113,7 +234,7 @@ function renderExpensesChart() {
   const m = now.getMonth();
 
   // Get expenses by category for current month
-  const categoryData = window.getExpensesByCategory(y, m);
+  const categoryData = getExpensesByCategory(y, m);
 
   const labels = Object.keys(categoryData);
   const data = Object.values(categoryData);
@@ -188,7 +309,7 @@ function renderForecastChart() {
     historicalLabels.push(monthName);
 
     // Obter gastos do mês
-    const expenses = window.getExpensesMonth(year, month);
+    const expenses = getExpensesMonthYear(year, month);
     const total = expenses.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
     historicalData.push(total);
   }
@@ -320,7 +441,7 @@ function renderPaymentsForecastChart() {
     months.push(monthName);
 
     // Calculate pending payments (issued invoices not yet paid)
-    const invoicesIssued = window.getInvoicesIssued();
+    const invoicesIssued = getUserInvoicesIssued();
     let pendingTotal = 0;
     invoicesIssued.forEach(inv => {
       if (!inv.invoiceDate) return;
@@ -380,7 +501,7 @@ function renderPaymentsForecastChart() {
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          position: "bottom"
+           position: "bottom"
         },
         title: {
           display: true,
@@ -500,4 +621,3 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
-

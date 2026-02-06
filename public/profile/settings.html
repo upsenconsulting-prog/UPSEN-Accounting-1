@@ -6,65 +6,68 @@
   <title>Configuración - UPSEN Accounting</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     * { box-sizing: border-box; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #eef1f7; min-height: 100vh; }
     
-    /* Sidebar */
-    .sidebar { width: 250px; background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%); color: white; min-height: 100vh; position: fixed; }
-    .sidebar-header { padding: 25px 20px; font-size: 1.5em; font-weight: bold; background: rgba(0,0,0,0.2); text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    /* Sidebar - reduzido */
+    .sidebar { width: 220px; background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%); color: white; min-height: 100vh; position: fixed; }
+    .sidebar-header { padding: 18px 15px; font-size: 1.2em; font-weight: bold; background: rgba(0,0,0,0.2); text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .sidebar-menu { list-style: none; padding: 0; margin: 0; }
-    .sidebar-menu li { padding: 15px 20px; cursor: pointer; transition: all 0.3s; border-left: 4px solid transparent; }
+    .sidebar-menu li { padding: 10px 15px; cursor: pointer; transition: all 0.3s; border-left: 4px solid transparent; }
     .sidebar-menu li:hover { background: rgba(26, 188, 156, 0.2); border-left-color: #1abc9c; }
     .sidebar-menu li.active { background: rgba(26, 188, 156, 0.2); border-left-color: #1abc9c; }
-    .sidebar-link { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 12px; }
-    .sidebar-link i { width: 20px; text-align: center; }
+    .sidebar-link { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; font-size: 0.9em; }
+    .sidebar-link i { width: 18px; text-align: center; font-size: 0.9em; }
     
-    /* Main Content */
-    .main-content { margin-left: 250px; padding: 30px; }
+    /* Main Content - reduzido */
+    .main-content { margin-left: 220px; padding: 20px; }
     
-    /* Cards */
-    .settings-card { background: white; border-radius: 16px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 25px; }
+    /* Cards - reduzido */
+    .settings-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 15px; }
     .settings-card:hover { transform: translateY(-2px); transition: transform 0.3s; }
     
     /* Section Titles */
     .section-title { 
       color: #2a4d9c; 
       font-weight: 600; 
-      margin-bottom: 25px; 
-      padding-bottom: 12px; 
+      margin-bottom: 15px; 
+      padding-bottom: 8px; 
       border-bottom: 2px solid #e9ecef; 
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
+      font-size: 1em;
     }
-    .section-title i { color: #1abc9c; }
+    .section-title i { color: #1abc9c; font-size: 0.9em; }
     
     /* Form Controls */
     .form-control, .form-select {
-      border-radius: 10px;
-      padding: 12px 15px;
+      border-radius: 8px;
+      padding: 10px 12px;
       border: 2px solid #e9ecef;
       transition: all 0.3s;
+      font-size: 0.9em;
     }
     .form-control:focus, .form-select:focus {
       border-color: #2a4d9c;
-      box-shadow: 0 0 0 4px rgba(42, 77, 156, 0.1);
+      box-shadow: 0 0 0 3px rgba(42, 77, 156, 0.1);
     }
     
-    /* Buttons */
-    .btn { border-radius: 10px; padding: 12px 25px; font-weight: 500; transition: all 0.3s; }
+    /* Buttons - reduzido */
+    .btn { border-radius: 8px; padding: 8px 18px; font-weight: 500; transition: all 0.3s; font-size: 0.85em; }
     .btn-primary { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); border: none; }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(42, 77, 156, 0.4); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(42, 77, 156, 0.4); }
     .btn-success { background: linear-gradient(135deg, #1abc9c, #16a085); border: none; }
-    .btn-success:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(26, 188, 156, 0.4); }
+    .btn-success:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(26, 188, 156, 0.4); }
     .btn-danger { background: linear-gradient(135deg, #e74c3c, #c0392b); border: none; }
-    .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4); }
+    .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4); }
     .btn-secondary { background: #e9ecef; border: none; color: #495057; }
     .btn-secondary:hover { background: #dee2e6; }
     
     /* Alert Messages */
-    .alert { border-radius: 10px; padding: 15px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .alert { border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; font-size: 0.85em; }
     .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
     .alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
@@ -72,42 +75,31 @@
     
     /* Toggle Switch */
     .form-check-input:checked { background-color: #2a4d9c; border-color: #2a4d9c; }
-    .form-check-input:focus { box-shadow: 0 0 0 4px rgba(42, 77, 156, 0.2); }
+    .form-check-input:focus { box-shadow: 0 0 0 3px rgba(42, 77, 156, 0.2); }
     
     /* Page Header */
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-    .page-title { font-size: 1.8em; font-weight: 700; color: #2c3e50; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .page-title { font-size: 1.4em; font-weight: 700; color: #2c3e50; }
     
     /* Info Box */
     .info-box {
       background: linear-gradient(135deg, rgba(42, 77, 156, 0.05), rgba(26, 188, 156, 0.05));
       border: 1px solid rgba(42, 77, 156, 0.1);
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 15px;
     }
-    .info-box i { font-size: 2em; color: #2a4d9c; margin-bottom: 10px; }
-    .info-box h6 { color: #2a4d9c; margin-bottom: 5px; }
+    .info-box i { font-size: 1.5em; color: #2a4d9c; margin-bottom: 8px; }
+    .info-box h6 { color: #2a4d9c; margin-bottom: 5px; font-size: 0.9em; }
     
     /* Danger Zone */
     .danger-zone {
       border: 2px solid #e74c3c;
-      border-radius: 12px;
-      padding: 25px;
+      border-radius: 10px;
+      padding: 20px;
       background: rgba(231, 76, 60, 0.03);
     }
-    .danger-zone h5 { color: #e74c3c; margin-bottom: 15px; }
-    
-    /* Loading */
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid #e9ecef;
-      border-top-color: #2a4d9c;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .danger-zone h5 { color: #e74c3c; margin-bottom: 10px; font-size: 1em; }
     
     /* Responsive */
     @media (max-width: 768px) {
@@ -120,8 +112,10 @@
       background: rgba(231, 76, 60, 0.2);
       color: #e74c3c;
       border: none;
-      margin-top: 20px;
+      margin-top: 15px;
       width: 100%;
+      font-size: 0.85em;
+      padding: 8px 15px;
     }
     .btn-logout:hover { background: #e74c3c; color: white; }
   </style>
@@ -258,7 +252,7 @@
         </button>
       </div>
       
-      <!-- Data Management -->
+<!-- Data Management -->
       <div class="settings-card">
         <h5 class="section-title"><i class="fas fa-database"></i> Gestión de Datos</h5>
         
@@ -268,9 +262,14 @@
               <i class="fas fa-file-invoice-dollar"></i>
               <h6>Facturas</h6>
               <p class="text-muted mb-2" id="countInvoices">0 registros</p>
-              <button class="btn btn-sm btn-outline-primary" onclick="exportData('invoices')">
-                <i class="fas fa-download me-1"></i>Exportar
-              </button>
+              <div class="d-flex gap-1 justify-content-center">
+                <button class="btn btn-sm btn-outline-primary" onclick="exportDataPDF('invoices')">
+                  <i class="fas fa-file-pdf me-1"></i>PDF
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="exportData('invoices')">
+                  <i class="fas fa-download me-1"></i>JSON
+                </button>
+              </div>
             </div>
           </div>
           <div class="col-md-4 mb-3">
@@ -278,9 +277,14 @@
               <i class="fas fa-shopping-cart"></i>
               <h6>Gastos</h6>
               <p class="text-muted mb-2" id="countExpenses">0 registros</p>
-              <button class="btn btn-sm btn-outline-primary" onclick="exportData('expenses')">
-                <i class="fas fa-download me-1"></i>Exportar
-              </button>
+              <div class="d-flex gap-1 justify-content-center">
+                <button class="btn btn-sm btn-outline-primary" onclick="exportDataPDF('expenses')">
+                  <i class="fas fa-file-pdf me-1"></i>PDF
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="exportData('expenses')">
+                  <i class="fas fa-download me-1"></i>JSON
+                </button>
+              </div>
             </div>
           </div>
           <div class="col-md-4 mb-3">
@@ -288,20 +292,25 @@
               <i class="fas fa-calculator"></i>
               <h6>Presupuestos</h6>
               <p class="text-muted mb-2" id="countBudgets">0 registros</p>
-              <button class="btn btn-sm btn-outline-primary" onclick="exportData('budgets')">
-                <i class="fas fa-download me-1"></i>Exportar
-              </button>
+              <div class="d-flex gap-1 justify-content-center">
+                <button class="btn btn-sm btn-outline-primary" onclick="exportDataPDF('budgets')">
+                  <i class="fas fa-file-pdf me-1"></i>PDF
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="exportData('budgets')">
+                  <i class="fas fa-download me-1"></i>JSON
+                </button>
+              </div>
             </div>
           </div>
         </div>
         
         <div class="row mt-3">
-          <div class="col-md-6">
-            <button class="btn btn-success w-100" onclick="exportAllData()">
-              <i class="fas fa-file-export me-2"></i>Exportar todos los datos
+          <div class="col-md-6 mb-2">
+            <button class="btn btn-success w-100" onclick="exportAllDataPDF()">
+              <i class="fas fa-file-pdf me-2"></i>Exportar todo PDF
             </button>
           </div>
-          <div class="col-md-6">
+          <div class="col-md-6 mb-2">
             <button class="btn btn-warning" onclick="document.getElementById('importFile').click()">
               <i class="fas fa-file-import me-2"></i>Importar datos
             </button>
@@ -557,7 +566,7 @@
     }
   }
   
-  function exportData(type) {
+function exportData(type) {
     let data = [];
     switch(type) {
       case 'invoices':
@@ -577,6 +586,173 @@
     
     downloadJSON(data, `upsen_${type}_${new Date().toISOString().split('T')[0]}.json`);
     showAlert(`${type.charAt(0).toUpperCase() + type.slice(1)} exportado!`, 'success');
+  }
+  
+  // Export to PDF functions
+  function exportDataPDF(type) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    const primaryColor = [42, 77, 156];
+    const secondaryColor = [26, 188, 156];
+    const textColor = [44, 62, 80];
+    const grayColor = [108, 117, 125];
+    
+    // Header
+    doc.setFillColor(...primaryColor);
+    doc.rect(0, 0, 210, 30, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('UPSEN Accounting', 105, 20, { align: 'center' });
+    
+    // Title
+    doc.setTextColor(...textColor);
+    doc.setFontSize(14);
+    doc.text(type.charAt(0).toUpperCase() + type.slice(1), 15, 45);
+    
+    doc.setTextColor(...grayColor);
+    doc.setFontSize(10);
+    doc.text('Generado: ' + new Date().toLocaleDateString('es-ES'), 195, 45, { align: 'right' });
+    
+    doc.setDrawColor(...secondaryColor);
+    doc.setLineWidth(0.5);
+    doc.line(15, 40, 195, 40);
+    
+    // Data
+    let y = 55;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    
+    let data = [];
+    let title = '';
+    
+    if (type === 'invoices') {
+      const received = AuthSystem.getUserData('upsen_invoices_received') || [];
+      const issued = AuthSystem.getUserData('upsen_invoices_issued') || [];
+      data = [...received.map(r => ({...r, type: 'Recibida'})), ...issued.map(i => ({...i, type: 'Emitida'}))];
+      title = 'Facturas';
+    } else if (type === 'expenses') {
+      data = AuthSystem.getUserData('upsen_expenses') || [];
+      title = 'Gastos';
+    } else if (type === 'budgets') {
+      data = AuthSystem.getUserData('upsen_budgets') || [];
+      title = 'Presupuestos';
+    }
+    
+    if (data.length === 0) {
+      doc.setTextColor(...grayColor);
+      doc.text('No hay datos disponibles.', 15, y);
+    } else {
+      doc.setFontSize(8);
+      data.slice(0, 30).forEach((item, index) => {
+        doc.setTextColor(...grayColor);
+        
+        if (type === 'invoices') {
+          doc.text((item.invoiceNumber || '-') + ' | ' + (item.supplier || item.customer || '-') + ' | ' + (item.invoiceDate || '-'), 15, y);
+          doc.setTextColor(...textColor);
+          doc.text((item.amount || 0) + ' EUR | ' + (item.state || '-'), 120, y);
+        } else if (type === 'expenses') {
+          doc.text((item.date || '-') + ' | ' + (item.category || '-'), 15, y);
+          doc.setTextColor(...textColor);
+          doc.text((item.amount || 0) + ' EUR', 120, y);
+          doc.setTextColor(...grayColor);
+          doc.text((item.notes || '').substring(0, 30), 150, y);
+        } else if (type === 'budgets') {
+          doc.text((item.number || '-') + ' | ' + (item.customer || '-'), 15, y);
+          doc.setTextColor(...textColor);
+          doc.text((item.total || 0) + ' EUR | ' + (item.status || '-'), 120, y);
+        }
+        y += 7;
+      });
+      
+      if (data.length > 30) {
+        doc.setTextColor(...grayColor);
+        doc.text('... y ' + (data.length - 30) + ' registros más', 15, y + 3);
+      }
+    }
+    
+    // Footer
+    doc.setFillColor(...primaryColor);
+    doc.rect(0, 277, 210, 20, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(9);
+    doc.text('UPSEN Accounting - ' + title, 105, 287, { align: 'center' });
+    
+    doc.save(`upsen_${type}_${new Date().toISOString().split('T')[0]}.pdf`);
+    showAlert(title + ' exportados en PDF!', 'success');
+  }
+  
+  function exportAllDataPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    const primaryColor = [42, 77, 156];
+    const secondaryColor = [26, 188, 156];
+    const textColor = [44, 62, 80];
+    const grayColor = [108, 117, 125];
+    
+    // Header
+    doc.setFillColor(...primaryColor);
+    doc.rect(0, 0, 210, 30, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('UPSEN Accounting', 105, 20, { align: 'center' });
+    
+    // Title
+    doc.setTextColor(...textColor);
+    doc.setFontSize(14);
+    doc.text('Resumen de Datos', 15, 45);
+    
+    doc.setTextColor(...grayColor);
+    doc.setFontSize(10);
+    doc.text('Generado: ' + new Date().toLocaleDateString('es-ES'), 195, 45, { align: 'right' });
+    
+    doc.setDrawColor(...secondaryColor);
+    doc.setLineWidth(0.5);
+    doc.line(15, 40, 195, 40);
+    
+    // Stats
+    const received = AuthSystem.getUserData('upsen_invoices_received') || [];
+    const issued = AuthSystem.getUserData('upsen_invoices_issued') || [];
+    const expenses = AuthSystem.getUserData('upsen_expenses') || [];
+    const budgets = AuthSystem.getUserData('upsen_budgets') || [];
+    
+    let y = 60;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...textColor);
+    doc.text('Estadisticas Generales', 15, y);
+    y += 10;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    
+    const stats = [
+      ['Facturas Recibidas:', received.length.toString()],
+      ['Facturas Emitidas:', issued.length.toString()],
+      ['Gastos:', expenses.length.toString()],
+      ['Presupuestos:', budgets.length.toString()]
+    ];
+    
+    stats.forEach(([label, value]) => {
+      doc.setTextColor(...grayColor);
+      doc.text(label, 20, y);
+      doc.setTextColor(...textColor);
+      doc.text(value, 80, y);
+      y += 7;
+    });
+    
+    // Footer
+    doc.setFillColor(...primaryColor);
+    doc.rect(0, 277, 210, 20, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(9);
+    doc.text('UPSEN Accounting - Resumen', 105, 287, { align: 'center' });
+    
+    doc.save(`upsen_resumen_${new Date().toISOString().split('T')[0]}.pdf`);
+    showAlert('Resumen exportado en PDF!', 'success');
   }
   
   function exportAllData() {

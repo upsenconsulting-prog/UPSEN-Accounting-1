@@ -1,4 +1,4 @@
-// Funções do store.js já estão disponíveis globalmente via window
+// expense.js - Com dados isolados por usuário
 
 function $(id) {
   return document.getElementById(id);
@@ -25,8 +25,33 @@ function markActivePage() {
 // Chart instance
 let expenseChart = null;
 
+// ========== DADOS DO USUÁRIO LOGADO ==========
+function getUserExpenses() {
+  return AuthSystem.getUserData('upsen_expenses') || [];
+}
+
+function saveUserExpense(expense) {
+  const list = getUserExpenses();
+  list.push({
+    id: AuthSystem.generateId(),
+    date: expense.date || '',
+    category: expense.category || '',
+    amount: Number(expense.amount || 0),
+    notes: expense.notes || '',
+    paymentMethod: expense.paymentMethod || '',
+    createdAt: new Date().toISOString()
+  });
+  AuthSystem.saveUserData('upsen_expenses', list);
+}
+
+function deleteUserExpense(id) {
+  const list = getUserExpenses().filter(e => e.id !== id);
+  AuthSystem.saveUserData('upsen_expenses', list);
+}
+
+// ========== RENDER FUNCTIONS ==========
 function renderSummaryCards() {
-  const list = window.getExpenses();
+  const list = getUserExpenses();
   
   // Calculate monthly total (current month)
   const now = new Date();
@@ -87,7 +112,7 @@ function renderChart() {
   const chartContainer = document.getElementById('expenseChartCanvas');
   if (!chartContainer) return;
 
-  const list = window.getExpenses();
+  const list = getUserExpenses();
   
   // Calculate totals by category
   const categoryTotals = {};
@@ -147,7 +172,7 @@ function renderExpenses() {
   const tbody = $("expenseTBody");
   if (!tbody) return;
 
-  const list = window.getExpenses();
+  const list = getUserExpenses();
   tbody.innerHTML = "";
 
   if (!list.length) {
@@ -179,7 +204,7 @@ function renderExpenses() {
 
   tbody.querySelectorAll("[data-del]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      window.deleteExpense(btn.getAttribute("data-del"));
+      deleteUserExpense(btn.getAttribute("data-del"));
       renderExpenses();
       renderChart();
       renderSummaryCards();
@@ -210,9 +235,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      window.addExpense({ date, category, amount, notes });
+      saveUserExpense({ date, category, amount, notes });
 
-      // fechar modal - usar classe .show
+      // fechar modal
       const el = $("modalNewExpense");
       if (el) {
         el.classList.remove("show");
@@ -229,4 +254,3 @@ document.addEventListener("DOMContentLoaded", () => {
   renderChart();
   renderSummaryCards();
 });
-
