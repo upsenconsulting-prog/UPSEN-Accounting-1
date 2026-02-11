@@ -1,4 +1,4 @@
-// invoice-issued.js - Com dados isolados por usuário
+// invoice-issued.js - Com Firebase Firestore
 
 function $(id) {
   return document.getElementById(id);
@@ -31,44 +31,75 @@ function markActivePage() {
 // Chart instance
 let issuedChart = null;
 
-// ========== DADOS DO USUÁRIO LOGADO ==========
-function getUserInvoicesIssued() {
-  return AuthSystem.getUserData('upsen_invoices_issued') || [];
+// ========== DADOS DO USUÁRIO LOGADO (FIRESTORE) ==========
+async function getUserInvoicesIssued() {
+  try {
+    const user = AuthService.getCurrentUser();
+    if (!user) return [];
+    
+    const result = await FirestoreService.getAll('invoices_issued');
+    // FirestoreService.getAll retorna { success: true, data: [...] } ou array (localStorage)
+    if (result && result.success === true && Array.isArray(result.data)) {
+      return result.data;
+    } else if (Array.isArray(result)) {
+      return result;
+    }
+    return [];
+  } catch (error) {
+    console.error('Error getting invoices issued:', error);
+    return [];
+  }
 }
 
-function saveUserInvoiceIssued(invoice) {
-  const list = getUserInvoicesIssued();
-  list.push({
-    id: AuthSystem.generateId(),
-    invoiceNumber: invoice.invoiceNumber || '',
-    customer: invoice.customer || '',
-    invoiceDate: invoice.invoiceDate || '',
-    dueDate: invoice.dueDate || '',
-    amount: Number(invoice.amount || 0),
-    state: invoice.state || 'Pendiente',
-    description: invoice.description || '',
-    createdAt: new Date().toISOString()
-  });
-  AuthSystem.saveUserData('upsen_invoices_issued', list);
+async function saveUserInvoiceIssued(invoice) {
+  try {
+    const user = AuthService.getCurrentUser();
+    if (!user) return false;
+    
+    const newInvoice = {
+      invoiceNumber: invoice.invoiceNumber || '',
+      customer: invoice.customer || '',
+      invoiceDate: invoice.invoiceDate || '',
+      dueDate: invoice.dueDate || '',
+      amount: Number(invoice.amount || 0),
+      state: invoice.state || 'Pendiente',
+      description: invoice.description || '',
+      userId: user.uid,
+      createdAt: new Date().toISOString()
+    };
+    
+    // Usar create (alias para add)
+    await window.FirestoreService.create('invoices_issued', newInvoice);
+    return true;
+  } catch (error) {
+    console.error('Error saving invoice:', error);
+    return false;
+  }
 }
 
-function deleteUserInvoiceIssued(id) {
-  const list = getUserInvoicesIssued().filter(i => i.id !== id);
-  AuthSystem.saveUserData('upsen_invoices_issued', list);
+async function deleteUserInvoiceIssued(id) {
+  try {
+    await FirestoreService.delete('invoices_issued', id);
+    return true;
+  } catch (error) {
+    console.error('Error deleting invoice:', error);
+    return false;
+  }
 }
 
-function updateUserInvoiceIssued(id, updates) {
-  const list = getUserInvoicesIssued();
-  const index = list.findIndex(i => i.id === id);
-  if (index !== -1) {
-    list[index] = { ...list[index], ...updates };
-    AuthSystem.saveUserData('upsen_invoices_issued', list);
+async function updateUserInvoiceIssued(id, updates) {
+  try {
+    await FirestoreService.update('invoices_issued', id, updates);
+    return true;
+  } catch (error) {
+    console.error('Error updating invoice:', error);
+    return false;
   }
 }
 
 // ========== RENDER FUNCTIONS ==========
-function renderSummaryCards() {
-  const list = getUserInvoicesIssued();
+async function renderSummaryCards() {
+  const list = await getUserInvoicesIssued();
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
@@ -112,11 +143,11 @@ function renderSummaryCards() {
   $('averageAmount').textContent = moneyEUR(avgAmount);
 }
 
-function renderChart() {
+async function renderChart() {
   const chartContainer = document.getElementById('issuedChartCanvas');
   if (!chartContainer) return;
 
-  const list = getUserInvoicesIssued();
+  const list = await getUserInvoicesIssued();
   
   // Calculate totals by month (last 6 months)
   const monthlyData = {};
@@ -184,11 +215,11 @@ function renderChart() {
   });
 }
 
-function renderInvoices() {
+async function renderInvoices() {
   const tbody = $('invoiceTbody');
   if (!tbody) return;
 
-  const list = getUserInvoicesIssued();
+  const list = await getUserInvoicesIssued();
   tbody.innerHTML = '';
 
   if (!list.length) {
@@ -232,33 +263,38 @@ function renderInvoices() {
   });
 
   tbody.querySelectorAll('[data-del]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       if (confirm('¿Eliminar factura?')) {
-        deleteUserInvoiceIssued(btn.getAttribute('data-del'));
-        renderInvoices();
-        renderChart();
-        renderSummaryCards();
+        await deleteUserInvoiceIssued(btn.getAttribute('data-del'));
+        await renderInvoices();
+        await renderChart();
+        await renderSummaryCards();
       }
     });
   });
 
   tbody.querySelectorAll('[data-paid]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      updateUserInvoiceIssued(btn.getAttribute('data-paid'), { state: 'Pagada' });
-      renderInvoices();
-      renderSummaryCards();
+    btn.addEventListener('click', async () => {
+      await updateUserInvoiceIssued(btn.getAttribute('data-paid'), { state: 'Pagada' });
+      await renderInvoices();
+      await renderSummaryCards();
     });
   });
 }
 
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   markActivePage();
+  
+  // Load data
+  await renderInvoices();
+  await renderChart();
+  await renderSummaryCards();
   
   // Guardar nova factura
   const saveBtn = $('saveInvoiceIssuedBtn');
   if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
+    saveBtn.addEventListener('click', async () => {
       const form = $('formNewInvoiceIssued');
       if (!form) return;
 
@@ -277,19 +313,15 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      saveUserInvoiceIssued(data);
+      await saveUserInvoiceIssued(data);
 
       const modal = $('modalNewInvoiceIssued');
       if (modal) modal.classList.remove('show');
       
       form.reset();
-      renderInvoices();
-      renderChart();
-      renderSummaryCards();
+      await renderInvoices();
+      await renderChart();
+      await renderSummaryCards();
     });
   }
-
-  renderInvoices();
-  renderChart();
-  renderSummaryCards();
 });

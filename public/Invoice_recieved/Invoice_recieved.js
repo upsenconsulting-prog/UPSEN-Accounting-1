@@ -1,4 +1,4 @@
-// Invoice_recieved.js - Com dados isolados por usuário
+// Invoice_recieved.js - Com Firebase Firestore
 
 function $(id) {
   return document.getElementById(id);
@@ -31,43 +31,74 @@ function markActivePage() {
 // Chart instance
 let receivedChart = null;
 
-// ========== DADOS DO USUÁRIO LOGADO ==========
-function getUserInvoicesReceived() {
-  return AuthSystem.getUserData('upsen_invoices_received') || [];
+// ========== DADOS DO USUÁRIO LOGADO (FIRESTORE) ==========
+async function getUserInvoicesReceived() {
+  try {
+    const user = AuthService.getCurrentUser();
+    if (!user) return [];
+    
+    const result = await FirestoreService.getAll('invoices_received');
+    // FirestoreService.getAll retorna { success: true, data: [...] } ou array (localStorage)
+    if (result && result.success === true && Array.isArray(result.data)) {
+      return result.data;
+    } else if (Array.isArray(result)) {
+      return result;
+    }
+    return [];
+  } catch (error) {
+    console.error('Error getting invoices received:', error);
+    return [];
+  }
 }
 
-function saveUserInvoiceReceived(invoice) {
-  const list = getUserInvoicesReceived();
-  list.push({
-    id: AuthSystem.generateId(),
-    invoiceNumber: invoice.invoiceNumber || '',
-    supplier: invoice.supplier || '',
-    invoiceDate: invoice.invoiceDate || '',
-    amount: Number(invoice.amount || 0),
-    state: invoice.state || 'Pendiente',
-    description: invoice.description || '',
-    createdAt: new Date().toISOString()
-  });
-  AuthSystem.saveUserData('upsen_invoices_received', list);
+async function saveUserInvoiceReceived(invoice) {
+  try {
+    const user = AuthService.getCurrentUser();
+    if (!user) return false;
+    
+    const newInvoice = {
+      invoiceNumber: invoice.invoiceNumber || '',
+      supplier: invoice.supplier || '',
+      invoiceDate: invoice.invoiceDate || '',
+      amount: Number(invoice.amount || 0),
+      state: invoice.state || 'Pendiente',
+      description: invoice.description || '',
+      userId: user.uid,
+      createdAt: new Date().toISOString()
+    };
+    
+    // Usar create (alias para add)
+    await window.FirestoreService.create('invoices_received', newInvoice);
+    return true;
+  } catch (error) {
+    console.error('Error saving invoice:', error);
+    return false;
+  }
 }
 
-function deleteUserInvoiceReceived(id) {
-  const list = getUserInvoicesReceived().filter(i => i.id !== id);
-  AuthSystem.saveUserData('upsen_invoices_received', list);
+async function deleteUserInvoiceReceived(id) {
+  try {
+    await FirestoreService.delete('invoices_received', id);
+    return true;
+  } catch (error) {
+    console.error('Error deleting invoice:', error);
+    return false;
+  }
 }
 
-function updateUserInvoiceReceived(id, updates) {
-  const list = getUserInvoicesReceived();
-  const index = list.findIndex(i => i.id === id);
-  if (index !== -1) {
-    list[index] = { ...list[index], ...updates };
-    AuthSystem.saveUserData('upsen_invoices_received', list);
+async function updateUserInvoiceReceived(id, updates) {
+  try {
+    await FirestoreService.update('invoices_received', id, updates);
+    return true;
+  } catch (error) {
+    console.error('Error updating invoice:', error);
+    return false;
   }
 }
 
 // ========== RENDER FUNCTIONS ==========
-function renderSummaryCards() {
-  const list = getUserInvoicesReceived();
+async function renderSummaryCards() {
+  const list = await getUserInvoicesReceived();
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
@@ -112,11 +143,11 @@ function renderSummaryCards() {
   $('overdueCount').textContent = overdueCount;
 }
 
-function renderChart() {
+async function renderChart() {
   const chartContainer = document.getElementById('receivedChartCanvas');
   if (!chartContainer) return;
 
-  const list = getUserInvoicesReceived();
+  const list = await getUserInvoicesReceived();
   
   // Calculate totals by supplier
   const supplierTotals = {};
@@ -159,11 +190,11 @@ function renderChart() {
   });
 }
 
-function renderInvoices() {
+async function renderInvoices() {
   const tbody = $('invoiceTBody');
   if (!tbody) return;
 
-  const list = getUserInvoicesReceived();
+  const list = await getUserInvoicesReceived();
   tbody.innerHTML = '';
 
   if (!list.length) {
@@ -206,37 +237,42 @@ function renderInvoices() {
   });
 
   tbody.querySelectorAll('[data-del]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       if (confirm('¿Eliminar factura?')) {
-        deleteUserInvoiceReceived(btn.getAttribute('data-del'));
-        renderInvoices();
-        renderChart();
-        renderSummaryCards();
+        await deleteUserInvoiceReceived(btn.getAttribute('data-del'));
+        await renderInvoices();
+        await renderChart();
+        await renderSummaryCards();
       }
     });
   });
 
   tbody.querySelectorAll('[data-paid]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      updateUserInvoiceReceived(btn.getAttribute('data-paid'), { state: 'Pagada' });
-      renderInvoices();
-      renderSummaryCards();
+    btn.addEventListener('click', async () => {
+      await updateUserInvoiceReceived(btn.getAttribute('data-paid'), { state: 'Pagada' });
+      await renderInvoices();
+      await renderSummaryCards();
     });
   });
 }
 
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   markActivePage();
+  
+  // Load data
+  await renderInvoices();
+  await renderChart();
+  await renderSummaryCards();
   
   // Guardar nova factura
   const saveBtn = $('saveInvoiceReceivedBtn');
   if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
+    saveBtn.addEventListener('click', async () => {
       const form = $('formNewInvoiceReceived');
       if (!form) return;
 
-      const fd = new FormData(form);
+       const fd = new FormData(form);
       const data = {
         invoiceNumber: String(fd.get('invoiceNumber') || ''),
         supplier: String(fd.get('supplier') || ''),
@@ -250,19 +286,15 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      saveUserInvoiceReceived(data);
+      await saveUserInvoiceReceived(data);
 
       const modal = $('modalNewInvoiceReceived');
       if (modal) modal.classList.remove('show');
       
       form.reset();
-      renderInvoices();
-      renderChart();
-      renderSummaryCards();
+      await renderInvoices();
+      await renderChart();
+      await renderSummaryCards();
     });
   }
-
-  renderInvoices();
-  renderChart();
-  renderSummaryCards();
 });

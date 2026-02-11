@@ -251,6 +251,29 @@
       transition: opacity 0.3s;
     }
     .back-link:hover { opacity: 1; }
+    .google-btn {
+      width: 100%;
+      padding: 14px;
+      background: white;
+      color: #333;
+      border: 2px solid #e9ecef;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .google-btn:hover {
+      border-color: #2a4d9c;
+      background: #f8f9fa;
+    }
+    .google-btn i {
+      font-size: 20px;
+    }
   </style>
 </head>
 <body>
@@ -269,6 +292,18 @@
       <div id="message" class="alert alert-info hidden">
         <i class="fas fa-info-circle"></i>
         <span id="messageText"></span>
+      </div>
+      
+      <!-- Info sobre App Check -->
+      <div id="appCheckInfo" class="alert alert-info" style="background: #fff3cd; color: #856404; border-color: #ffeaa7; display: none;">
+        <i class="fas fa-shield-alt"></i>
+        <span id="appCheckText"><strong>Info:</strong> Firebase App Check ativo. Tentando login...</span>
+      </div>
+      
+      <!-- Info sobre domínio -->
+      <div class="alert alert-info" style="background: #e3f2fd; color: #0d47a1; border-color: #90caf9;">
+        <i class="fas fa-info-circle"></i>
+        <span><strong>Info:</strong> Usa email/password ou cria uma nova conta. O login Google requer configuração adicional no Firebase Console.</span>
       </div>
       
       <!-- Formulario de LOGIN -->
@@ -292,6 +327,13 @@
         <button type="submit" class="login-btn" id="loginBtn">
           <i class="fas fa-sign-in-alt me-2"></i>Iniciar sesión
         </button>
+        
+        <!-- Google Login -->
+        <button type="button" class="google-btn mt-3" onclick="tryGoogleLogin()" title=" Faz login com Google">
+          <i class="fab fa-google"></i>
+          Continuar com Google
+        </button>
+
         
         <div class="form-footer">
           <p>¿No tienes cuenta? <button type="button" class="toggle-btn" onclick="showRegister()">Crear cuenta</button></p>
@@ -384,48 +426,69 @@
     </div>
   </div>
 
-  <!-- Loading Overlay -->
-  <div id="loadingOverlay" class="loading-overlay hidden">
-    <div class="spinner"></div>
-  </div>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
 
+  <!-- Firebase Config -->
+  <script src="shared/firebase-config.js"></script>
+  
+  <!-- Esperar Firebase carregar antes de usar -->
+  <script>
+    // Aguardar Firebase estar pronto
+    function waitForFirebase(callback, maxAttempts = 100) {
+      let attempts = 0;
+      const check = () => {
+        attempts++;
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
+          console.log('Firebase SDK carregado após', attempts, 'tentativas');
+          callback(true);
+        } else if (attempts < maxAttempts) {
+          setTimeout(check, 50);
+        } else {
+          console.warn('Firebase SDK não carregado após', maxAttempts, 'tentativas');
+          callback(false);
+        }
+      };
+      check();
+    }
+  </script>
+  
+  <!-- Auth System (Firebase + Fallback Demo) -->
   <script src="shared/auth-system.js"></script>
+  
   <script>
     // Elementos
     const loginForm = document.getElementById('loginForm');
     const registerForm = document.getElementById('registerForm');
     const messageDiv = document.getElementById('message');
     const messageText = document.getElementById('messageText');
-    const loadingOverlay = document.getElementById('loadingOverlay');
     const demoSection = document.getElementById('demoSection');
     
-    // Verificar si ya está logueado
-    if (AuthSystem.isLoggedIn()) {
-      window.location.href = 'frontPage/frontPage.html';
-    }
+    // Verificar estado de autenticação
+    document.addEventListener('DOMContentLoaded', () => {
+      // Aguardar Firebase e inicializar AuthSystem
+      waitForFirebase((firebaseReady) => {
+        console.log('Firebase pronto:', firebaseReady);
+        AuthSystem.init((result) => {
+          console.log('AuthSystem inicializado, loggedIn:', result.isLoggedIn);
+          if (result.isLoggedIn) {
+            window.location.href = 'frontPage/frontPage.html';
+          }
+        });
+      });
+    });
     
-    // Funciones de UI
+    // Funções de UI
     function showMessage(text, type = 'info') {
       messageText.textContent = text;
       messageDiv.className = `alert alert-${type}`;
       messageDiv.classList.remove('hidden');
       
-      // Auto-hide después de 5 segundos
       setTimeout(() => {
         messageDiv.classList.add('hidden');
       }, 5000);
-    }
-    
-    function hideMessage() {
-      messageDiv.classList.add('hidden');
-    }
-    
-    function showLoading() {
-      loadingOverlay.classList.remove('hidden');
-    }
-    
-    function hideLoading() {
-      loadingOverlay.classList.add('hidden');
     }
     
     function showLogin() {
@@ -442,6 +505,10 @@
       demoSection.classList.add('hidden');
     }
     
+    function hideMessage() {
+      messageDiv.classList.add('hidden');
+    }
+    
     function fillDemoLogin(email, password) {
       document.getElementById('email').value = email;
       document.getElementById('password').value = password;
@@ -452,8 +519,8 @@
       window.location.href = 'frontPage/frontPage.html';
     }
     
-    // Login
-    loginForm.addEventListener('submit', function(e) {
+    // Login com Email/Password
+    loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       hideMessage();
       
@@ -465,26 +532,42 @@
         return;
       }
       
-      showLoading();
       document.getElementById('loginBtn').disabled = true;
       
-      // Simular delay para mejor UX
-      setTimeout(() => {
-        const result = AuthSystem.login(email, password);
-        hideLoading();
-        document.getElementById('loginBtn').disabled = false;
-        
-        if (result.success) {
-          showMessage(`¡Bienvenido, ${result.user.name}!`, 'success');
-          setTimeout(redirectToDashboard, 1000);
-        } else {
-          showMessage(result.message || 'Correo o contraseña incorrectos.', 'error');
-        }
-      }, 600);
+      const result = await AuthSystem.login(email, password);
+      document.getElementById('loginBtn').disabled = false;
+      
+      if (result.success) {
+        showMessage(`¡Bienvenido, ${result.user.name || result.user.email}!`, 'success');
+        setTimeout(redirectToDashboard, 1000);
+      } else {
+        showMessage(result.message, 'error');
+      }
     });
     
+    // Login com Google
+    async function tryGoogleLogin() {
+      hideMessage();
+      showMessage('A iniciar sessão com Google...', 'info');
+      
+      try {
+        const result = await AuthSystem.loginWithGoogle();
+        
+        if (result.success) {
+          showMessage(`¡Bienvenido, ${result.user.name || result.user.email}!`, 'success');
+          setTimeout(redirectToDashboard, 1000);
+        } else {
+          showMessage(result.message, 'error');
+        }
+      } catch (error) {
+        console.error('Erro Google Login:', error);
+        showMessage('Erro ao iniciar sessão com Google.', 'error');
+      }
+    }
+
+    
     // Registro
-    registerForm.addEventListener('submit', function(e) {
+    registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       hideMessage();
       
@@ -495,7 +578,7 @@
       const password = document.getElementById('regPassword').value;
       const passwordConfirm = document.getElementById('regPasswordConfirm').value;
       
-      // Validaciones
+      // Validações
       if (!name || !company || !email || !password) {
         showMessage('Por favor, completa todos los campos obligatorios.', 'error');
         return;
@@ -511,24 +594,25 @@
         return;
       }
       
-      showLoading();
       document.getElementById('registerBtn').disabled = true;
       
-      setTimeout(() => {
-        const result = AuthSystem.register(name, email, password, company, phone);
-        hideLoading();
-        document.getElementById('registerBtn').disabled = false;
-        
-        if (result.success) {
-          showMessage('¡Cuenta creada con éxito! ¡Bienvenido a UPSEN Accounting!', 'success');
-          setTimeout(redirectToDashboard, 1500);
-        } else {
-          showMessage(result.message || 'Error al crear la cuenta.', 'error');
-        }
-      }, 600);
+      const result = await AuthSystem.register(email, password, {
+        name,
+        company,
+        phone
+      });
+      
+      document.getElementById('registerBtn').disabled = false;
+      
+      if (result.success) {
+        showMessage('¡Cuenta creada con éxito! ¡Bienvenido a UPSEN Accounting!', 'success');
+        setTimeout(redirectToDashboard, 1500);
+      } else {
+        showMessage(result.message, 'error');
+      }
     });
     
-    // Mostrar mensaje inicial
+    // Mensagem inicial
     showMessage('Sistema UPSEN Accounting - Inicia sesión para continuar', 'info');
   </script>
 </body>

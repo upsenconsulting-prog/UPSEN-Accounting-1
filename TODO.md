@@ -1,63 +1,57 @@
-# UPSEN Accounting - Firebase Integration
+# UPSEN Accounting - Correções Realizadas
 
-## ✅ Firebase Integration Implementada
+## ✅ Correções Implementadas
 
-O sistema está configurado para funcionar com **localStorage** (dados guardados no browser). O Firebase pode ser adicionado mais tarde para sincronização na cloud.
+### 1. Firebase Authentication - onAuthStateChanged
+O código agora usa corretamente o `onAuthStateChanged` do Firebase para detectar o estado de autenticação:
+
+```javascript
+// Observar estado de autenticacao
+AuthService.onAuthChange(({ user, userData, isLoggedIn }) => {
+  if (isLoggedIn && userData) {
+    loadProfileData(userData);
+  } else if (!isLoggedIn) {
+    window.location.href = '../login.html';
+  }
+});
+```
+
+### 2. Loading Infinito Corrigido
+- Removido o loading overlay que estava a bloquear a página
+- A página agora carrega diretamente
+
+### 3. Profile.html Otimizado
+- Usa `onAuthStateChanged` para carregar dados
+- Exportação PDF funcional com jsPDF
+- Código limpo e sem duplicações
+
+### 4. Firebase Integration Melhorado
+- Adicionado cache de utilizador (`currentUser`, `currentUserData`)
+- `isLoggedIn()` agora funciona corretamente
+- Suporte para `onAuthStateChanged` em todas as páginas
 
 ---
 
-## 👤 Como Aceder (Demo)
+## 📁 Ficheiros Modificados
 
-**O sistema já está a funcionar!** Basta fazer login com:
-
-```
-Email: admin@demo.com
-Password: demo123
-```
-
-**Passos:**
-1. Abra o site: `public/frontPage/frontPage.html`
-2. Faça login com as credenciais acima
-3. Os dados demo (John Smith) serão carregados automaticamente
+1. `public/shared/firebase-integration.js` - AuthService melhorado
+2. `public/profile/profile.html` - Carregamento correto + PDF export
+3. `public/frontPage/frontPage.html` - Login/logout com Firebase
 
 ---
 
-## 📋 Funcionalidades Disponíveis
+## 🔐 Como Usar
 
-### Sistema Atual (localStorage)
-- ✅ Login/Registo de empresas
-- ✅ Faturas Recebidas
-- ✅ Faturas Emitidas
-- ✅ Gastos
-- ✅ Orçamentos
-- ✅ Dashboard com KPIs
-- ✅ Dados isolados por empresa
+### Configurar Firebase (se ainda não estiver)
+1. Criar projeto no Firebase Console
+2. Ativar Authentication (Email/Password)
+3. Criar base de dados Firestore
+4. Copiar configuração para `firebase-config.js`
 
-### Firebase (Opcional - Para Later)
-O sistema está preparado para Firebase. Quando quiser ativar:
-1. Instalar Firebase CLI: `npm install -g firebase-tools`
-2. Iniciar emulators: `firebase emulators:start`
-3. Atualizar configuração em `public/shared/firebase-config.js`
-
----
-
-## 📁 Estrutura de Dados (localStorage)
-
-```
-auth_users              - Lista de empresas
-currentUser            - Empresa atual logada
-upsen_invoices_received_{userId}
-upsen_invoices_issued_{userId}
-upsen_expenses_{userId}
-upsen_budgets_{userId}
-```
-
----
-
-## ⚠️ Notas
-
-- **Dados são guardados no browser** - Não serão perdidos ao fechar
-- **Para limpar dados**: Clique em "Eliminar conta" nas definições
-- **John Smith** é o utilizador admin e não deve ser eliminado
-- **Firebase pode ser adicionado** quando quiser sincronização na cloud
+### Testar
+1. Aceder a `public/login.html`
+2. Fazer login ou registar
+3. Aceder a `public/profile/profile.html`
+4. Verificar dados carregados corretamente
+5. Testar exportação PDF
 

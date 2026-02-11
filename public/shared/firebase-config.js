@@ -1,39 +1,18 @@
 /**
  * Firebase Configuration - UPSEN Accounting
+ * Projeto: upsen-accounting-3109f
  * 
- * DESENVOLVIMENTO LOCAL:
- * - Execute: firebase emulators:start
- * - Aceda: http://localhost:4000 para ver UI dos emulators
- * 
- * PRODUÇÃO (Firebase Cloud):
- * - Mude USE_EMULATORS para false
- * - Substitua a configuração com as suas credenciais reais do Firebase Console
+ * Este ficheiro deve ser carregado ANTES do firebase-integration.js
  */
 
-// ===== CONFIGURAÇÃO PARA EMULATORS (DESENVOLVIMENTO) =====
-const firebaseConfig = {
-  apiKey: "demo-api-key",
-  authDomain: "upsen-accounting-demo.firebaseapp.com",
-  projectId: "upsen-accounting-demo",
-  storageBucket: "upsen-accounting-demo.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
+// Configuração oficial do Firebase (versão sem export)
+window.FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBi1RinGAhVVWtT5wYn9ycf-4uWS5P1z1k",
+  authDomain: "upsen-accounting-3109f.firebaseapp.com",
+  projectId: "upsen-accounting-3109f",
+  storageBucket: "upsen-accounting-3109f.firebasestorage.app",
+  messagingSenderId: "706016193278",
+  appId: "1:706016193278:web:48f754a2b77ce0684393af"
 };
 
-// ===== CONFIGURAÇÃO PARA PRODUÇÃO (substitua com as suas credenciais) =====
-// const firebaseConfig = {
-//   apiKey: "SUA-API-KEY",
-//   authDomain: "SEU-PROJETO.firebaseapp.com",
-//   projectId: "SEU-PROJETO",
-//   storageBucket: "SEU-PROJETO.appspot.com",
-//   messagingSenderId: "SEU-SENDER-ID",
-//   appId: "SUA-APP-ID"
-// };
-
-// Bandeira para usar Firebase Emulators (desenvolvimento local)
-// Mude para false quando quiser usar Firebase Cloud (produção)
-const USE_EMULATORS = true;
-
-// Exportar configuração para outros módulos
-export { firebaseConfig, USE_EMULATORS };
-
+console.log('Firebase config loaded');

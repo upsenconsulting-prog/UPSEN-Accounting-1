@@ -418,25 +418,36 @@
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+
+<!-- Firebase Config & Auth -->
+<script src="../shared/firebase-config.js"></script>
 <script src="../shared/auth-system.js"></script>
+
 <script>
   let passwordModal = null;
   
   document.addEventListener('DOMContentLoaded', async function() {
     passwordModal = new bootstrap.Modal(document.getElementById('passwordModal'));
     
-    if (!AuthSystem.isLoggedIn()) {
-      window.location.href = '../login.html';
-      return;
-    }
-    
-    loadSettings();
-    loadStats();
-    calculateStorage();
+    AuthSystem.init((isLoggedIn) => {
+      if (!isLoggedIn) {
+        window.location.href = '../login.html';
+        return;
+      }
+      
+      loadSettings();
+      loadStats();
+      calculateStorage();
+    });
   });
+
   
-  function loadSettings() {
-    const user = AuthSystem.getCurrentUser();
+function loadSettings() {
+    const user = AuthService.getCurrentUser();
     if (!user) return;
     
     document.getElementById('settingName').value = user.name || '';
@@ -462,18 +473,21 @@
     document.getElementById('notifyBudget').checked = localStorage.getItem('notifyBudget') === 'true';
   }
   
-  function loadStats() {
+  async function loadStats() {
     try {
-      const invoices = AuthSystem.getUserData('upsen_invoices_received') || [];
-      const issued = AuthSystem.getUserData('upsen_invoices_issued') || [];
-      const expenses = AuthSystem.getUserData('upsen_expenses') || [];
-      const budgets = AuthSystem.getUserData('upsen_budgets') || [];
+      const user = AuthService.getCurrentUser();
+      if (!user) return;
       
-      document.getElementById('countInvoices').textContent = (invoices.length + issued.length) + ' registros';
-      document.getElementById('countExpenses').textContent = expenses.length + ' registros';
-      document.getElementById('countBudgets').textContent = budgets.length + ' registros';
+      const invoices = await FirestoreService.getAll('invoices_received');
+      const issued = await FirestoreService.getAll('invoices_issued');
+      const expenses = await FirestoreService.getAll('expenses');
+      const budgets = await FirestoreService.getAll('budgets');
+      
+      document.getElementById('countInvoices').textContent = ((invoices?.length || 0) + (issued?.length || 0)) + ' registros';
+      document.getElementById('countExpenses').textContent = (expenses?.length || 0) + ' registros';
+      document.getElementById('countBudgets').textContent = (budgets?.length || 0) + ' registros';
     } catch (e) {
-      console.log('Error loading stats');
+      console.log('Error loading stats', e);
     }
   }
   
@@ -515,7 +529,7 @@
     localStorage.setItem('settingTheme', settings.theme);
     localStorage.setItem('settingTimezone', settings.timezone);
     
-    await AuthSystem.updateProfile({ settings });
+await AuthService.updateProfile({ settings });
     showAlert('¡Configuración guardada correctamente!', 'success');
   }
   
@@ -556,7 +570,7 @@
       return;
     }
     
-    const result = await AuthSystem.changePassword(current, newPass);
+const result = await AuthService.changePassword(current, newPass);
     if (result.success) {
       passwordModal.hide();
       showAlert('¡Contraseña cambiada!', 'success');
@@ -571,16 +585,16 @@ function exportData(type) {
     switch(type) {
       case 'invoices':
         data = {
-          received: AuthSystem.getUserData('upsen_invoices_received'),
-          issued: AuthSystem.getUserData('upsen_invoices_issued'),
+          received: [],
+          issued: [],
           exportedAt: new Date().toISOString()
         };
         break;
       case 'expenses':
-        data = { expenses: AuthSystem.getUserData('upsen_expenses'), exportedAt: new Date().toISOString() };
+        data = { expenses: [], exportedAt: new Date().toISOString() };
         break;
       case 'budgets':
-        data = { budgets: AuthSystem.getUserData('upsen_budgets'), exportedAt: new Date().toISOString() };
+        data = { budgets: [], exportedAt: new Date().toISOString() };
         break;
     }
     
@@ -588,8 +602,8 @@ function exportData(type) {
     showAlert(`${type.charAt(0).toUpperCase() + type.slice(1)} exportado!`, 'success');
   }
   
-  // Export to PDF functions
-  function exportDataPDF(type) {
+// Export to PDF functions
+  async function exportDataPDF(type) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
@@ -628,15 +642,15 @@ function exportData(type) {
     let title = '';
     
     if (type === 'invoices') {
-      const received = AuthSystem.getUserData('upsen_invoices_received') || [];
-      const issued = AuthSystem.getUserData('upsen_invoices_issued') || [];
+      const received = await FirestoreService.getAll('invoices_received') || [];
+      const issued = await FirestoreService.getAll('invoices_issued') || [];
       data = [...received.map(r => ({...r, type: 'Recibida'})), ...issued.map(i => ({...i, type: 'Emitida'}))];
       title = 'Facturas';
     } else if (type === 'expenses') {
-      data = AuthSystem.getUserData('upsen_expenses') || [];
+      data = await FirestoreService.getAll('expenses') || [];
       title = 'Gastos';
     } else if (type === 'budgets') {
-      data = AuthSystem.getUserData('upsen_budgets') || [];
+      data = await FirestoreService.getAll('budgets') || [];
       title = 'Presupuestos';
     }
     
@@ -645,7 +659,7 @@ function exportData(type) {
       doc.text('No hay datos disponibles.', 15, y);
     } else {
       doc.setFontSize(8);
-      data.slice(0, 30).forEach((item, index) => {
+      data.slice(0, 30).forEach((item) => {
         doc.setTextColor(...grayColor);
         
         if (type === 'invoices') {
@@ -683,7 +697,7 @@ function exportData(type) {
     showAlert(title + ' exportados en PDF!', 'success');
   }
   
-  function exportAllDataPDF() {
+  async function exportAllDataPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
@@ -714,10 +728,10 @@ function exportData(type) {
     doc.line(15, 40, 195, 40);
     
     // Stats
-    const received = AuthSystem.getUserData('upsen_invoices_received') || [];
-    const issued = AuthSystem.getUserData('upsen_invoices_issued') || [];
-    const expenses = AuthSystem.getUserData('upsen_expenses') || [];
-    const budgets = AuthSystem.getUserData('upsen_budgets') || [];
+    const received = await FirestoreService.getAll('invoices_received') || [];
+    const issued = await FirestoreService.getAll('invoices_issued') || [];
+    const expenses = await FirestoreService.getAll('expenses') || [];
+    const budgets = await FirestoreService.getAll('budgets') || [];
     
     let y = 60;
     doc.setFontSize(12);
@@ -755,8 +769,28 @@ function exportData(type) {
     showAlert('Resumen exportado en PDF!', 'success');
   }
   
-  function exportAllData() {
-    const data = AuthSystem.exportUserData();
+  async function exportAllData() {
+    const user = AuthService.getCurrentUser();
+    if (!user) {
+      showAlert('Error: Usuario no encontrado.', 'error');
+      return;
+    }
+    
+    const data = {
+      profile: {
+        name: user.name,
+        email: user.email,
+        company: user.company,
+        phone: user.phone,
+        settings: user.settings
+      },
+      invoicesReceived: await FirestoreService.getAll('invoices_received') || [],
+      invoicesIssued: await FirestoreService.getAll('invoices_issued') || [],
+      expenses: await FirestoreService.getAll('expenses') || [],
+      budgets: await FirestoreService.getAll('budgets') || [],
+      exportedAt: new Date().toISOString()
+    };
+    
     downloadJSON(data, `upsen_backup_${new Date().toISOString().split('T')[0]}.json`);
     showAlert('¡Todos los datos exportados!', 'success');
   }
@@ -805,13 +839,19 @@ function exportData(type) {
     }
   }
   
-  function resetAllData() {
+async function resetAllData() {
     if (confirm('¿Restablecer todos los datos? Esto eliminará todos los documentos guardados.')) {
       if (confirm('Esta acción eliminará permanentemente todos tus datos. ¿Continuar?')) {
-        const user = AuthSystem.getCurrentUser();
+        const user = AuthService.getCurrentUser();
         if (user) {
-          const keys = ['upsen_invoices_received', 'upsen_invoices_issued', 'upsen_expenses', 'upsen_budgets'];
-          keys.forEach(key => localStorage.removeItem(`${key}_${user.id}`));
+          // Delete all Firestore collections
+          const collections = ['invoices_received', 'invoices_issued', 'expenses', 'budgets'];
+          for (const collection of collections) {
+            const docs = await FirestoreService.getAll(collection);
+            for (const doc of docs) {
+              await FirestoreService.delete(collection, doc.id);
+            }
+          }
           showAlert('¡Datos restablecidos!', 'success');
           loadStats();
         }
@@ -819,19 +859,49 @@ function exportData(type) {
     }
   }
   
-  function deleteAccount() {
+  async function deleteAccount() {
     if (confirm('¿ELIMINAR TU CUENTA? Esto borrará TODOS tus datos permanentemente.')) {
       if (confirm('Esta acción NO se puede deshacer. ¿Estás absolutamente seguro?')) {
-        AuthSystem.deleteAccount();
-        window.location.href = '../login.html';
+        const result = await AuthService.deleteAccount();
+        if (result.success) {
+          window.location.href = '../login.html';
+        }
       }
     }
   }
   
-  function logout() {
-    AuthSystem.logout();
-    window.location.href = '../login.html';
+function logout() {
+  console.log('Logout clicked');
+  
+  // Limpar cache local
+  if (window.AuthService) {
+    window.AuthService.currentUser = null;
+    window.AuthService.currentUserData = null;
   }
+  
+  // Tentar fazer logout através de AuthService
+  if (window.AuthService && typeof window.AuthService.logout === 'function') {
+    window.AuthService.logout().then(() => {
+      window.location.href = '../login.html';
+    }).catch(() => {
+      window.location.href = '../login.html';
+    });
+    return;
+  }
+  
+  // Fallback: tentar através do objeto window.firebase
+  if (window.firebase && window.firebase.auth) {
+    window.firebase.auth().signOut().then(() => {
+      window.location.href = '../login.html';
+    }).catch(() => {
+      window.location.href = '../login.html';
+    });
+    return;
+  }
+  
+  // Se nada funcionar, redirecionar mesmo assim
+  window.location.href = '../login.html';
+}
 </script>
 </body>
 </html>

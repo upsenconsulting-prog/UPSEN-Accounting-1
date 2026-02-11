@@ -316,33 +316,48 @@
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+
+<!-- Firebase Config & Auth -->
+<script src="../shared/firebase-config.js"></script>
+<script src="../shared/firebase-integration.js"></script>
 <script src="../shared/auth-system.js"></script>
+
 <script src="./expense.js"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Update user name in sidebar if needed
-  const user = AuthSystem.getCurrentUser();
-  if (user) {
-    // User info is handled by expense.js
-  }
-  
-  // Modal instance
-  const modalExpense = new bootstrap.Modal(document.getElementById('modalNewExpense'));
-  
-  // New Expense Button
-  document.getElementById('newExpenseBtn').addEventListener('click', function() {
-    // Set today's date as default
-    const dateInput = document.querySelector('#formNewExpense input[name="date"]');
-    if (dateInput && !dateInput.value) {
-      dateInput.value = new Date().toISOString().split('T')[0];
+document.addEventListener('DOMContentLoaded', async function() {
+  // Initialize auth
+  AuthSystem.init((isLoggedIn) => {
+    if (!isLoggedIn) {
+      window.location.href = '../login.html';
+      return;
     }
-    modalExpense.show();
-  });
-  
-  // Refresh button
-  document.getElementById('refreshBtn').addEventListener('click', function() {
-    location.reload();
+    
+    const user = AuthService.getCurrentUser();
+    console.log('Logged in as:', user ? user.email : 'Demo user');
+    
+    // Modal instance
+    const modalExpense = new bootstrap.Modal(document.getElementById('modalNewExpense'));
+    
+    // New Expense Button
+    document.getElementById('newExpenseBtn').addEventListener('click', function() {
+      // Set today's date as default
+      const dateInput = document.querySelector('#formNewExpense input[name="date"]');
+      if (dateInput && !dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+      }
+      modalExpense.show();
+    });
+    
+    // Refresh button
+    document.getElementById('refreshBtn').addEventListener('click', function() {
+      location.reload();
+    });
   });
   
   // Sidebar link handling
