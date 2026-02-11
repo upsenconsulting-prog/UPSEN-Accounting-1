@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perfil - UPSEN Accounting</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #eef1f7; min-height: 100vh; }
+    .sidebar { width: 220px; background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%); color: white; min-height: 100vh; position: fixed; }
+    .sidebar-header { padding: 18px 15px; font-size: 1.2em; font-weight: bold; background: rgba(0,0,0,0.2); text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-menu { list-style: none; padding: 0; margin: 0; }
+    .sidebar-menu li { padding: 10px 15px; cursor: pointer; transition: all 0.3s; border-left: 4px solid transparent; }
+    .sidebar-menu li:hover { background: rgba(26, 188, 156, 0.2); border-left-color: #1abc9c; }
+    .sidebar-menu li.active { background: rgba(26, 188, 156, 0.2); border-left-color: #1abc9c; }
+    .sidebar-link { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; font-size: 0.9em; }
+    .sidebar-link i { width: 18px; text-align: center; font-size: 0.9em; }
+    .main-content { margin-left: 220px; padding: 20px; }
+    .profile-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 15px; }
+    .user-avatar { width: 90px; height: 90px; border-radius: 50%; background: linear-gradient(135deg, #2a4d9c 0%, #3a6cd6 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 2em; margin: 0 auto 15px; }
+    .user-name { text-align: center; font-size: 1.4em; font-weight: 600; color: #2c3e50; margin-bottom: 3px; }
+    .user-email { text-align: center; color: #6c757d; font-size: 0.85em; margin-bottom: 8px; }
+    .user-role { display: inline-block; padding: 4px 12px; background: linear-gradient(135deg, #1abc9c, #16a085); color: white; border-radius: 15px; font-size: 0.75em; font-weight: 500; }
+    .section-title { color: #2a4d9c; font-weight: 600; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #e9ecef; display: flex; align-items: center; gap: 8px; font-size: 1em; }
+    .section-title i { color: #1abc9c; font-size: 0.9em; }
+    .info-label { color: #6c757d; font-size: 0.8em; margin-bottom: 3px; }
+    .info-value { font-weight: 500; color: #2c3e50; font-size: 0.9em; }
+    .form-control, .form-select { border-radius: 8px; padding: 10px 12px; border: 2px solid #e9ecef; transition: all 0.3s; font-size: 0.9em; }
+    .form-control:focus, .form-select:focus { border-color: #2a4d9c; box-shadow: 0 0 0 3px rgba(42, 77, 156, 0.1); }
+    .btn { border-radius: 8px; padding: 8px 18px; font-weight: 500; transition: all 0.3s; font-size: 0.85em; }
+    .btn-primary { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); border: none; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(42, 77, 156, 0.4); }
+    .btn-success { background: linear-gradient(135deg, #1abc9c, #16a085); border: none; }
+    .btn-success:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(26, 188, 156, 0.4); }
+    .btn-danger { background: linear-gradient(135deg, #e74c3c, #c0392b); border: none; }
+    .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4); }
+    .btn-secondary { background: #e9ecef; border: none; color: #495057; }
+    .btn-secondary:hover { background: #dee2e6; }
+    .stat-card { background: #f8f9fa; border-radius: 10px; padding: 15px; text-align: center; border: 1px solid #e9ecef; }
+    .stat-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-size: 1.1em; }
+    .stat-icon.blue { background: rgba(42, 77, 156, 0.1); color: #2a4d9c; }
+    .stat-icon.green { background: rgba(26, 188, 156, 0.1); color: #1abc9c; }
+    .stat-icon.red { background: rgba(231, 76, 60, 0.1); color: #e74c3c; }
+    .stat-icon.purple { background: rgba(155, 89, 182, 0.1); color: #9b59b6; }
+    .stat-value { font-size: 1.5em; font-weight: 700; color: #2c3e50; }
+    .stat-label { color: #6c757d; font-size: 0.75em; }
+    .alert { border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; font-size: 0.85em; }
+    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    .alert-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    .modal-content { border-radius: 12px; }
+    .modal-header { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); color: white; border: none; padding: 15px 20px; font-size: 1em; }
+    .modal-header .btn-close { filter: brightness(0) invert(1); }
+    .modal-body { padding: 20px; }
+    .modal-footer { padding: 15px 20px; border-top: 1px solid #e9ecef; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .page-title { font-size: 1.4em; font-weight: 700; color: #2c3e50; }
+    @media (max-width: 768px) { .sidebar { position: relative; width: 100%; min-height: auto; } .main-content { margin-left: 0; } }
+    .btn-logout { background: rgba(231, 76, 60, 0.2); color: #e74c3c; border: none; margin-top: 15px; width: 100%; font-size: 0.85em; padding: 8px 15px; }
+    .btn-logout:hover { background: #e74c3c; color: white; }
+    .btn-info { background: #17a2b8; border: none; color: white; }
+    .btn-info:hover { background: #138496; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+<div class="container-fluid">
+  <div class="row">
+    <aside class="sidebar">
+      <div class="sidebar-header"><i class="fas fa-chart-line me-2"></i>Accounting</div>
+      <ul class="sidebar-menu">
+        <li><a href="../frontPage/frontPage.html" class="sidebar-link"><i class="fas fa-tachometer-alt"></i> Panel</a></li>
+        <li><a href="../expense/expense.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar"></i> Gastos</a></li>
+        <li><a href="../Invoice-issued/invoice-issued.html" class="sidebar-link"><i class="fas fa-file-export"></i> Facturas emitidas</a></li>
+        <li><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link"><i class="fas fa-file-import"></i> Facturas recibidas</a></li>
+        <li><a href="../budgetPage/budget.html" class="sidebar-link"><i class="fas fa-calculator"></i> Presupuestos</a></li>
+        <li class="active"><a href="profile.html" class="sidebar-link"><i class="fas fa-user"></i> Perfil</a></li>
+        <li><a href="settings.html" class="sidebar-link"><i class="fas fa-cog"></i> Configuracion</a></li>
+      </ul>
+      <div style="padding: 20px;">
+        <button class="btn btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt me-2"></i>Cerrar sesion</button>
+      </div>
+    </aside>
+    <main class="main-content col-md-9">
+      <div class="page-header">
+        <h1 class="page-title"><i class="fas fa-user me-3"></i>Mi Perfil</h1>
+        <button class="btn btn-primary" onclick="showEditModal()"><i class="fas fa-edit me-2"></i>Editar</button>
+      </div>
+      
+      <div id="loadingMessage" class="alert alert-info">
+        <i class="fas fa-spinner fa-spin me-2"></i>Carregando dados do utilizador...
+      </div>
+      
+      <div id="profileContent" class="hidden">
+        <div class="profile-card">
+          <div class="user-avatar" id="userAvatar">U</div>
+          <div class="user-name" id="userName">Usuario</div>
+          <div class="user-email" id="userEmail">-</div>
+          <span class="user-role" id="userRole">Usuario</span>
+        </div>
+        
+        <div class="profile-card">
+          <h5 class="section-title"><i class="fas fa-building"></i> Dados</h5>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <div class="info-label">Empresa</div>
+              <div class="info-value" id="displayCompany">-</div>
+            <div class="col-md-6 mb-3">
+              <div class="info-label">Telefono</div>
+              <div class="info-value" id="displayPhone">-</div>
+            <div class="col-md-6 mb-3">
+              <div class="info-label">Email</div>
+              <div class="info-value" id="displayEmail">-</div>
+            <div class="col-md-6 mb-3">
+              <div class="info-label">Rol</div>
+              <div class="info-value" id="displayRole">-</div>
+          </div>
+        
+        <div class="profile-card">
+          <h5 class="section-title"><i class="fas fa-sliders-h"></i> Preferencias</h5>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <div class="info-label">Moneda</div>
+              <div class="info-value" id="displayCurrency">-</div>
+            <div class="col-md-4 mb-3">
+              <div class="info-label">Idioma</div>
+              <div class="info-value" id="displayLanguage">-</div>
+            <div class="col-md-4 mb-3">
+              <div class="info-label">Tema</div>
+              <div class="info-value" id="displayTheme">-</div>
+          </div>
+        
+        <div class="profile-card">
+          <h5 class="section-title"><i class="fas fa-chart-bar"></i> Estadisticas</h5>
+          <div class="row">
+            <div class="col-md-3 col-6 mb-3">
+              <div class="stat-card">
+                <div class="stat-icon blue"><i class="fas fa-file-invoice"></i></div>
+                <div class="stat-value" id="statInvoices">0</div>
+                <div class="stat-label">Recibidas</div>
+            </div>
+            <div class="col-md-3 col-6 mb-3">
+              <div class="stat-card">
+                <div class="stat-icon green"><i class="fas fa-file-export"></i></div>
+                <div class="stat-value" id="statIssued">0</div>
+                <div class="stat-label">Emitidas</div>
+            </div>
+            <div class="col-md-3 col-6 mb-3">
+              <div class="stat-card">
+                <div class="stat-icon red"><i class="fas fa-shopping-cart"></i></div>
+                <div class="stat-value" id="statExpenses">0</div>
+                <div class="stat-label">Gastos</div>
+            </div>
+            <div class="col-md-3 col-6 mb-3">
+              <div class="stat-card">
+                <div class="stat-icon purple"><i class="fas fa-calculator"></i></div>
+                <div class="stat-value" id="statBudgets">0</div>
+                <div class="stat-label">Presupuestos</div>
+            </div>
+        </div>
+        
+        <div class="profile-card">
+          <h5 class="section-title"><i class="fas fa-cogs"></i> Acciones</h5>
+          <div class="d-flex flex-wrap gap-3">
+            <button class="btn btn-primary" onclick="showEditModal()"><i class="fas fa-edit me-2"></i>Editar Perfil</button>
+            <button class="btn btn-success" onclick="showPasswordModal()"><i class="fas fa-lock me-2"></i>Password</button>
+            <button class="btn btn-info" onclick="exportDataPDF()"><i class="fas fa-file-pdf me-2"></i>PDF</button>
+            <button class="btn btn-danger" onclick="deleteAccount()"><i class="fas fa-trash me-2"></i>Eliminar</button>
+          </div>
+      </div>
+    </main>
+  </div>
+
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Perfil</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="editAlert" class="alert hidden"></div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="editName" placeholder="Tu nombre">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Empresa</label>
+            <input type="text" class="form-control" id="editCompany" placeholder="Empresa">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Telefono</label>
+            <input type="tel" class="form-control" id="editPhone" placeholder="Telefono">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" id="editEmail" readonly>
+          </div>
+        <hr>
+        <h6 class="mb-3">Preferencias</h6>
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Moneda</label>
+            <select class="form-select" id="editCurrency">
+              <option value="EUR">Euro (EUR)</option>
+              <option value="USD">Dolar (USD)</option>
+              <option value="GBP">Libra (GBP)</option>
+              <option value="BRL">Real (BRL)</option>
+            </select>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Idioma</label>
+            <select class="form-select" id="editLanguage">
+              <option value="es">Espanol</option>
+              <option value="pt">Portugues</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Tema</label>
+            <select class="form-select" id="editTheme">
+              <option value="light">Claro</option>
+              <option value="dark">Oscuro</option>
+            </select>
+          </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="saveProfile()">Guardar</button>
+      </div>
+  </div>
+
+<div class="modal fade" id="passwordModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Cambiar Password</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="passwordAlert" class="alert hidden"></div>
+        <div class="mb-3">
+          <label class="form-label">Nueva password</label>
+          <input type="password" class="form-control" id="newPassword" placeholder="Minimo 6 caracteres" minlength="6">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Confirmar</label>
+          <input type="password" class="form-control" id="confirmPassword" placeholder="Repetir password">
+        </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" onclick="changePassword()">Cambiar</button>
+      </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+<script src="../shared/firebase-config.js"></script>
+<script src="../shared/auth-system.js"></script>
+
+<script>
+var editModal = null;
+var passwordModal = null;
+var currentUserData = null;
+
+function $(id) { return document.getElementById(id); }
+
+function showAlert(id, message, type) {
+  var el = $(id);
+  el.textContent = message;
+  el.className = 'alert alert-' + type;
+  el.classList.remove('hidden');
+  setTimeout(function() { el.classList.add('hidden'); }, 5000);
+}
+
+function getUser() {
+  try {
+    var session = localStorage.getItem('upsen_current_user');
+    if (session) {
+      var data = JSON.parse(session);
+      if (data && data.user) return data.user;
+    }
+  } catch (e) {}
+  return null;
+}
+
+function displayProfile(user) {
+  if (!user) {
+    $('loadingMessage').innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>No hay datos del usuario. <a href="../login.html">Ir al login</a>';
+    $('loadingMessage').className = 'alert alert-warning';
+    return;
+  }
+  
+  currentUserData = user;
+  
+  $('userAvatar').textContent = (user.name || user.email || 'U').substring(0, 2).toUpperCase();
+  $('userName').textContent = user.name || 'Usuario';
+  $('userEmail').textContent = user.email || '-';
+  $('userRole').textContent = user.role === 'admin' ? 'Administrador' : 'Usuario';
+  
+  $('displayCompany').textContent = user.company || '-';
+  $('displayPhone').textContent = user.phone || '-';
+  $('displayEmail').textContent = user.email || '-';
+  $('displayRole').textContent = user.role === 'admin' ? 'Administrador' : 'Usuario';
+  
+  var currencyMap = { 'EUR': 'Euro (EUR)', 'USD': 'Dolar (USD)', 'GBP': 'Libra (GBP)', 'BRL': 'Real (BRL)' };
+  var languageMap = { 'es': 'Espanol', 'pt': 'Portugues', 'en': 'English' };
+  var themeMap = { 'light': 'Claro', 'dark': 'Oscuro' };
+  
+  $('displayCurrency').textContent = currencyMap[user.settings?.currency] || 'Euro (EUR)';
+  $('displayLanguage').textContent = languageMap[user.settings?.language] || 'Espanol';
+  $('displayTheme').textContent = themeMap[user.settings?.theme] || 'Claro';
+  
+  loadStatistics();
+  
+  $('loadingMessage').classList.add('hidden');
+  $('profileContent').classList.remove('hidden');
+}
+
+function loadStatistics() {
+  var user = getUser();
+  if (!user) return;
+  
+  var userId = user.uid || user.id;
+  
+  function getCount(key) {
+    try {
+      var data = localStorage.getItem('upsen_' + key + '_' + userId);
+      return data ? JSON.parse(data).length : 0;
+    } catch (e) { return 0; }
+  }
+  
+  $('statInvoices').textContent = getCount('invoices_received');
+  $('statIssued').textContent = getCount('invoices_issued');
+  $('statExpenses').textContent = getCount('expenses');
+  $('statBudgets').textContent = getCount('budgets');
+}
+
+function showEditModal() {
+  var user = currentUserData || getUser();
+  if (!user) return;
+  
+  $('editName').value = user.name || '';
+  $('editCompany').value = user.company || '';
+  $('editPhone').value = user.phone || '';
+  $('editEmail').value = user.email || '';
+  $('editCurrency').value = user.settings?.currency || 'EUR';
+  $('editLanguage').value = user.settings?.language || 'es';
+  $('editTheme').value = user.settings?.theme || 'light';
+  $('editAlert').classList.add('hidden');
+  editModal.show();
+}
+
+function showPasswordModal() {
+  $('newPassword').value = '';
+  $('confirmPassword').value = '';
+  $('passwordAlert').classList.add('hidden');
+  passwordModal.show();
+}
+
+async function saveProfile() {
+  var name = $('editName').value.trim();
+  var company = $('editCompany').value.trim();
+  var phone = $('editPhone').value.trim();
+  var currency = $('editCurrency').value;
+  var language = $('editLanguage').value;
+  var theme = $('editTheme').value;
+  
+  if (!name || !company) {
+    showAlert('editAlert', 'Completa todos los campos.', 'error');
+    return;
+  }
+  
+  var user = currentUserData || getUser();
+  if (!user) return;
+  
+  var uid = user.uid || user.id;
+  var updates = {
+    name: name,
+    company: company,
+    phone: phone,
+    settings: { currency: currency, language: language, theme: theme }
+  };
+  
+  // Atualizar localStorage
+  try {
+    var session = JSON.parse(localStorage.getItem('upsen_current_user') || '{}');
+    session.user = Object.assign({}, session.user || user, updates);
+    localStorage.setItem('upsen_current_user', JSON.stringify(session));
+  } catch (e) {}
+  
+  var auth = window.AuthService || window.Auth;
+  if (auth && auth.updateProfile) {
+    var result = await auth.updateProfile(uid, updates);
+    showAlert('alertMessage', result.message, result.success ? 'success' : 'error');
+  } else {
+    showAlert('alertMessage', 'Perfil atualizado (local)!', 'success');
+  }
+  
+  displayProfile(Object.assign({}, user, updates));
+  editModal.hide();
+}
+
+async function changePassword() {
+  var newPass = $('newPassword').value;
+  var confirm = $('confirmPassword').value;
+  
+  if (!newPass || !confirm) {
+    showAlert('passwordAlert', 'Completa todos los campos.', 'error');
+    return;
+  }
+  if (newPass !== confirm) {
+    showAlert('passwordAlert', 'Las passwords no coinciden.', 'error');
+    return;
+  }
+  if (newPass.length < 6) {
+    showAlert('passwordAlert', 'Minimo 6 caracteres.', 'error');
+    return;
+  }
+  
+  var auth = window.AuthService || window.Auth;
+  if (auth && auth.changePassword) {
+    var result = await auth.changePassword(newPass);
+    if (result.success) {
+      passwordModal.hide();
+      showAlert('alertMessage', result.message, 'success');
+    } else {
+      showAlert('passwordAlert', result.message, 'error');
+    }
+  } else {
+    passwordModal.hide();
+    showAlert('alertMessage', 'Password actualizada (demo)!', 'success');
+  }
+}
+
+async function deleteAccount() {
+  if (!confirm('Eliminar cuenta? TODOS los datos se perderan.')) return;
+  if (!confirm('Esta accion NO se puede deshacer.')) return;
+  
+  var auth = window.AuthService || window.Auth;
+  if (auth && auth.deleteAccount) {
+    var result = await auth.deleteAccount();
+    if (result.success) {
+      window.location.href = '../login.html';
+    } else {
+      alert(result.message || 'Error.');
+    }
+  } else {
+    localStorage.removeItem('upsen_current_user');
+    window.location.href = '../login.html';
+  }
+}
+
+function exportDataPDF() {
+  var user = currentUserData || getUser();
+  if (!user) return;
+  
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF();
+  var primaryColor = [42, 77, 156];
+  
+  doc.setFillColor(...primaryColor);
+  doc.rect(0, 0, 210, 30, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text('UPSEN Accounting', 105, 20, { align: 'center' });
+  
+  doc.setTextColor(44, 62, 80);
+  doc.setFontSize(14);
+  doc.text('Perfil de Usuario', 15, 45);
+  
+  var y = 60;
+  doc.setFontSize(12);
+  
+  var data = [
+    ['Nombre:', user.name || '-'],
+    ['Empresa:', user.company || '-'],
+    ['Email:', user.email || '-'],
+    ['Telefono:', user.phone || '-'],
+    ['Rol:', user.role || 'Usuario']
+  ];
+  
+  data.forEach(function(item) {
+    doc.setTextColor(100);
+    doc.text(item[0], 20, y);
+    doc.setTextColor(44);
+    doc.text(item[1], 60, y);
+    y += 10;
+  });
+  
+  doc.setFillColor(...primaryColor);
+  doc.rect(0, 277, 210, 20, 'F');
+  doc.setTextColor(255);
+  doc.setFontSize(9);
+  doc.text('UPSEN Accounting', 105, 287, { align: 'center' });
+  
+  doc.save('perfil_' + (user.email || 'usuario') + '.pdf');
+  showAlert('alertMessage', 'PDF exportado!', 'success');
+}
+
+function doLogout() {
+  var auth = window.AuthService || window.Auth;
+  if (auth && auth.logout) {
+    auth.logout().then(function() {
+      window.location.href = '../login.html';
+    });
+  } else {
+    window.location.href = '../login.html';
+  }
+}
+
+function checkAuth() {
+  var user = getUser();
+  if (user) {
+    console.log('Usuario encontrado:', user.email);
+    displayProfile(user);
+  } else {
+    console.log('No hay usuario logueado');
+    $('loadingMessage').innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>No hay sesion activa. <a href="../login.html">Ir al login</a>';
+    $('loadingMessage').className = 'alert alert-warning';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  editModal = new bootstrap.Modal($('editProfileModal'));
+  passwordModal = new bootstrap.Modal($('passwordModal'));
+  $('alertMessage').classList.add('hidden');
+  setTimeout(checkAuth, 500);
+});
+</script>
+</body>
+</html>

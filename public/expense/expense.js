@@ -1,4 +1,4 @@
-// expense.js - Com Firebase Firestore
+// expense.js - Com dados isolados por usuário
 
 function $(id) {
   return document.getElementById(id);
@@ -25,72 +25,33 @@ function markActivePage() {
 // Chart instance
 let expenseChart = null;
 
-// ========== DADOS DO USUÁRIO LOGADO (FIRESTORE) ==========
-async function getUserExpenses() {
-  try {
-    const user = AuthService.getCurrentUser();
-    if (!user) return [];
-    
-    const result = await FirestoreService.getAll('expenses');
-    // FirestoreService.getAll retorna { success: true, data: [...] } ou array (localStorage)
-    if (result && result.success === true && Array.isArray(result.data)) {
-      return result.data;
-    } else if (Array.isArray(result)) {
-      return result;
-    }
-    return [];
-  } catch (error) {
-    console.error('Error getting expenses:', error);
-    return [];
-  }
+// ========== DADOS DO USUÁRIO LOGADO ==========
+function getUserExpenses() {
+  return AuthSystem.getUserData('upsen_expenses') || [];
 }
 
-async function saveUserExpense(expense) {
-  try {
-    const user = AuthService.getCurrentUser();
-    if (!user) {
-      console.error('No user logged in');
-      return false;
-    }
-    
-    // Verificar se FirestoreService tem create
-    if (!window.FirestoreService || typeof window.FirestoreService.create !== 'function') {
-      console.error('FirestoreService.create not available!', window.FirestoreService);
-      return false;
-    }
-    
-    const newExpense = {
-      date: expense.date || '',
-      category: expense.category || '',
-      amount: Number(expense.amount || 0),
-      notes: expense.notes || '',
-      paymentMethod: expense.paymentMethod || '',
-      userId: user.uid,
-      createdAt: new Date().toISOString()
-    };
-    
-    // Usar add ou create ( FirestoreService.add )
-    await window.FirestoreService.create('expenses', newExpense);
-    return true;
-  } catch (error) {
-    console.error('Error saving expense:', error);
-    return false;
-  }
+function saveUserExpense(expense) {
+  const list = getUserExpenses();
+  list.push({
+    id: AuthSystem.generateId(),
+    date: expense.date || '',
+    category: expense.category || '',
+    amount: Number(expense.amount || 0),
+    notes: expense.notes || '',
+    paymentMethod: expense.paymentMethod || '',
+    createdAt: new Date().toISOString()
+  });
+  AuthSystem.saveUserData('upsen_expenses', list);
 }
 
-async function deleteUserExpense(id) {
-  try {
-    await FirestoreService.delete('expenses', id);
-    return true;
-  } catch (error) {
-    console.error('Error deleting expense:', error);
-    return false;
-  }
+function deleteUserExpense(id) {
+  const list = getUserExpenses().filter(e => e.id !== id);
+  AuthSystem.saveUserData('upsen_expenses', list);
 }
 
 // ========== RENDER FUNCTIONS ==========
-async function renderSummaryCards() {
-  const list = await getUserExpenses();
+function renderSummaryCards() {
+  const list = getUserExpenses();
   
   // Calculate monthly total (current month)
   const now = new Date();
@@ -147,11 +108,11 @@ async function renderSummaryCards() {
   }
 }
 
-async function renderChart() {
+function renderChart() {
   const chartContainer = document.getElementById('expenseChartCanvas');
   if (!chartContainer) return;
 
-  const list = await getUserExpenses();
+  const list = getUserExpenses();
   
   // Calculate totals by category
   const categoryTotals = {};
@@ -207,11 +168,11 @@ async function renderChart() {
   });
 }
 
-async function renderExpenses() {
+function renderExpenses() {
   const tbody = $("expenseTBody");
   if (!tbody) return;
 
-  const list = await getUserExpenses();
+  const list = getUserExpenses();
   tbody.innerHTML = "";
 
   if (!list.length) {
@@ -242,55 +203,55 @@ async function renderExpenses() {
   });
 
   tbody.querySelectorAll("[data-del]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      if (confirm('¿Eliminar gasto?')) {
-        await deleteUserExpense(btn.getAttribute("data-del"));
-        await renderExpenses();
-        await renderChart();
-        await renderSummaryCards();
-      }
+    btn.addEventListener("click", () => {
+      deleteUserExpense(btn.getAttribute("data-del"));
+      renderExpenses();
+      renderChart();
+      renderSummaryCards();
     });
   });
 }
 
 
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
   // Mark current page as active
   markActivePage();
   
-  // Load data
-  await renderExpenses();
-  await renderChart();
-  await renderSummaryCards();
-  
-  // O modal é gerido pelo expense.html, não aqui
-  // expense.js apenas guarda os dados
-  
-  // Guardar gasto - chamado pelo botão no HTML
-  window.saveExpenseData = async function() {
-    const form = $("formNewExpense");
-    if (!form) return false;
+  // Guardar gasto
+  const saveBtn = $("saveExpenseBtn");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", () => {
+      const form = $("formNewExpense");
+      if (!form) return;
 
-    const fd = new FormData(form);
-    const date = String(fd.get("date") || "");
-    const category = String(fd.get("category") || "");
-    const amount = String(fd.get("amount") || "");
-    const notes = String(fd.get("notes") || "");
+      const fd = new FormData(form);
+      const date = String(fd.get("date") || "");
+      const category = String(fd.get("category") || "");
+      const amount = String(fd.get("amount") || "");
+      const notes = String(fd.get("notes") || "");
 
-    if (!date || !category || !amount) {
-      alert("Completa: fecha, categoría e importe.");
-      return false;
-    }
+      if (!date || !category || !amount) {
+        alert("Completa: fecha, categoría e importe.");
+        return;
+      }
 
-    const saved = await saveUserExpense({ date, category, amount, notes });
-    
-    if (saved) {
+      saveUserExpense({ date, category, amount, notes });
+
+      // fechar modal
+      const el = $("modalNewExpense");
+      if (el) {
+        el.classList.remove("show");
+      }
+
       form.reset();
-      await renderExpenses();
-      await renderChart();
-      await renderSummaryCards();
-      return true;
-    }
-    return false;
-  };
+      renderExpenses();
+      renderChart();
+      renderSummaryCards();
+    });
+  }
+
+  renderExpenses();
+  renderChart();
+  renderSummaryCards();
 });
+

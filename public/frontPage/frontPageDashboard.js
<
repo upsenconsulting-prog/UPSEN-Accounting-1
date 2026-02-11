@@ -1,11 +1,11 @@
-// frontPageDashboard.js - Dashboard com suporte a Firebase + localStorage
+// frontPageDashboard.js - Com debug e sync correto
 
 function $(id) {
   return document.getElementById(id);
 }
 
 function formatEUR(n) {
-  return "EUR " + Number(n || 0).toFixed(2);
+  return "EUR" + Number(n || 0).toFixed(2);
 }
 
 // Chart instances
@@ -27,76 +27,169 @@ function markActivePage() {
   }
 }
 
-// ========== OBTENER USER ID ==========
+// ========== OBTER DADOS DO USUÁRIO ==========
 function getUserId() {
-  var auth = window.AuthService || window.Auth;
-  if (auth && auth.getCurrentUser) {
-    var user = auth.getCurrentUser();
-    if (user) {
-      return user.uid || user.id || 'unknown';
-    }
+  var user = null;
+  
+  if (window.AuthSystem && window.AuthSystem.getCurrentUser) {
+    user = window.AuthSystem.getCurrentUser();
   }
   
-  // Fallback: leer de localStorage
-  try {
-    var session = localStorage.getItem('upsen_current_user');
-    if (session) {
-      var data = JSON.parse(session);
-      if (data && data.user) {
-        return data.user.uid || data.user.id || 'unknown';
+  if (!user) {
+    try {
+      var session = localStorage.getItem('upsen_current_user');
+      if (session) {
+        var data = JSON.parse(session);
+        user = data.user;
       }
-    }
-  } catch (e) {}
+    } catch (e) {}
+  }
   
+  if (user) {
+    var id = user.uid || user.id;
+    console.log('User ID:', id);
+    return id;
+  }
+  
+  console.warn('Nenhum usuario encontrado');
   return 'unknown';
 }
 
 function getDataKey(type) {
   var userId = getUserId();
-  return 'upsen_' + type + '_' + userId;
+  var key = 'upsen_' + type + '_' + userId;
+  console.log('Data key:', key);
+  return key;
 }
 
-// ========== DATOS LOCALES ==========
 function getUserExpenses() {
-  var auth = window.AuthService || window.Auth;
-  var user = auth ? auth.getCurrentUser() : null;
-  var userId = user?.uid || user?.id || 'unknown';
-  var key = 'upsen_expenses_' + userId;
-  
+  var key = getDataKey('expenses');
   try {
     var data = localStorage.getItem(key);
+    console.log('Expenses loaded:', key, data ? JSON.parse(data).length : 0, 'items');
     if (data) return JSON.parse(data);
-  } catch (e) {}
-  
+  } catch (e) {
+    console.warn('Erro ao ler expenses:', e);
+  }
   return [];
 }
 
 function getUserInvoicesIssued() {
-  var auth = window.AuthService || window.Auth;
-  var user = auth ? auth.getCurrentUser() : null;
-  var userId = user?.uid || user?.id || 'unknown';
-  var key = 'upsen_invoices_issued_' + userId;
-  
+  var key = getDataKey('invoices_issued');
   try {
     var data = localStorage.getItem(key);
+    console.log('Invoices issued loaded:', key, data ? JSON.parse(data).length : 0, 'items');
     if (data) return JSON.parse(data);
-  } catch (e) {}
-  
+  } catch (e) {
+    console.warn('Erro ao ler invoices issued:', e);
+  }
   return [];
 }
 
 function getUserInvoicesReceived() {
-  var auth = window.AuthService || window.Auth;
-  var user = auth ? auth.getCurrentUser() : null;
-  var userId = user?.uid || user?.id || 'unknown';
-  var key = 'upsen_invoices_received_' + userId;
-  
+  var key = getDataKey('invoices_received');
   try {
     var data = localStorage.getItem(key);
+    console.log('Invoices received loaded:', key, data ? JSON.parse(data).length : 0, 'items');
     if (data) return JSON.parse(data);
-  } catch (e) {}
-  
+  } catch (e) {
+    console.warn('Erro ao ler invoices received:', e);
+  }
   return [];
+}
+
+// ========== CARREGAR DO FIRESTORE ==========
+function loadFromFirestore(callback) {
+  var user = null;
+  
+  if (window.AuthSystem && window.AuthSystem.getCurrentUser) {
+    user = window.AuthSystem.getCurrentUser();
+  }
+  
+  if (!user || !user.uid) {
+    console.warn('Usuario nao encontrado ou sem UID');
+    if (callback) callback();
+    return;
+  }
+  
+  console.log('Carregando do Firestore para usuario:', user.uid);
+  
+  if (!window.firebaseDb) {
+    console.warn('Firebase DB nao disponivel');
+    if (callback) callback();
+    return;
+  }
+  
+  var collections = ['expenses', 'invoicesIssued', 'invoicesReceived'];
+  
+  // Carregar cada colecao
+  var loaded = 0;
+  var total = collections.length;
+  
+  function checkComplete() {
+    loaded++;
+    console.log('Carregado:', loaded, '/', total);
+    if (loaded >= total && callback) {
+      callback();
+    }
+  }
+  
+  // Expenses
+  window.firebaseDb.collection('companies').doc(user.uid)
+    .collection('expenses')
+    .get()
+    .then(function(snapshot) {
+      var docs = [];
+      snapshot.forEach(function(doc) {
+        docs.push({ id: doc.id, ...doc.data() });
+      });
+      var key = getDataKey('expenses');
+      localStorage.setItem(key, JSON.stringify(docs));
+      console.log('Expenses do Firestore:', docs.length, 'items');
+      checkComplete();
+    })
+    .catch(function(e) {
+      console.warn('Erro ao carregar expenses do Firestore:', e);
+      checkComplete();
+    });
+  
+  // Invoices Issued
+  window.firebaseDb.collection('companies').doc(user.uid)
+    .collection('invoicesIssued')
+    .get()
+    .then(function(snapshot) {
+      var docs = [];
+      snapshot.forEach(function(doc) {
+        docs.push({ id: doc.id, ...doc.data() });
+      });
+      var key = getDataKey('invoices_issued');
+      localStorage.setItem(key, JSON.stringify(docs));
+      console.log('Invoices issued do Firestore:', docs.length, 'items');
+      checkComplete();
+    })
+    .catch(function(e) {
+      console.warn('Erro ao carregar invoices issued do Firestore:', e);
+      checkComplete();
+    });
+  
+  // Invoices Received
+  window.firebaseDb.collection('companies').doc(user.uid)
+    .collection('invoicesReceived')
+    .get()
+    .then(function(snapshot) {
+      var docs = [];
+      snapshot.forEach(function(doc) {
+        docs.push({ id: doc.id, ...doc.data() });
+      });
+      var key = getDataKey('invoices_received');
+      localStorage.setItem(key, JSON.stringify(docs));
+      console.log('Invoices received do Firestore:', docs.length, 'items');
+      checkComplete();
+    })
+    .catch(function(e) {
+      console.warn('Erro ao carregar invoices received do Firestore:', e);
+      checkComplete();
+    });
 }
 
 // ========== KPI HELPERS ==========
@@ -314,6 +407,8 @@ function renderDashboardKPIs() {
   var y = now.getFullYear();
   var m = now.getMonth();
 
+  console.log('Renderizando KPIs para', y, '/', m + 1);
+
   var totalReceived = sumInvoicesReceivedMonthYear(y, m);
   var countReceived = countInvoicesReceivedMonthYear(y, m);
   var pendingReceived = countInvoicesReceivedPending();
@@ -326,17 +421,29 @@ function renderDashboardKPIs() {
   var countExpenses = countExpensesMonthYear(y, m);
   var topCategory = getTopExpenseCategory(y, m);
 
-  if ($('kpi-received-total')) $('kpi-received-total').textContent = formatEUR(totalReceived);
-  if ($('kpi-received-count')) $('kpi-received-count').textContent = String(countReceived);
-  if ($('kpi-received-pending')) $('kpi-received-pending').textContent = String(pendingReceived);
+  var elReceivedTotal = $('kpi-received-total');
+  var elReceivedCount = $('kpi-received-count');
+  var elPending = $('kpi-received-pending');
 
-  if ($('kpi-issued-total')) $('kpi-issued-total').textContent = formatEUR(totalIssued);
-  if ($('kpi-issued-count')) $('kpi-issued-count').textContent = String(countIssued);
-  if ($('kpi-issued-pending')) $('kpi-issued-pending').textContent = String(pendingIssued);
+  if (elReceivedTotal) elReceivedTotal.textContent = formatEUR(totalReceived);
+  if (elReceivedCount) elReceivedCount.textContent = String(countReceived);
+  if (elPending) elPending.textContent = String(pendingReceived);
 
-  if ($('kpi-expenses-total')) $('kpi-expenses-total').textContent = formatEUR(totalExpenses);
-  if ($('kpi-expenses-count')) $('kpi-expenses-count').textContent = String(countExpenses);
-  if ($('kpi-expenses-category')) $('kpi-expenses-category').textContent = topCategory || '-';
+  var elIssuedTotal = $('kpi-issued-total');
+  var elIssuedCount = $('kpi-issued-count');
+  var elIssuedPending = $('kpi-issued-pending');
+
+  if (elIssuedTotal) elIssuedTotal.textContent = formatEUR(totalIssued);
+  if (elIssuedCount) elIssuedCount.textContent = String(countIssued);
+  if (elIssuedPending) elIssuedPending.textContent = String(pendingIssued);
+
+  var elExpensesTotal = $('kpi-expenses-total');
+  var elExpensesCount = $('kpi-expenses-count');
+  var elExpensesCategory = $('kpi-expenses-category');
+
+  if (elExpensesTotal) elExpensesTotal.textContent = formatEUR(totalExpenses);
+  if (elExpensesCount) elExpensesCount.textContent = String(countExpenses);
+  if (elExpensesCategory) elExpensesCategory.textContent = topCategory || '-';
 }
 
 // ========== CHARTS ==========
@@ -477,7 +584,7 @@ function renderForecastChart() {
           beginAtZero: true,
           ticks: {
             callback: function(value) {
-              return 'EUR ' + value.toLocaleString('es-ES');
+              return 'EUR' + value.toLocaleString('es-ES');
             }
           }
         }
@@ -564,7 +671,7 @@ function renderPaymentsForecastChart() {
         legend: { position: 'bottom' },
         title: {
           display: true,
-          text: 'Evolucion de pagamentos',
+          text: 'Evolucao de pagamentos',
           font: { size: 14, weight: '600' }
         }
       },
@@ -573,7 +680,7 @@ function renderPaymentsForecastChart() {
           beginAtZero: true,
           ticks: {
             callback: function(value) {
-              return 'EUR ' + value;
+              return 'EUR' + value;
             }
           }
         }
@@ -595,27 +702,18 @@ function hideNewDocumentModal() {
 
 function navigateToPage(page) {
   hideNewDocumentModal();
-  setTimeout(function() { window.location.href = page; }, 150);
+  setTimeout(function() {
+    window.location.href = page;
+  }, 150);
 }
 
 // ========== INITIALIZATION ==========
-function initDashboard() {
+document.addEventListener('DOMContentLoaded', function() {
   console.log('Dashboard inicializando...');
   
   markActivePage();
   
-  var auth = window.AuthService || window.Auth;
-  var user = auth ? auth.getCurrentUser() : null;
-  console.log('Usuario atual:', user ? (user.email || user.name) : 'null');
-  
-  var expenses = getUserExpenses();
-  var invoicesIssued = getUserInvoicesIssued();
-  var invoicesReceived = getUserInvoicesReceived();
-  
-  console.log('Expenses:', expenses.length, 'itens');
-  console.log('Invoices Issued:', invoicesIssued.length, 'itens');
-  console.log('Invoices Received:', invoicesReceived.length, 'itens');
-  
+  // Primeiro renderizar com dados locais
   var now = new Date();
   var y = now.getFullYear();
   var m = now.getMonth();
@@ -624,6 +722,15 @@ function initDashboard() {
   renderExpensesChart();
   renderForecastChart();
   renderPaymentsForecastChart();
+
+  // Depois carregar do Firestore e renderizar novamente
+  loadFromFirestore(function() {
+    console.log('Dados do Firestore carregados, renderizando novamente...');
+    renderDashboardKPIs();
+    renderExpensesChart();
+    renderForecastChart();
+    renderPaymentsForecastChart();
+  });
 
   var newDocBtn = $('newDocumentBtn');
   if (newDocBtn) {
@@ -658,45 +765,6 @@ function initDashboard() {
   });
   
   console.log('Dashboard carregado');
-}
+});
 
-// Esperar Auth estar pronto
-var authCheckCount = 0;
-var maxAuthChecks = 100;
-
-function checkAuthAndInit() {
-  authCheckCount++;
-  
-  var auth = window.AuthService || window.Auth;
-  
-  if (!auth || typeof auth.isLoggedIn !== 'function') {
-    if (authCheckCount < maxAuthChecks) {
-      console.log('Esperando Auth...');
-      setTimeout(checkAuthAndInit, 100);
-    } else {
-      console.error('Auth no encontrado');
-      window.location.href = '../login.html';
-    }
-    return;
-  }
-  
-  var user = auth.getCurrentUser();
-  
-  if (user) {
-    console.log('Auth listo, usuario:', user.email || user.name);
-    initDashboard();
-    return;
-  }
-  
-  if (authCheckCount < maxAuthChecks) {
-    console.log('Esperando Auth... (tentativa ' + authCheckCount + ')');
-    setTimeout(checkAuthAndInit, 100);
-  } else {
-    console.log('Timeout esperando Auth, redirigiendo a login...');
-    window.location.href = '../login.html';
-  }
-}
-
-// Iniciar
-checkAuthAndInit();
-console.log('frontPageDashboard.js carregado');
+console.log('frontPageDashboard.js loaded');

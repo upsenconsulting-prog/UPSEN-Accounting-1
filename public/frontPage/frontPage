@@ -1,0 +1,102 @@
+/**
+ * UPSEN Accounting - FrontPage
+ * Con verificacion de autenticacion real
+ */
+
+(function() {
+  'use strict';
+  
+  // Verificar si esta en la pagina de login - no verificar en login
+  var isLoginPage = window.location.pathname.indexOf('login.html') !== -1;
+  
+  if (isLoginPage) {
+    console.log('Pagina de login - no verificar autenticacion');
+    return;
+  }
+  
+  // Verificar autenticacion al cargar
+  function checkAuth() {
+    var checkCount = 0;
+    var maxChecks = 30;
+    
+    function verify() {
+      checkCount++;
+      
+      // Esperar a AuthSystem
+      if (typeof AuthSystem === 'undefined') {
+        if (checkCount < maxChecks) {
+          setTimeout(verify, 100);
+          return;
+        }
+        // AuthSystem no cargo - redirigir a login
+        redirectToLogin();
+        return;
+      }
+      
+      var isLoggedIn = AuthSystem.isLoggedIn();
+      var currentUser = AuthSystem.getCurrentUser();
+      
+      console.log('Auth check:', { isLoggedIn: isLoggedIn, user: currentUser ? currentUser.email : null });
+      
+      if (!isLoggedIn || !currentUser) {
+        console.log('Usuario no autenticado - redirigiendo a login...');
+        redirectToLogin();
+        return;
+      }
+      
+      // Usuario autenticado - mostrar contenido
+      console.log('Usuario autenticado:', currentUser.email);
+      showApp();
+      updateUserInfo(currentUser);
+    }
+    
+    setTimeout(verify, 300);
+  }
+  
+  function redirectToLogin() {
+    // Guardar URL para retornar despues del login
+    sessionStorage.setItem('redirectAfterLogin', window.location.href);
+    window.location.href = '../login.html';
+  }
+  
+  function showApp() {
+    var loginScreen = document.getElementById('loginScreen');
+    var appContainer = document.getElementById('appContainer');
+    
+    if (loginScreen) {
+      loginScreen.style.display = 'none';
+    }
+    if (appContainer) {
+      appContainer.style.display = 'flex';
+    }
+  }
+  
+  function updateUserInfo(user) {
+    var userNameElements = document.querySelectorAll('#userName, .user-name');
+    var userEmailElements = document.querySelectorAll('#userEmail, .user-email');
+    
+    var displayName = user.name || user.email || 'Usuario';
+    
+    userNameElements.forEach(function(el) {
+      if (el) el.textContent = displayName;
+    });
+    
+    userEmailElements.forEach(function(el) {
+      if (el) el.textContent = user.email || '';
+    });
+  }
+  
+  // Logout function
+  window.doLogout = function() {
+    AuthSystem.clearSession();
+    window.location.href = '../login.html';
+  };
+  
+  // Iniciar verificacion
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(checkAuth, 100);
+  });
+  
+  console.log('FrontPage JS cargado - Proteccion de autenticacion activa');
+  
+})();

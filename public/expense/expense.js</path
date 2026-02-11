@@ -1,0 +1,319 @@
+// expense.js - Sistema com sincronização Firestore + localStorage
+
+function $(id) {
+  return document.getElementById(id);
+}
+
+function moneyEUR(n) {
+  return '€' + Number(n || 0).toFixed(2);
+}
+
+// ========== MARK ACTIVE PAGE ==========
+function markActivePage() {
+  const currentPage = window.location.href;
+  const links = document.querySelectorAll('.sidebar-link');
+  links.forEach(link => {
+    link.parentElement.classList.remove('active');
+    if (link.href === currentPage) {
+      link.parentElement.classList.add('active');
+    }
+  });
+}
+
+// ========== ID DO USUÁRIO ==========
+function getUserId() {
+  const user = window.AuthSystem?.getCurrentUser?.() || window.Auth?.getCurrentUser?.();
+  return user?.uid || user?.id || 'unknown';
+}
+
+function getDataKey() {
+  const userId = getUserId();
+  return 'upsen_expenses_' + userId;
+}
+
+// ========== FIRESTORE SYNC ==========
+async function loadExpensesFromFirestore() {
+  if (!window.USE_FIREBASE || !window.firebaseDb) return [];
+  
+  const userId = getUserId();
+  if (userId === 'unknown') return [];
+  
+  try {
+    const snapshot = await window.firebaseDb
+      .collection('companies').doc(userId)
+      .collection('expenses')
+      .orderBy('createdAt', 'desc')
+      .get();
+    
+    if (!snapshot.empty) {
+      const expenses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // Guardar em localStorage como cache
+      localStorage.setItem(getDataKey(), JSON.stringify(expenses));
+      console.log('Carregados', expenses.length, 'gastos do Firestore');
+      return expenses;
+    }
+  } catch (error) {
+    console.warn('Erro ao carregar do Firestore:', error.message);
+  }
+  return [];
+}
+
+async function saveExpenseToFirestore(expense) {
+  if (!window.USE_FIREBASE || !window.firebaseDb) return null;
+  
+  const userId = getUserId();
+  if (userId === 'unknown') return null;
+  
+  try {
+    const docRef = await window.firebaseDb
+      .collection('companies').doc(userId)
+      .collection('expenses')
+      .add(expense);
+    console.log('Gasto guardado no Firestore:', docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.warn('Erro ao guardar no Firestore:', error.message);
+    return null;
+  }
+}
+
+async function deleteExpenseFromFirestore(id) {
+  if (!window.USE_FIREBASE || !window.firebaseDb) return false;
+  
+  const userId = getUserId();
+  if (userId === 'unknown') return false;
+  
+  try {
+    await window.firebaseDb
+      .collection('companies').doc(userId)
+      .collection('expenses').doc(id)
+      .delete();
+    console.log('Gasto eliminado do Firestore:', id);
+    return true;
+  } catch (error) {
+    console.warn('Erro ao eliminar do Firestore:', error.message);
+    return false;
+  }
+}
+
+// ========== DADOS LOCAIS ==========
+async function getAllExpenses() {
+  const key = getDataKey();
+  let expenses = [];
+  
+  // Primeiro tentar Firestore
+  if (window.USE_FIREBASE && window.firebaseDb) {
+    expenses = await loadExpensesFromFirestore();
+    if (expenses.length > 0) {
+      return expenses;
+    }
+  }
+  
+  // Fallback localStorage
+  try {
+    const data = localStorage.getItem(key);
+    expenses = data ? JSON.parse(data) : [];
+  } catch (e) {
+    expenses = [];
+  }
+  
+  return expenses;
+}
+
+async function addExpense(expense) {
+  const expenses = await getAllExpenses();
+  
+  const newExpense = {
+    id: generateId(),
+    date: expense.date || '',
+    category: expense.category || '',
+    amount: Number(expense.amount || 0),
+    notes: expense.notes || '',
+    paymentMethod: expense.paymentMethod || '',
+    createdAt: new Date().toISOString()
+  };
+  
+  expenses.push(newExpense);
+  localStorage.setItem(getDataKey(), JSON.stringify(expenses));
+  
+  // Sincronizar com Firestore
+  await saveExpenseToFirestore(newExpense);
+  
+  return newExpense;
+}
+
+async function deleteExpense(id) {
+  const expenses = await getAllExpenses();
+  const filtered = expenses.filter(e => e.id !== id);
+  localStorage.setItem(getDataKey(), JSON.stringify(filtered));
+  
+  // Eliminar do Firestore
+  await deleteExpenseFromFirestore(id);
+}
+
+function generateId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+}
+
+// ========== RENDER FUNCTIONS ==========
+async function renderSummaryCards() {
+  const list = await getAllExpenses();
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  
+  let monthlyTotal = 0;
+  let categoryTotals = {};
+  let lastExpense = null;
+  
+  list.forEach(exp => {
+    if (exp.date) {
+      const [year, month] = exp.date.split('-').map(Number);
+      if (year === currentYear && month - 1 === currentMonth) {
+        monthlyTotal += Number(exp.amount || 0);
+      }
+    }
+    
+    const cat = exp.category || 'Sin categoría';
+    categoryTotals[cat] = (categoryTotals[cat] || 0) + Number(exp.amount || 0);
+    
+    if (!lastExpense || (exp.date && exp.date > lastExpense.date)) {
+      lastExpense = exp;
+    }
+  });
+  
+  const monthlyTotalEl = $('monthlyTotal');
+  if (monthlyTotalEl) monthlyTotalEl.textContent = moneyEUR(monthlyTotal);
+  
+  const topCategoryEl = $('topCategory');
+  if (topCategoryEl) {
+    const cats = Object.keys(categoryTotals);
+    if (cats.length > 0) {
+      const topCat = cats.sort((a, b) => categoryTotals[b] - categoryTotals[a])[0];
+      topCategoryEl.textContent = topCat;
+    } else {
+      topCategoryEl.textContent = 'Sin datos';
+    }
+  }
+  
+  const lastExpenseEl = $('lastExpense');
+  if (lastExpenseEl) {
+    if (lastExpense) {
+      lastExpenseEl.textContent = (lastExpense.date || '-') + ' – ' + (lastExpense.category || '-');
+    } else {
+      lastExpenseEl.textContent = 'Sin gastos';
+    }
+  }
+}
+
+async function renderChart() {
+  const chartContainer = document.getElementById('expenseChartCanvas');
+  if (!chartContainer) return;
+
+  const list = await getAllExpenses();
+  const categoryTotals = {};
+  
+  list.forEach(exp => {
+    const cat = exp.category || 'Sin categoría';
+    categoryTotals[cat] = (categoryTotals[cat] || 0) + Number(exp.amount || 0);
+  });
+
+  const labels = Object.keys(categoryTotals);
+  const data = Object.values(categoryTotals);
+  const ctx = chartContainer.getContext('2d');
+
+  if (window.expenseChart) {
+    window.expenseChart.destroy();
+  }
+
+  window.expenseChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels.length ? labels : ['Sin datos'],
+      datasets: [{
+        label: 'Gastos por categoría',
+        data: data.length ? data : [0],
+        backgroundColor: ['#2a4d9c', '#3a6cd6', '#1abc9c', '#e74c3c', '#f39c12', '#9b59b6']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { callback: v => '€' + v } }
+      }
+    }
+  });
+}
+
+async function renderExpenses() {
+  const tbody = $('expenseTBody');
+  if (!tbody) return;
+
+  const list = await getAllExpenses();
+  tbody.innerHTML = '';
+
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No hay gastos registrados.</td></tr>';
+    return;
+  }
+
+  list.sort((a, b) => (b.date || '').localeCompare(a.date || '')).forEach(e => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + (e.date || '-') + '</td>' +
+      '<td>' + (e.category || '-') + '</td>' +
+      '<td>' + moneyEUR(e.amount) + '</td>' +
+      '<td><span>' + (e.notes || '') + '</span>' +
+      '<button class="btn btn-sm btn-outline-danger" data-del="' + e.id + '" style="float:right;">Eliminar</button></td>';
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (confirm('¿Eliminar gasto?')) {
+        await deleteExpense(btn.getAttribute('data-del'));
+        await renderExpenses();
+        await renderChart();
+        await renderSummaryCards();
+      }
+    });
+  });
+}
+
+// ========== GUARDAR DADOS ==========
+window.saveExpenseData = async function() {
+  const form = $('formNewExpense');
+  if (!form) return false;
+
+  const fd = new FormData(form);
+  const data = {
+    date: String(fd.get('date') || ''),
+    category: String(fd.get('category') || ''),
+    amount: String(fd.get('amount') || ''),
+    notes: String(fd.get('notes') || '')
+  };
+
+  if (!data.date || !data.category || !data.amount) {
+    alert('Completa: fecha, categoría e importe.');
+    return false;
+  }
+
+  await addExpense(data);
+  form.reset();
+  await renderExpenses();
+  await renderChart();
+  await renderSummaryCards();
+  return true;
+};
+
+// ========== INITIALIZATION ==========
+document.addEventListener('DOMContentLoaded', async () => {
+  markActivePage();
+  await renderExpenses();
+  await renderChart();
+  await renderSummaryCards();
+});

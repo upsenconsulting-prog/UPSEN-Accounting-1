@@ -345,58 +345,37 @@
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-
-<!-- Firebase Config & Auth -->
-<script src="../shared/firebase-config.js"></script>
-<script src="../shared/firebase-integration.js"></script>
 <script src="../shared/auth-system.js"></script>
-
 <script src="./invoice-issued.js"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', async function() {
-  // Initialize auth
-  AuthSystem.init((isLoggedIn) => {
-    if (!isLoggedIn) {
-      window.location.href = '../login.html';
-      return;
+document.addEventListener('DOMContentLoaded', function() {
+  const modalInvoice = new bootstrap.Modal(document.getElementById('modalNewInvoiceIssued'));
+  
+  // New Invoice Button
+  document.getElementById('newInvoiceBtn').addEventListener('click', function() {
+    // Generate invoice number
+    const date = new Date();
+    const num = 'INV-' + date.getFullYear() + '-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+    const numberInput = document.querySelector('#formNewInvoiceIssued input[name="invoiceNumber"]');
+    if (numberInput) numberInput.value = num;
+    
+    // Set default dates
+    const invoiceDate = document.querySelector('#formNewInvoiceIssued input[name="invoiceDate"]');
+    const dueDate = document.querySelector('#formNewInvoiceIssued input[name="dueDate"]');
+    if (invoiceDate) invoiceDate.value = new Date().toISOString().split('T')[0];
+    if (dueDate) {
+      const due = new Date();
+      due.setDate(due.getDate() + 30);
+      dueDate.value = due.toISOString().split('T')[0];
     }
     
-    const user = AuthService.getCurrentUser();
-    console.log('Logged in as:', user ? user.email : 'Demo user');
-    
-    const modalInvoice = new bootstrap.Modal(document.getElementById('modalNewInvoiceIssued'));
-    
-    // New Invoice Button
-    document.getElementById('newInvoiceBtn').addEventListener('click', function() {
-      // Generate invoice number
-      const date = new Date();
-      const num = 'INV-' + date.getFullYear() + '-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
-      const numberInput = document.querySelector('#formNewInvoiceIssued input[name="invoiceNumber"]');
-      if (numberInput) numberInput.value = num;
-      
-      // Set default dates
-      const invoiceDate = document.querySelector('#formNewInvoiceIssued input[name="invoiceDate"]');
-      const dueDate = document.querySelector('#formNewInvoiceIssued input[name="dueDate"]');
-      if (invoiceDate) invoiceDate.value = new Date().toISOString().split('T')[0];
-      if (dueDate) {
-        const due = new Date();
-        due.setDate(due.getDate() + 30);
-        dueDate.value = due.toISOString().split('T')[0];
-      }
-      
-      modalInvoice.show();
-    });
-    
-    // Refresh button
-    document.getElementById('refreshBtn').addEventListener('click', function() {
-      location.reload();
-    });
+    modalInvoice.show();
+  });
+  
+  // Refresh button
+  document.getElementById('refreshBtn').addEventListener('click', function() {
+    location.reload();
   });
   
   // Sidebar link handling

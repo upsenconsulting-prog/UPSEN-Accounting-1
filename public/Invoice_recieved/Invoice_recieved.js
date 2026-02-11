@@ -1,26 +1,23 @@
-// Invoice_recieved.js - Com Firebase Firestore
+// Invoice_recieved.js - Sistema com suporte a Firebase + localStorage
 
 function $(id) {
   return document.getElementById(id);
 }
 
 function moneyEUR(n) {
-  const v = Number(n ?? 0);
-  return `€${v.toFixed(2)}`;
+  return 'EUR ' + Number(n || 0).toFixed(2);
 }
 
 function formatDate(dateStr) {
   if (!dateStr) return '-';
-  const [y, m, d] = dateStr.split('-');
-  return `${d}.${m}.${y}`;
+  var parts = dateStr.split('-');
+  return parts[2] + '.' + parts[1] + '.' + parts[0];
 }
 
-// ========== MARK ACTIVE PAGE ==========
 function markActivePage() {
-  const currentPage = window.location.href;
-  const links = document.querySelectorAll('.sidebar-link');
-  
-  links.forEach(link => {
+  var currentPage = window.location.href;
+  var links = document.querySelectorAll('.sidebar-link');
+  links.forEach(function(link) {
     link.parentElement.classList.remove('active');
     if (link.href === currentPage) {
       link.parentElement.classList.add('active');
@@ -28,96 +25,134 @@ function markActivePage() {
   });
 }
 
-// Chart instance
-let receivedChart = null;
+var receivedChart = null;
 
-// ========== DADOS DO USUÁRIO LOGADO (FIRESTORE) ==========
-async function getUserInvoicesReceived() {
+function getUserId() {
+  var auth = window.AuthService || window.Auth;
+  if (auth && auth.getCurrentUser) {
+    var user = auth.getCurrentUser();
+    if (user) return user.uid || user.id || 'unknown';
+  }
   try {
-    const user = AuthService.getCurrentUser();
-    if (!user) return [];
-    
-    const result = await FirestoreService.getAll('invoices_received');
-    // FirestoreService.getAll retorna { success: true, data: [...] } ou array (localStorage)
-    if (result && result.success === true && Array.isArray(result.data)) {
-      return result.data;
-    } else if (Array.isArray(result)) {
-      return result;
+    var session = localStorage.getItem('upsen_current_user');
+    if (session) {
+      var data = JSON.parse(session);
+      if (data && data.user) return data.user.uid || data.user.id || 'unknown';
     }
-    return [];
+  } catch (e) {}
+  return 'unknown';
+}
+
+function getDataKey() {
+  return 'upsen_invoices_received_' + getUserId();
+}
+
+function getUserInvoicesReceived() {
+  var key = getDataKey();
+  try {
+    var data = localStorage.getItem(key);
+    if (data) return JSON.parse(data);
+  } catch (e) {}
+  return [];
+}
+
+function saveUserInvoicesReceived(invoices) {
+  localStorage.setItem(getDataKey(), JSON.stringify(invoices));
+}
+
+function generateId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+}
+
+async function saveToFirestore(data) {
+  if (!window.USE_FIREBASE || !window.firebaseDb) return null;
+  var userId = getUserId();
+  if (userId === 'unknown') return null;
+  try {
+    var docRef = await window.firebaseDb.collection('users').doc(userId).collection('invoicesReceived').add(data);
+    return docRef.id;
   } catch (error) {
-    console.error('Error getting invoices received:', error);
-    return [];
+    console.warn('Erro ao guardar no Firestore:', error.message);
+    return null;
   }
 }
 
-async function saveUserInvoiceReceived(invoice) {
+async function deleteFromFirestore(id) {
+  if (!window.USE_FIREBASE || !window.firebaseDb) return false;
+  var userId = getUserId();
+  if (userId === 'unknown') return false;
   try {
-    const user = AuthService.getCurrentUser();
-    if (!user) return false;
-    
-    const newInvoice = {
-      invoiceNumber: invoice.invoiceNumber || '',
-      supplier: invoice.supplier || '',
-      invoiceDate: invoice.invoiceDate || '',
-      amount: Number(invoice.amount || 0),
-      state: invoice.state || 'Pendiente',
-      description: invoice.description || '',
-      userId: user.uid,
-      createdAt: new Date().toISOString()
-    };
-    
-    // Usar create (alias para add)
-    await window.FirestoreService.create('invoices_received', newInvoice);
+    await window.firebaseDb.collection('users').doc(userId).collection('invoicesReceived').doc(id).delete();
     return true;
   } catch (error) {
-    console.error('Error saving invoice:', error);
     return false;
   }
 }
 
-async function deleteUserInvoiceReceived(id) {
-  try {
-    await FirestoreService.delete('invoices_received', id);
-    return true;
-  } catch (error) {
-    console.error('Error deleting invoice:', error);
-    return false;
+async function getAllInvoicesReceived() {
+  return getUserInvoicesReceived();
+}
+
+async function addInvoiceReceived(invoice) {
+  var invoices = getUserInvoicesReceived();
+  var newInvoice = {
+    id: generateId(),
+    invoiceNumber: invoice.invoiceNumber || '',
+    supplier: invoice.supplier || '',
+    invoiceDate: invoice.invoiceDate || '',
+    amount: Number(invoice.amount || 0),
+    state: invoice.state || 'Pendiente',
+    description: invoice.description || '',
+    createdAt: new Date().toISOString()
+  };
+  invoices.push(newInvoice);
+  saveUserInvoicesReceived(invoices);
+  await saveToFirestore(newInvoice);
+  return newInvoice;
+}
+
+async function deleteInvoiceReceived(id) {
+  var invoices = getUserInvoicesReceived();
+  var filtered = invoices.filter(function(i) { return i.id !== id; });
+  saveUserInvoicesReceived(filtered);
+  await deleteFromFirestore(id);
+}
+
+async function updateInvoiceReceived(id, updates) {
+  var invoices = getUserInvoicesReceived();
+  for (var i = 0; i < invoices.length; i++) {
+    if (invoices[i].id === id) {
+      invoices[i] = Object.assign({}, invoices[i], updates);
+      saveUserInvoicesReceived(invoices);
+      
+      if (window.USE_FIREBASE && window.firebaseDb) {
+        window.firebaseDb.collection('users').doc(getUserId()).collection('invoicesReceived').doc(id).update(updates);
+      }
+      break;
+    }
   }
 }
 
-async function updateUserInvoiceReceived(id, updates) {
-  try {
-    await FirestoreService.update('invoices_received', id, updates);
-    return true;
-  } catch (error) {
-    console.error('Error updating invoice:', error);
-    return false;
-  }
-}
-
-// ========== RENDER FUNCTIONS ==========
 async function renderSummaryCards() {
-  const list = await getUserInvoicesReceived();
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
+  var list = await getAllInvoicesReceived();
+  var now = new Date();
+  var pendingTotal = 0;
+  var paidTotal = 0;
+  var monthlyTotal = 0;
+  var overdueCount = 0;
   
-  let pendingTotal = 0;
-  let paidTotal = 0;
-  let monthlyTotal = 0;
-  let overdueCount = 0;
-  
-  list.forEach(inv => {
-    const amount = Number(inv.amount || 0);
+  list.forEach(function(inv) {
+    var amount = Number(inv.amount || 0);
     
     if (inv.state === 'Pendiente') {
       pendingTotal += amount;
       
-      // Check if overdue (assume due date is 30 days after invoice date)
       if (inv.invoiceDate) {
-        const invoiceDate = new Date(inv.invoiceDate);
-        const dueDate = new Date(invoiceDate);
+        var invoiceDate = new Date(inv.invoiceDate);
+        var dueDate = new Date(invoiceDate);
         dueDate.setDate(dueDate.getDate() + 30);
         if (dueDate < now) {
           overdueCount++;
@@ -127,43 +162,41 @@ async function renderSummaryCards() {
       paidTotal += amount;
     }
     
-    // Monthly total
     if (inv.invoiceDate) {
-      const [year, month] = inv.invoiceDate.split('-').map(Number);
-      if (year === currentYear && month - 1 === currentMonth) {
-        monthlyTotal += amount;
+      var parts = inv.invoiceDate.split('-');
+      if (parts.length >= 2) {
+        var year = parseInt(parts[0]);
+        var month = parseInt(parts[1]) - 1;
+        if (year === now.getFullYear() && month === now.getMonth()) {
+          monthlyTotal += amount;
+        }
       }
     }
   });
   
-  // Update DOM
-  $('pendingTotal').textContent = moneyEUR(pendingTotal);
-  $('paidTotal').textContent = moneyEUR(paidTotal);
-  $('monthlyTotal').textContent = moneyEUR(monthlyTotal);
-  $('overdueCount').textContent = overdueCount;
+  if ($('pendingTotal')) $('pendingTotal').textContent = moneyEUR(pendingTotal);
+  if ($('paidTotal')) $('paidTotal').textContent = moneyEUR(paidTotal);
+  if ($('monthlyTotal')) $('monthlyTotal').textContent = moneyEUR(monthlyTotal);
+  if ($('overdueCount')) $('overdueCount').textContent = overdueCount;
 }
 
 async function renderChart() {
-  const chartContainer = document.getElementById('receivedChartCanvas');
+  var chartContainer = document.getElementById('receivedChartCanvas');
   if (!chartContainer) return;
 
-  const list = await getUserInvoicesReceived();
+  var list = await getAllInvoicesReceived();
+  var supplierTotals = {};
   
-  // Calculate totals by supplier
-  const supplierTotals = {};
-  list.forEach(inv => {
-    const supplier = inv.supplier || 'Sin proveedor';
+  list.forEach(function(inv) {
+    var supplier = inv.supplier || 'Sin proveedor';
     supplierTotals[supplier] = (supplierTotals[supplier] || 0) + Number(inv.amount || 0);
   });
 
-  const labels = Object.keys(supplierTotals);
-  const data = Object.values(supplierTotals);
+  var labels = Object.keys(supplierTotals);
+  var data = Object.values(supplierTotals);
+  var ctx = chartContainer.getContext('2d');
 
-  const ctx = chartContainer.getContext('2d');
-
-  if (receivedChart) {
-    receivedChart.destroy();
-  }
+  if (receivedChart) receivedChart.destroy();
 
   receivedChart = new Chart(ctx, {
     type: 'doughnut',
@@ -171,46 +204,32 @@ async function renderChart() {
       labels: labels.length ? labels : ['Sin datos'],
       datasets: [{
         data: data.length ? data : [1],
-        backgroundColor: [
-          '#2a4d9c', '#3a6cd6', '#1abc9c', '#e74c3c', '#f39c12',
-          '#9b59b6', '#3498db', '#1abc9c', '#e67e22', '#34495e'
-        ],
-        borderWidth: 0
+        backgroundColor: ['#2a4d9c', '#3a6cd6', '#1abc9c', '#e74c3c', '#f39c12']
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'right'
-        }
-      }
+      plugins: { legend: { position: 'right' } }
     }
   });
 }
 
 async function renderInvoices() {
-  const tbody = $('invoiceTBody');
+  var tbody = $('invoiceTBody');
   if (!tbody) return;
 
-  const list = await getUserInvoicesReceived();
+  var list = await getAllInvoicesReceived();
   tbody.innerHTML = '';
 
   if (!list.length) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="6" class="text-center text-muted">
-          No hay facturas recibidas todavía.
-        </td>
-      </tr>
-    `;
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay facturas recibidas.</td></tr>';
     return;
   }
 
-  list.forEach((inv) => {
-    let statusClass = 'status-pending';
-    let statusText = 'Pendiente';
+  list.forEach(function(inv) {
+    var statusClass = 'status-pending';
+    var statusText = 'Pendiente';
     
     if (inv.state === 'Pagada') {
       statusClass = 'status-paid';
@@ -220,26 +239,21 @@ async function renderInvoices() {
       statusText = 'Vencida';
     }
     
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${inv.invoiceNumber || '-'}</td>
-      <td>${inv.supplier || '-'}</td>
-      <td>${formatDate(inv.invoiceDate)}</td>
-      <td>${moneyEUR(inv.amount)}</td>
-      <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-      <td>
-        <button class="btn btn-sm btn-outline-primary" data-view="${inv.id}">Ver</button>
-        <button class="btn btn-sm btn-outline-success" data-paid="${inv.id}" title="Marcar como pagada">✓</button>
-        <button class="btn btn-sm btn-outline-danger" data-del="${inv.id}" title="Eliminar">X</button>
-      </td>
-    `;
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + (inv.invoiceNumber || '-') + '</td>' +
+      '<td>' + (inv.supplier || '-') + '</td>' +
+      '<td>' + formatDate(inv.invoiceDate) + '</td>' +
+      '<td>' + moneyEUR(inv.amount) + '</td>' +
+      '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>' +
+      '<td><button class="btn btn-sm btn-outline-success" data-paid="' + inv.id + '">✓</button> ' +
+      '<button class="btn btn-sm btn-outline-danger" data-del="' + inv.id + '">X</button></td>';
     tbody.appendChild(tr);
   });
 
-  tbody.querySelectorAll('[data-del]').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      if (confirm('¿Eliminar factura?')) {
-        await deleteUserInvoiceReceived(btn.getAttribute('data-del'));
+  tbody.querySelectorAll('[data-del]').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      if (confirm('Eliminar factura?')) {
+        await deleteInvoiceReceived(btn.getAttribute('data-del'));
         await renderInvoices();
         await renderChart();
         await renderSummaryCards();
@@ -247,54 +261,68 @@ async function renderInvoices() {
     });
   });
 
-  tbody.querySelectorAll('[data-paid]').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      await updateUserInvoiceReceived(btn.getAttribute('data-paid'), { state: 'Pagada' });
+  tbody.querySelectorAll('[data-paid]').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      await updateInvoiceReceived(btn.getAttribute('data-paid'), { state: 'Pagada' });
       await renderInvoices();
       await renderSummaryCards();
     });
   });
 }
 
+window.saveInvoiceReceivedData = async function() {
+  var form = $('formNewInvoiceReceived');
+  if (!form) return false;
 
-document.addEventListener('DOMContentLoaded', async () => {
-  markActivePage();
+  var fd = new FormData(form);
+  var data = {
+    invoiceNumber: String(fd.get('invoiceNumber') || ''),
+    supplier: String(fd.get('supplier') || ''),
+    invoiceDate: String(fd.get('invoiceDate') || ''),
+    amount: String(fd.get('amount') || ''),
+    state: String(fd.get('state') || 'Pendiente')
+  };
+
+  if (!data.invoiceNumber || !data.supplier || !data.invoiceDate || !data.amount) {
+    alert('Completa todos los campos.');
+    return false;
+  }
+
+  await addInvoiceReceived(data);
   
-  // Load data
+  // Refresh the UI
   await renderInvoices();
   await renderChart();
   await renderSummaryCards();
   
-  // Guardar nova factura
-  const saveBtn = $('saveInvoiceReceivedBtn');
+  // Hide modal
+  var modal = bootstrap.Modal.getInstance(document.getElementById('modalNewInvoiceReceived'));
+  if (modal) modal.hide();
+  
+  return true;
+};
+
+document.addEventListener('DOMContentLoaded', async function() {
+  markActivePage();
+  
+  // Add event listener for save button
+  var saveBtn = $('saveInvoiceReceivedBtn');
   if (saveBtn) {
-    saveBtn.addEventListener('click', async () => {
-      const form = $('formNewInvoiceReceived');
-      if (!form) return;
-
-       const fd = new FormData(form);
-      const data = {
-        invoiceNumber: String(fd.get('invoiceNumber') || ''),
-        supplier: String(fd.get('supplier') || ''),
-        invoiceDate: String(fd.get('invoiceDate') || ''),
-        amount: String(fd.get('amount') || ''),
-        state: String(fd.get('state') || 'Pendiente')
-      };
-
-      if (!data.invoiceNumber || !data.supplier || !data.invoiceDate || !data.amount) {
-        alert('Completa todos los campos.');
-        return;
-      }
-
-      await saveUserInvoiceReceived(data);
-
-      const modal = $('modalNewInvoiceReceived');
-      if (modal) modal.classList.remove('show');
-      
-      form.reset();
-      await renderInvoices();
-      await renderChart();
-      await renderSummaryCards();
+    saveBtn.addEventListener('click', async function() {
+      await saveInvoiceReceivedData();
     });
   }
+  
+  function waitForAuth() {
+    var auth = window.AuthService || window.Auth;
+    if (auth && typeof auth.isLoggedIn === 'function') {
+      renderInvoices();
+      renderChart();
+      renderSummaryCards();
+    } else {
+      setTimeout(waitForAuth, 100);
+    }
+  }
+  
+  setTimeout(waitForAuth, 200);
 });

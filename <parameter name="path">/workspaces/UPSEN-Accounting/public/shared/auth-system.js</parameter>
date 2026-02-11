@@ -1,0 +1,673 @@
+<parameter name="content">/**
+ * ============================================
+ * SISTEMA DE AUTENTICAÇÃO UPSEN ACCOUNTING
+ * Firebase Auth + Firestore para dados
+ * Suporta usuários demo em localStorage
+ * @version 2.6.0 - Correção de dados
+ */
+
+// Variáveis globais
+window.USE_FIREBASE = false;
+window.firebaseAuth = null;
+window.firebaseDb = null;
+window.firebaseReady = false;
+
+// Inicializar Firebase com retry
+function initFirebaseNow() {
+  return new Promise(function(resolve) {
+    var attempts = 0;
+    var maxAttempts = 100;
+    
+    var check = function() {
+      attempts++;
+      
+      if (typeof firebase === 'undefined') {
+        if (attempts < maxAttempts) {
+          setTimeout(check, 50);
+        } else {
+          console.warn('Firebase SDK nunca carregou');
+          resolve(false);
+        }
+        return;
+      }
+      
+      if (!firebase.apps) {
+        if (attempts < maxAttempts) {
+          setTimeout(check, 50);
+        } else {
+          console.warn('firebase.apps não existe');
+          resolve(false);
+        }
+        return;
+      }
+      
+      if (firebase.apps.length > 0) {
+        var config = window.FIREBASE_CONFIG;
+        if (config) {
+          try {
+            var app = firebase.app();
+            window.firebaseAuth = firebase.auth(app);
+            window.firebaseDb = firebase.firestore(app);
+            window.USE_FIREBASE = true;
+            window.firebaseReady = true;
+            console.log('Firebase conectado a app existente');
+            resolve(true);
+            return;
+          } catch (error) {
+            console.error('Erro ao conectar a app existente:', error);
+          }
+        }
+      }
+      
+      var config = window.FIREBASE_CONFIG;
+      if (config) {
+        try {
+          var app = firebase.initializeApp(config);
+          window.firebaseAuth = firebase.auth(app);
+          window.firebaseDb = firebase.firestore(app);
+          window.USE_FIREBASE = true;
+          window.firebaseReady = true;
+          console.log('Firebase inicializado com sucesso');
+          resolve(true);
+          return;
+        } catch (error) {
+          console.error('Erro ao inicializar Firebase:', error);
+          resolve(false);
+          return;
+        }
+      }
+      
+      // Sem configuração
+      if (attempts < maxAttempts) {
+        setTimeout(check, 50);
+      } else {
+        console.warn('Configuração Firebase não encontrada');
+        resolve(false);
+      }
+    };
+    
+    check();
+  });
+}
+
+// Inicializar imediatamente
+initFirebaseNow().then(function(success) {
+  window.initFirebaseComplete = true;
+  console.log('Firebase init complete:', success, 'Mode:', success ? 'Firebase' : 'Demo');
+});
+
+// AuthSystem
+var AuthSystem = {
+  CURRENT_USER_KEY: 'upsen_current_user',
+  USERS_KEY: 'upsen_users',
+  DEMO_USERS_LOADED: false,
+  
+  // Inicializar
+  init: function(callback) {
+    var self = this;
+    
+    var waitAndInit = function() {
+      if (window.firebaseReady && window.USE_FIREBASE && window.firebaseAuth) {
+        window.firebaseAuth.onAuthStateChanged(async function(user) {
+          if (user) {
+            await self.loadFirebaseUserData(user);
+          } else {
+            self.clearFirebaseSession();
+          }
+          
+          var currentUser = self.getCurrentUser();
+          if (callback) {
+            callback({ isLoggedIn: self.isLoggedIn(), userData: currentUser, user: currentUser });
+          }
+        });
+      } else {
+        setTimeout(waitAndInit, 100);
+      }
+    };
+    
+    if (window.firebaseReady) {
+      waitAndInit();
+    } else {
+      var waitAttempts = 0;
+      var waitForFirebase = function() {
+        waitAttempts++;
+        if (window.firebaseReady) {
+          waitAndInit();
+        } else if (waitAttempts < 50) {
+          setTimeout(waitForFirebase, 100);
+        } else {
+          self.initDemoMode();
+          var currentUser = self.getCurrentUser();
+          if (callback) {
+            callback({ isLoggedIn: self.isLoggedIn(), userData: currentUser, user: currentUser });
+          }
+        }
+      };
+      waitForFirebase();
+    }
+  },
+  
+  // Carregar dados do usuário do Firebase
+  loadFirebaseUserData: async function(user) {
+    var self = this;
+    
+    var userData = {
+      uid: user.uid,
+      email: user.email,
+      name: user.displayName || '',
+      company: '',
+      phone: user.phoneNumber || '',
+      role: 'admin',
+      emailVerified: user.emailVerified,
+      createdAt: new Date().toISOString(),
+      lastLogin: new Date().toISOString(),
+      settings: { currency: 'EUR', language: 'pt', theme: 'light' }
+    };
+    
+    try {
+      var docRef = window.firebaseDb.collection('companies').doc(user.uid);
+      
+      try {
+        await docRef.set(userData, { merge: true });
+        console.log('Documento criado/atualizado no Firestore:', user.email);
+      } catch (setError) {
+        console.warn('Não foi possível criar documento no Firestore:', setError.message);
+      }
+      
+      try {
+        var doc = await docRef.get();
+        if (doc.exists) {
+          var firestoreData = doc.data();
+          Object.assign(userData, firestoreData);
+        }
+      } catch (getError) {
+        console.warn('Não foi possível ler documento do Firestore:', getError.message);
+      }
+      
+      self.saveSession(userData, true);
+      console.log('Usuário Firebase carregado:', user.email);
+      
+    } catch (error) {
+      console.error('Erro ao carregar dados do usuário:', error);
+      self.saveSession(userData, true);
+    }
+  },
+  
+  clearFirebaseSession: function() {
+    var session = localStorage.getItem(this.CURRENT_USER_KEY);
+    if (session) {
+      try {
+        var data = JSON.parse(session);
+        if (data.useFirebase) {
+          localStorage.removeItem(this.CURRENT_USER_KEY);
+        }
+      } catch (e) {
+        localStorage.removeItem(this.CURRENT_USER_KEY);
+      }
+    }
+  },
+  
+  // Modo demo
+  initDemoMode: function() {
+    this.createDemoUsers();
+    this.cleanExpiredSessions();
+    console.log('Modo demo ativado');
+  },
+  
+  // Utilitários
+  hash: function(str) {
+    if (!str) return '';
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
+      var char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return hash.toString(16);
+  },
+  
+  generateId: function() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    return 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+  },
+  
+  getUsers: function() {
+    try {
+      return JSON.parse(localStorage.getItem(this.USERS_KEY)) || [];
+    } catch {
+      return [];
+    }
+  },
+  
+  saveUsers: function(users) {
+    localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
+  },
+  
+  // Usuários demo
+  createDemoUsers: function() {
+    if (this.DEMO_USERS_LOADED) return;
+    
+    var users = this.getUsers();
+    if (users.length === 0) {
+      users.push({
+        id: 'demo_admin',
+        email: 'admin@demo.com',
+        password: this.hash('demo123'),
+        name: 'Administrador',
+        company: 'UPSEN Demo',
+        phone: '+351 123 456 789',
+        role: 'admin',
+        createdAt: new Date().toISOString(),
+        lastLogin: null,
+        settings: { currency: 'EUR', language: 'pt', theme: 'light', notifications: true }
+      });
+      
+      users.push({
+        id: 'test_user',
+        email: 'test@example.com',
+        password: this.hash('123456'),
+        name: 'Utilizador Teste',
+        company: 'Empresa Teste',
+        phone: '+351 000 000 000',
+        role: 'user',
+        createdAt: new Date().toISOString(),
+        lastLogin: null,
+        settings: { currency: 'EUR', language: 'pt', theme: 'light', notifications: true }
+      });
+      
+      this.saveUsers(users);
+      this.initUserData('demo_admin');
+      this.initUserData('test_user');
+      this.createDemoData('demo_admin');
+      this.createDemoData('test_user');
+      
+      console.log('Usuários demo criados');
+      console.log('-> admin@demo.com / demo123');
+      console.log('-> test@example.com / 123456');
+    }
+    
+    this.DEMO_USERS_LOADED = true;
+  },
+  
+  initUserData: function(userId) {
+    var dataKeys = ['invoices_received', 'invoices_issued', 'expenses', 'budgets'];
+    dataKeys.forEach(function(key) {
+      var userDataKey = 'upsen_' + key + '_' + userId;
+      if (!localStorage.getItem(userDataKey)) {
+        localStorage.setItem(userDataKey, '[]');
+      }
+    });
+  },
+  
+  createDemoData: function(userId) {
+    var self = this;
+    var collections = [
+      { key: 'invoices_received', data: [
+        { id: this.generateId(), invoiceNumber: 'FR-2025-001', supplier: 'Fornecedor ABC', invoiceDate: '2025-01-15', amount: 1500, state: 'Pago', description: 'Serviços de consultoria', createdAt: new Date().toISOString() },
+        { id: this.generateId(), invoiceNumber: 'FR-2025-002', supplier: 'Fornecedor XYZ', invoiceDate: '2025-01-20', amount: 2300, state: 'Pendiente', description: 'Material de escritório', createdAt: new Date().toISOString() }
+      ]},
+      { key: 'invoices_issued', data: [
+        { id: this.generateId(), invoiceNumber: 'FV-2025-001', customer: 'Cliente S.A.', invoiceDate: '2025-01-10', dueDate: '2025-02-10', amount: 5000, state: 'Pago', description: 'Projeto de desenvolvimento', createdAt: new Date().toISOString() }
+      ]},
+      { key: 'expenses', data: [
+        { id: this.generateId(), date: '2025-01-05', category: 'Material', description: 'Material de escritório', amount: 150, paymentMethod: 'Transferência', createdAt: new Date().toISOString() }
+      ]},
+      { key: 'budgets', data: [
+        { id: this.generateId(), number: 'ORC-2025-001', series: 'Presupuestos', customer: 'Cliente Principal', date: '2025-01-15', validity: '2025-02-15', total: 8000, status: 'pending', notes: 'Projeto completo', items: [], createdAt: new Date().toISOString() }
+      ]}
+    ];
+    
+    collections.forEach(function(col) {
+      var key = 'upsen_' + col.key + '_' + userId;
+      if (!localStorage.getItem(key)) {
+        localStorage.setItem(key, JSON.stringify(col.data));
+      }
+    });
+  },
+  
+  // Sessão
+  saveSession: function(user, useFirebase) {
+    localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify({
+      user: user,
+      loginTime: Date.now(),
+      useFirebase: useFirebase
+    }));
+  },
+  
+  // Dados do usuário - CORRIGIDO com prefixo "upsen_"
+  getUserData: function(key) {
+    var user = this.getCurrentUser();
+    if (!user) return [];
+    
+    var userId = user.uid || user.id || 'unknown';
+    var fullKey = 'upsen_' + key + '_' + userId;
+    
+    try {
+      var data = localStorage.getItem(fullKey);
+      if (data) return JSON.parse(data);
+    } catch (e) {}
+    
+    return [];
+  },
+  
+  saveUserData: function(key, data) {
+    var user = this.getCurrentUser();
+    if (!user) return false;
+    
+    var userId = user.uid || user.id || 'unknown';
+    var fullKey = 'upsen_' + key + '_' + userId;
+    localStorage.setItem(fullKey, JSON.stringify(data));
+    return true;
+  },
+  
+  // Login
+  login: async function(email, password) {
+    if (window.USE_FIREBASE && window.firebaseAuth) {
+      try {
+        var result = await window.firebaseAuth.signInWithEmailAndPassword(email, password);
+        var user = result.user;
+        
+        if (!user.emailVerified) {
+          await window.firebaseAuth.signOut();
+          return { success: false, message: 'Por favor verifica o teu email antes de fazer login.' };
+        }
+        
+        var userData = null;
+        try {
+          var doc = await window.firebaseDb.collection('companies').doc(user.uid).get();
+          if (doc.exists) {
+            userData = { uid: doc.id, ...doc.data() };
+          }
+        } catch (e) {
+          console.log('Erro ao obter dados do Firestore:', e);
+        }
+        
+        if (!userData) {
+          userData = {
+            uid: user.uid,
+            email: user.email,
+            name: '',
+            company: '',
+            role: 'user',
+            settings: { currency: 'EUR', language: 'pt', theme: 'light' }
+          };
+          try {
+            await window.firebaseDb.collection('companies').doc(user.uid).set(userData);
+          } catch (e) {
+            console.log('Erro ao criar documento:', e);
+          }
+        }
+        
+        this.saveSession(userData, true);
+        return { success: true, user: userData };
+      } catch (error) {
+        console.error('Erro login Firebase:', error.code, error.message);
+        return { success: false, message: this.getErrorMessage(error.code) };
+      }
+    } else {
+      return this.loginDemo(email, password);
+    }
+  },
+  
+  // Login modo demo
+  loginDemo: function(email, password) {
+    var self = this;
+    var users = this.getUsers();
+    var user = users.find(function(u) { return u.email === email.toLowerCase().trim() && u.password === self.hash(password); });
+    
+    if (user) {
+      var users = this.getUsers();
+      var index = users.findIndex(function(u) { return u.id === user.id; });
+      if (index !== -1) {
+        users[index].lastLogin = new Date().toISOString();
+        this.saveUsers(users);
+      }
+      
+      var sessionUser = Object.assign({}, user);
+      delete sessionUser.password;
+      this.saveSession(sessionUser, false);
+      return { success: true, user: sessionUser };
+    }
+    
+    return { success: false, message: 'Email ou password incorretos' };
+  },
+  
+  // Registro
+  register: async function(email, password, userData) {
+    if (window.USE_FIREBASE && window.firebaseAuth) {
+      try {
+        var result = await window.firebaseAuth.createUserWithEmailAndPassword(email, password);
+        var user = result.user;
+        await user.sendEmailVerification();
+        
+        var userRole = 'user';
+        try {
+          var snapshot = await window.firebaseDb.collection('companies').limit(1).get();
+          if (snapshot.empty) {
+            userRole = 'admin';
+          }
+        } catch (e) {
+          console.log('Erro ao verificar usuários existentes:', e);
+        }
+        
+        var userDoc = {
+          email: user.email,
+          name: userData.name || '',
+          company: userData.company || '',
+          phone: userData.phone || '',
+          role: userRole,
+          emailVerified: false,
+          createdAt: new Date().toISOString(),
+          settings: { currency: 'EUR', language: 'pt', theme: 'light' }
+        };
+        
+        await window.firebaseDb.collection('companies').doc(user.uid).set(userDoc);
+        await window.firebaseAuth.signOut();
+        
+        return { success: true, message: 'Conta criada! Verifica o teu email para ativar.' };
+      } catch (error) {
+        console.error('Erro registro Firebase:', error.code, error.message);
+        return { success: false, message: this.getErrorMessage(error.code) };
+      }
+    } else {
+      return this.registerDemo(email, password, userData);
+    }
+  },
+  
+  // Registro modo demo
+  registerDemo: function(email, password, userData) {
+    var users = this.getUsers();
+    
+    if (users.find(function(u) { return u.email === email.toLowerCase().trim(); })) {
+      return { success: false, message: 'Este email já está registado' };
+    }
+    
+    if (password.length < 6) {
+      return { success: false, message: 'Password deve ter pelo menos 6 caracteres' };
+    }
+    
+    var newUser = {
+      id: this.generateId(),
+      name: userData.name || userData.name,
+      email: email.toLowerCase().trim(),
+      password: this.hash(password),
+      company: userData.company || '',
+      phone: userData.phone || '',
+      role: 'user',
+      createdAt: new Date().toISOString(),
+      lastLogin: null,
+      settings: { currency: 'EUR', language: 'pt', theme: 'light', notifications: true }
+    };
+    
+    users.push(newUser);
+    this.saveUsers(users);
+    this.initUserData(newUser.id);
+    
+    var sessionUser = Object.assign({}, newUser);
+    delete sessionUser.password;
+    this.saveSession(sessionUser, false);
+    
+    return { success: true, user: sessionUser, message: 'Conta criada com sucesso' };
+  },
+  
+  // Login Google
+  loginWithGoogle: async function() {
+    if (!window.USE_FIREBASE || !window.firebaseAuth) {
+      return { success: false, message: 'Google Login não disponível' };
+    }
+    
+    try {
+      var provider = new firebase.auth.GoogleAuthProvider();
+      var result = await window.firebaseAuth.signInWithPopup(provider);
+      var user = result.user;
+      
+      var doc = await window.firebaseDb.collection('companies').doc(user.uid).get();
+      if (!doc.exists) {
+        var userRole = 'user';
+        try {
+          var snapshot = await window.firebaseDb.collection('companies').limit(1).get();
+          if (snapshot.empty) {
+            userRole = 'admin';
+          }
+        } catch (e) {
+          console.log('Erro ao verificar usuários:', e);
+        }
+        
+        await window.firebaseDb.collection('companies').doc(user.uid).set({
+          email: user.email,
+          name: user.displayName || '',
+          company: '',
+          phone: user.phoneNumber || '',
+          role: userRole,
+          createdAt: new Date().toISOString(),
+          settings: { currency: 'EUR', language: 'pt', theme: 'light' }
+        });
+      }
+      
+      var userData = { uid: user.uid, ...doc.data() };
+      this.saveSession(userData, true);
+      
+      return { success: true, user: userData };
+    } catch (error) {
+      console.error('Erro Google Login:', error);
+      return { success: false, message: this.getErrorMessage(error.code) };
+    }
+  },
+  
+  // Logout
+  logout: async function() {
+    if (window.USE_FIREBASE && window.firebaseAuth) {
+      try {
+        await window.firebaseAuth.signOut();
+      } catch (error) {
+        console.error('Erro logout:', error);
+      }
+    }
+    
+    localStorage.removeItem(this.CURRENT_USER_KEY);
+    return { success: true, message: 'Sessão terminada' };
+  },
+  
+  // Usuário atual
+  getCurrentUser: function() {
+    try {
+      var session = localStorage.getItem(this.CURRENT_USER_KEY);
+      if (!session) return null;
+      
+      var data = JSON.parse(session);
+      
+      if (window.USE_FIREBASE && data.useFirebase && !window.firebaseAuth.currentUser) {
+        localStorage.removeItem(this.CURRENT_USER_KEY);
+        return null;
+      }
+      
+      return data.user;
+    } catch {
+      return null;
+    }
+  },
+  
+  isLoggedIn: function() {
+    return this.getCurrentUser() !== null;
+  },
+  
+  // Perfil
+  updateProfile: async function(updates) {
+    var user = this.getCurrentUser();
+    if (!user) return { success: false, message: 'Não está logado' };
+    
+    if (window.USE_FIREBASE && user.uid) {
+      try {
+        await window.firebaseDb.collection('companies').doc(user.uid).update(Object.assign({}, updates, { updatedAt: new Date().toISOString() }));
+        this.saveSession(Object.assign({}, user, updates), true);
+        return { success: true, message: 'Perfil atualizado!' };
+      } catch (error) {
+        return { success: false, message: 'Erro ao atualizar perfil' };
+      }
+    } else {
+      var users = this.getUsers();
+      var index = users.findIndex(function(u) { return u.id === user.id; });
+      
+      if (index !== -1) {
+        users[index] = Object.assign({}, users[index], updates);
+        this.saveUsers(users);
+        var sessionUser = Object.assign({}, users[index]);
+        delete sessionUser.password;
+        this.saveSession(sessionUser, false);
+        return { success: true, message: 'Perfil atualizado' };
+      }
+      
+      return { success: false, message: 'Utilizador não encontrado' };
+    }
+  },
+  
+  // Mensagens de erro
+  getErrorMessage: function(code) {
+    var messages = {
+      'auth/email-already-in-use': 'Este email já está registado.',
+      'auth/invalid-email': 'Email inválido.',
+      'auth/operation-not-allowed': 'Operação não permitida.',
+      'auth/weak-password': 'Password muito fraca.',
+      'auth/user-disabled': 'Conta desativada.',
+      'auth/user-not-found': 'Utilizador não encontrado.',
+      'auth/wrong-password': 'Password incorreta.',
+      'auth/popup-closed-by-user': 'Janela de login cancelada.',
+      'auth/network-request-failed': 'Erro de rede.',
+      'auth/too-many-requests': 'Muitas tentativas. Tenta novamente mais tarde.',
+      'auth/email-not-verified': 'Por favor verifica o teu email.'
+    };
+    return messages[code] || 'Ocorreu um erro. Tente novamente: ' + (code || '');
+  },
+  
+  cleanExpiredSessions: function() {
+    try {
+      var session = localStorage.getItem(this.CURRENT_USER_KEY);
+      if (session) {
+        var data = JSON.parse(session);
+        if (!data.useFirebase && Date.now() - data.loginTime > 24 * 60 * 60 * 1000) {
+          localStorage.removeItem(this.CURRENT_USER_KEY);
+        }
+      }
+    } catch {
+      localStorage.removeItem(this.CURRENT_USER_KEY);
+    }
+  },
+  
+  getAllUsers: function() {
+    return this.getUsers().map(function(u) {
+      return { id: u.id, name: u.name, email: u.email, company: u.company, role: u.role, lastLogin: u.lastLogin };
+    });
+  }
+};
+
+// Expor globalmente
+window.AuthSystem = AuthSystem;
+window.Auth = AuthSystem;
+
+// Compatibilidade
+if (!window.AuthService) {
+  window.AuthService = AuthSystem;
+}
+</parameter>

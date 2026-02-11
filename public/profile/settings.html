@@ -3,906 +3,306 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Configuración - UPSEN Accounting</title>
+  <title>Configuracion - UPSEN Accounting</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     * { box-sizing: border-box; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #eef1f7; min-height: 100vh; }
-    
-    /* Sidebar - reduzido */
-    .sidebar { width: 220px; background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%); color: white; min-height: 100vh; position: fixed; }
-    .sidebar-header { padding: 18px 15px; font-size: 1.2em; font-weight: bold; background: rgba(0,0,0,0.2); text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar { width: 260px; background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%); color: white; min-height: 100vh; position: fixed; box-shadow: 4px 0 20px rgba(0,0,0,0.15); }
+    .sidebar-header { padding: 30px 20px; font-size: 1.6em; font-weight: bold; background: rgba(0,0,0,0.2); text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .sidebar-header i { color: #1abc9c; }
     .sidebar-menu { list-style: none; padding: 0; margin: 0; }
-    .sidebar-menu li { padding: 10px 15px; cursor: pointer; transition: all 0.3s; border-left: 4px solid transparent; }
-    .sidebar-menu li:hover { background: rgba(26, 188, 156, 0.2); border-left-color: #1abc9c; }
+    .sidebar-menu li { padding: 0; transition: all 0.3s; border-left: 4px solid transparent; }
+    .sidebar-menu li:hover { background: rgba(26, 188, 156, 0.15); border-left-color: #1abc9c; }
     .sidebar-menu li.active { background: rgba(26, 188, 156, 0.2); border-left-color: #1abc9c; }
-    .sidebar-link { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; font-size: 0.9em; }
-    .sidebar-link i { width: 18px; text-align: center; font-size: 0.9em; }
-    
-    /* Main Content - reduzido */
-    .main-content { margin-left: 220px; padding: 20px; }
-    
-    /* Cards - reduzido */
-    .settings-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 15px; }
-    .settings-card:hover { transform: translateY(-2px); transition: transform 0.3s; }
-    
-    /* Section Titles */
-    .section-title { 
-      color: #2a4d9c; 
-      font-weight: 600; 
-      margin-bottom: 15px; 
-      padding-bottom: 8px; 
-      border-bottom: 2px solid #e9ecef; 
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 1em;
-    }
-    .section-title i { color: #1abc9c; font-size: 0.9em; }
-    
-    /* Form Controls */
-    .form-control, .form-select {
-      border-radius: 8px;
-      padding: 10px 12px;
-      border: 2px solid #e9ecef;
-      transition: all 0.3s;
-      font-size: 0.9em;
-    }
-    .form-control:focus, .form-select:focus {
-      border-color: #2a4d9c;
-      box-shadow: 0 0 0 3px rgba(42, 77, 156, 0.1);
-    }
-    
-    /* Buttons - reduzido */
-    .btn { border-radius: 8px; padding: 8px 18px; font-weight: 500; transition: all 0.3s; font-size: 0.85em; }
-    .btn-primary { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); border: none; }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(42, 77, 156, 0.4); }
-    .btn-success { background: linear-gradient(135deg, #1abc9c, #16a085); border: none; }
-    .btn-success:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(26, 188, 156, 0.4); }
-    .btn-danger { background: linear-gradient(135deg, #e74c3c, #c0392b); border: none; }
-    .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4); }
-    .btn-secondary { background: #e9ecef; border: none; color: #495057; }
-    .btn-secondary:hover { background: #dee2e6; }
-    
-    /* Alert Messages */
-    .alert { border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; font-size: 0.85em; }
+    .sidebar-link { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 12px; padding: 15px 20px; transition: all 0.3s; }
+    .sidebar-link:hover { color: #1abc9c; }
+    .sidebar-link i { width: 24px; text-align: center; color: rgba(255,255,255,0.7); transition: color 0.3s; }
+    .main-content { margin-left: 260px; padding: 30px; min-height: 100vh; background: #eef1f7; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+    .page-title { font-size: 2em; font-weight: 700; color: #2c3e50; display: flex; align-items: center; gap: 15px; }
+    .page-title i { color: #1abc9c; }
+    .modern-card { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 25px; transition: all 0.3s; border: 1px solid rgba(0,0,0,0.05); }
+    .modern-card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
+    .section-title { color: #2a4d9c; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #e9ecef; padding-bottom: 10px; }
+    .section-title i { color: #1abc9c; }
+    .form-label { font-weight: 500; color: #495057; margin-bottom: 8px; }
+    .form-control, .form-select { border-radius: 10px; padding: 12px 15px; border: 2px solid #e9ecef; transition: all 0.3s; font-size: 0.95em; }
+    .form-control:focus, .form-select:focus { border-color: #2a4d9c; box-shadow: 0 0 0 3px rgba(42, 77, 156, 0.1); }
+    .btn { border-radius: 10px; padding: 12px 25px; font-weight: 500; transition: all 0.3s; border: none; cursor: pointer; }
+    .btn-primary { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); color: white; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(42, 77, 156, 0.4); color: white; }
+    .btn-success { background: linear-gradient(135deg, #1abc9c, #16a085); color: white; }
+    .btn-success:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(26, 188, 156, 0.4); color: white; }
+    .alert { border-radius: 10px; padding: 15px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
     .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-    .alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
-    .alert-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
-    
-    /* Toggle Switch */
-    .form-check-input:checked { background-color: #2a4d9c; border-color: #2a4d9c; }
-    .form-check-input:focus { box-shadow: 0 0 0 3px rgba(42, 77, 156, 0.2); }
-    
-    /* Page Header */
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .page-title { font-size: 1.4em; font-weight: 700; color: #2c3e50; }
-    
-    /* Info Box */
-    .info-box {
-      background: linear-gradient(135deg, rgba(42, 77, 156, 0.05), rgba(26, 188, 156, 0.05));
-      border: 1px solid rgba(42, 77, 156, 0.1);
-      border-radius: 10px;
-      padding: 15px;
-      margin-bottom: 15px;
-    }
-    .info-box i { font-size: 1.5em; color: #2a4d9c; margin-bottom: 8px; }
-    .info-box h6 { color: #2a4d9c; margin-bottom: 5px; font-size: 0.9em; }
-    
-    /* Danger Zone */
-    .danger-zone {
-      border: 2px solid #e74c3c;
-      border-radius: 10px;
-      padding: 20px;
-      background: rgba(231, 76, 60, 0.03);
-    }
-    .danger-zone h5 { color: #e74c3c; margin-bottom: 10px; font-size: 1em; }
-    
-    /* Responsive */
-    @media (max-width: 768px) {
-      .sidebar { position: relative; width: 100%; min-height: auto; }
-      .main-content { margin-left: 0; }
-    }
-    
-    /* Logout Button */
-    .btn-logout {
-      background: rgba(231, 76, 60, 0.2);
-      color: #e74c3c;
-      border: none;
-      margin-top: 15px;
-      width: 100%;
-      font-size: 0.85em;
-      padding: 8px 15px;
-    }
+    .user-info { background: rgba(255,255,255,0.1); padding: 15px 20px; border-radius: 10px; margin: 20px; margin-top: auto; }
+    .user-info-name { font-weight: 600; margin-bottom: 5px; }
+    .user-info-email { font-size: 0.85em; opacity: 0.8; }
+    .btn-logout { background: rgba(231, 76, 60, 0.15); color: #e74c3c; border: none; width: calc(100% - 40px); margin: 15px 20px; margin-top: 15px; }
     .btn-logout:hover { background: #e74c3c; color: white; }
+    .form-check-input:checked { background-color: #2a4d9c; border-color: #2a4d9c; }
+    .form-switch .form-check-input { width: 3em; height: 1.5em; cursor: pointer; }
+    @media (max-width: 992px) { .sidebar { position: relative; width: 100%; min-height: auto; } .main-content { margin-left: 0; } }
   </style>
 </head>
 <body>
 <div class="container-fluid">
   <div class="row">
-    <!-- Sidebar -->
     <aside class="sidebar">
-      <div class="sidebar-header">
-        <i class="fas fa-chart-line me-2"></i>Accounting
-      </div>
+      <div class="sidebar-header"><i class="fas fa-chart-line me-2"></i>Accounting</div>
       <ul class="sidebar-menu">
-        <li><a href="../frontPage/frontPage.html" class="sidebar-link"><i class="fas fa-tachometer-alt"></i> Panel de control</a></li>
+        <li><a href="../frontPage/frontPage.html" class="sidebar-link"><i class="fas fa-tachometer-alt"></i> Panel</a></li>
         <li><a href="../expense/expense.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar"></i> Gastos</a></li>
         <li><a href="../Invoice-issued/invoice-issued.html" class="sidebar-link"><i class="fas fa-file-export"></i> Facturas emitidas</a></li>
         <li><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link"><i class="fas fa-file-import"></i> Facturas recibidas</a></li>
         <li><a href="../budgetPage/budget.html" class="sidebar-link"><i class="fas fa-calculator"></i> Presupuestos</a></li>
         <li><a href="profile.html" class="sidebar-link"><i class="fas fa-user"></i> Perfil</a></li>
-        <li class="active"><a href="settings.html" class="sidebar-link"><i class="fas fa-cog"></i> Configuración</a></li>
+        <li class="active"><a href="settings.html" class="sidebar-link"><i class="fas fa-cog"></i> Config</a></li>
       </ul>
-      <div style="padding: 20px;">
-        <button class="btn btn-logout" onclick="logout()">
-          <i class="fas fa-sign-out-alt me-2"></i> Cerrar sesión
-        </button>
+      <div class="user-info">
+        <div class="user-info-name" id="userNameSidebar">Cargando...</div>
+        <div class="user-info-email" id="userEmailSidebar">-</div>
+        <button class="btn btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt me-2"></i>Cerrar sesion</button>
       </div>
     </aside>
-    
-    <!-- Main Content -->
     <main class="main-content col-md-9">
       <div class="page-header">
-        <h1 class="page-title"><i class="fas fa-cog me-3"></i>Configuración</h1>
+        <h1 class="page-title"><i class="fas fa-cog me-3"></i>Configuracion</h1>
       </div>
-      
-      <!-- Alert Messages -->
-      <div id="alertMessage" class="alert hidden"></div>
-      
-      <!-- General Settings -->
-      <div class="settings-card">
-        <h5 class="section-title"><i class="fas fa-sliders-h"></i> Configuración General</h5>
+      <div id="alertMessage" class="alert" style="display: none;"></div>
+      <div class="modern-card">
+        <h5 class="section-title"><i class="fas fa-building"></i> Datos de la Empresa</h5>
         <div class="row">
           <div class="col-md-6 mb-3">
-            <label class="form-label">Moneda predeterminada</label>
-            <select class="form-select" id="settingCurrency">
-              <option value="EUR">Euro (EUR)</option>
-              <option value="USD">Dólar (USD)</option>
-              <option value="GBP">Libra Esterlina (GBP)</option>
-              <option value="BRL">Real Brasileño (BRL)</option>
-            </select>
+            <label class="form-label">Nombre de la empresa</label>
+            <input type="text" class="form-control" id="companyName" placeholder="Nombre">
           </div>
           <div class="col-md-6 mb-3">
+            <label class="form-label">NIF / CIF</label>
+            <input type="text" class="form-control" id="companyTaxId" placeholder="NIF">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Direccion</label>
+            <input type="text" class="form-control" id="companyAddress" placeholder="Direccion">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Ciudad</label>
+            <input type="text" class="form-control" id="companyCity" placeholder="Ciudad">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Pais</label>
+            <input type="text" class="form-control" id="companyCountry" placeholder="Pais">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Sitio web</label>
+            <input type="text" class="form-control" id="companyWebsite" placeholder="www.ejemplo.com">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveCompanySettings()"><i class="fas fa-save me-2"></i>Guardar Empresa</button>
+      </div>
+      <div class="modern-card">
+        <h5 class="section-title"><i class="fas fa-sliders-h"></i> Preferencias</h5>
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Moneda</label>
+            <select class="form-select" id="settingCurrency">
+              <option value="EUR">Euro (EUR)</option>
+              <option value="USD">Dolar (USD)</option>
+              <option value="GBP">Libra (GBP)</option>
+              <option value="BRL">Real (BRL)</option>
+            </select>
+          </div>
+          <div class="col-md-4 mb-3">
             <label class="form-label">Idioma</label>
             <select class="form-select" id="settingLanguage">
-              <option value="es">Español</option>
-              <option value="pt">Português</option>
+              <option value="es">Espanol</option>
+              <option value="pt">Portugues</option>
               <option value="en">English</option>
             </select>
           </div>
-          <div class="col-md-6 mb-3">
+          <div class="col-md-4 mb-3">
             <label class="form-label">Tema</label>
             <select class="form-select" id="settingTheme">
               <option value="light">Claro</option>
               <option value="dark">Oscuro</option>
             </select>
           </div>
-          <div class="col-md-6 mb-3">
-            <label class="form-label">Zona horaria</label>
-            <select class="form-select" id="settingTimezone">
-              <option value="Europe/Madrid">Madrid (GMT+1)</option>
-              <option value="Europe/Lisbon">Lisboa (GMT+0)</option>
-              <option value="America/Sao_Paulo">São Paulo (GMT-3)</option>
-              <option value="UTC">UTC</option>
-            </select>
-          </div>
         </div>
-        <button class="btn btn-primary" onclick="saveGeneralSettings()">
-          <i class="fas fa-save me-2"></i>Guardar cambios
-        </button>
+        <button class="btn btn-success" onclick="savePreferences()"><i class="fas fa-check me-2"></i>Guardar Preferencias</button>
       </div>
-      
-      <!-- Notifications -->
-      <div class="settings-card">
+      <div class="modern-card">
         <h5 class="section-title"><i class="fas fa-bell"></i> Notificaciones</h5>
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <div class="form-check form-switch mb-3">
-              <input class="form-check-input" type="checkbox" id="notifyEmail" checked>
-              <label class="form-check-label" for="notifyEmail">Recibir notificaciones por email</label>
-            </div>
-            <div class="form-check form-switch mb-3">
-              <input class="form-check-input" type="checkbox" id="notifyExpiry" checked>
-              <label class="form-check-label" for="notifyExpiry">Aviso de facturas próximas a vencer</label>
-            </div>
-          </div>
-          <div class="col-md-6 mb-3">
-            <div class="form-check form-switch mb-3">
-              <input class="form-check-input" type="checkbox" id="notifyWeekly" checked>
-              <label class="form-check-label" for="notifyWeekly">Resumen semanal de actividad</label>
-            </div>
-            <div class="form-check form-switch mb-3">
-              <input class="form-check-input" type="checkbox" id="notifyBudget">
-              <label class="form-check-label" for="notifyBudget">Alertas de presupuesto</label>
-            </div>
-          </div>
+        <div class="form-check form-switch mb-3">
+          <input class="form-check-input" type="checkbox" id="notifyEmail" style="width: 3em; height: 1.5em;">
+          <label class="form-check-label ms-2" for="notifyEmail">Notificaciones por email</label>
         </div>
-        <button class="btn btn-primary" onclick="saveNotificationSettings()">
-          <i class="fas fa-save me-2"></i>Guardar preferencias
-        </button>
-      </div>
-      
-      <!-- Invoice Settings -->
-      <div class="settings-card">
-        <h5 class="section-title"><i class="fas fa-file-invoice"></i> Configuración de Facturas</h5>
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <label class="form-label">Prefijo facturas emitidas</label>
-            <input type="text" class="form-control" id="invoicePrefix" value="FV-" placeholder="FV-">
-          </div>
-          <div class="col-md-6 mb-3">
-            <label class="form-label">Prefijo facturas recibidas</label>
-            <input type="text" class="form-control" id="receivedPrefix" value="FR-" placeholder="FR-">
-          </div>
-          <div class="col-md-6 mb-3">
-            <label class="form-label">Días por defecto para vencimiento</label>
-            <input type="number" class="form-control" id="defaultDueDays" value="30" min="1" max="365">
-          </div>
-          <div class="col-md-6 mb-3">
-            <label class="form-label">IVA por defecto (%)</label>
-            <input type="number" class="form-control" id="defaultVAT" value="21" min="0" max="100">
-          </div>
+        <div class="form-check form-switch mb-3">
+          <input class="form-check-input" type="checkbox" id="notifyBrowser" style="width: 3em; height: 1.5em;">
+          <label class="form-check-label ms-2" for="notifyBrowser">Notificaciones en el navegador</label>
         </div>
-        <button class="btn btn-primary" onclick="saveInvoiceSettings()">
-          <i class="fas fa-save me-2"></i>Guardar configuración
-        </button>
-      </div>
-      
-<!-- Data Management -->
-      <div class="settings-card">
-        <h5 class="section-title"><i class="fas fa-database"></i> Gestión de Datos</h5>
-        
-        <div class="row">
-          <div class="col-md-4 mb-3">
-            <div class="info-box text-center">
-              <i class="fas fa-file-invoice-dollar"></i>
-              <h6>Facturas</h6>
-              <p class="text-muted mb-2" id="countInvoices">0 registros</p>
-              <div class="d-flex gap-1 justify-content-center">
-                <button class="btn btn-sm btn-outline-primary" onclick="exportDataPDF('invoices')">
-                  <i class="fas fa-file-pdf me-1"></i>PDF
-                </button>
-                <button class="btn btn-sm btn-outline-secondary" onclick="exportData('invoices')">
-                  <i class="fas fa-download me-1"></i>JSON
-                </button>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4 mb-3">
-            <div class="info-box text-center">
-              <i class="fas fa-shopping-cart"></i>
-              <h6>Gastos</h6>
-              <p class="text-muted mb-2" id="countExpenses">0 registros</p>
-              <div class="d-flex gap-1 justify-content-center">
-                <button class="btn btn-sm btn-outline-primary" onclick="exportDataPDF('expenses')">
-                  <i class="fas fa-file-pdf me-1"></i>PDF
-                </button>
-                <button class="btn btn-sm btn-outline-secondary" onclick="exportData('expenses')">
-                  <i class="fas fa-download me-1"></i>JSON
-                </button>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4 mb-3">
-            <div class="info-box text-center">
-              <i class="fas fa-calculator"></i>
-              <h6>Presupuestos</h6>
-              <p class="text-muted mb-2" id="countBudgets">0 registros</p>
-              <div class="d-flex gap-1 justify-content-center">
-                <button class="btn btn-sm btn-outline-primary" onclick="exportDataPDF('budgets')">
-                  <i class="fas fa-file-pdf me-1"></i>PDF
-                </button>
-                <button class="btn btn-sm btn-outline-secondary" onclick="exportData('budgets')">
-                  <i class="fas fa-download me-1"></i>JSON
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="row mt-3">
-          <div class="col-md-6 mb-2">
-            <button class="btn btn-success w-100" onclick="exportAllDataPDF()">
-              <i class="fas fa-file-pdf me-2"></i>Exportar todo PDF
-            </button>
-          </div>
-          <div class="col-md-6 mb-2">
-            <button class="btn btn-warning" onclick="document.getElementById('importFile').click()">
-              <i class="fas fa-file-import me-2"></i>Importar datos
-            </button>
-            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
-          </div>
-        </div>
-      </div>
-      
-      <!-- Account Info -->
-      <div class="settings-card">
-        <h5 class="section-title"><i class="fas fa-user-circle"></i> Información de la Cuenta</h5>
-        <div class="row">
-          <div class="col-md-4 mb-3">
-            <label class="form-label">Usuario</label>
-            <input type="text" class="form-control" id="settingName" readonly>
-          </div>
-          <div class="col-md-4 mb-3">
-            <label class="form-label">Email</label>
-            <input type="email" class="form-control" id="settingEmail" readonly>
-          </div>
-          <div class="col-md-4 mb-3">
-            <label class="form-label">Empresa</label>
-            <input type="text" class="form-control" id="settingCompany" readonly>
-          </div>
-        </div>
-        <div class="d-flex gap-2">
-          <a href="profile.html" class="btn btn-primary">
-            <i class="fas fa-edit me-2"></i>Editar perfil completo
-          </a>
-          <button class="btn btn-success" onclick="showPasswordModal()">
-            <i class="fas fa-lock me-2"></i>Cambiar contraseña
-          </button>
-        </div>
-      </div>
-      
-      <!-- Danger Zone -->
-      <div class="settings-card danger-zone">
-        <h5><i class="fas fa-exclamation-triangle me-2"></i>Zona de Peligro</h5>
-        <p class="text-muted mb-3">Estas acciones son irreversibles. Por favor, procede con cautela.</p>
-        <div class="d-flex flex-wrap gap-3">
-          <button class="btn btn-outline-warning" onclick="clearCache()">
-            <i class="fas fa-trash me-2"></i>Limpiar caché
-          </button>
-          <button class="btn btn-outline-danger" onclick="resetAllData()">
-            <i class="fas fa-redo me-2"></i>Restablecer datos
-          </button>
-          <button class="btn btn-danger" onclick="deleteAccount()">
-            <i class="fas fa-user-times me-2"></i>Eliminar cuenta
-          </button>
-        </div>
-      </div>
-      
-      <!-- System Info -->
-      <div class="settings-card">
-        <h5 class="section-title"><i class="fas fa-info-circle"></i> Información del Sistema</h5>
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <label class="form-label">Versión</label>
-            <input type="text" class="form-control" value="1.0.0" readonly>
-          </div>
-          <div class="col-md-6 mb-3">
-            <label class="form-label">Almacenamiento usado</label>
-            <div class="progress mt-2" style="height: 25px;">
-              <div class="progress-bar" id="storageProgress" role="progressbar" style="width: 0%"></div>
-            </div>
-            <small class="text-muted" id="storageInfo">Calculando...</small>
-          </div>
-        </div>
+        <button class="btn btn-primary" onclick="saveNotifications()"><i class="fas fa-bell me-2"></i>Guardar Notificaciones</button>
       </div>
     </main>
   </div>
 </div>
-
-<!-- Modal Password -->
-<div class="modal fade" id="passwordModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-lock me-2"></i>Cambiar Contraseña</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div id="passwordAlert" class="alert hidden"></div>
-        <div class="mb-3">
-          <label class="form-label">Contraseña actual</label>
-          <input type="password" class="form-control" id="currentPassword">
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Nueva contraseña</label>
-          <input type="password" class="form-control" id="newPassword" minlength="6">
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Confirmar nueva contraseña</label>
-          <input type="password" class="form-control" id="confirmPassword">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-success" onclick="changePassword()">Cambiar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-
-<!-- Firebase Config & Auth -->
-<script src="../shared/firebase-config.js"></script>
 <script src="../shared/auth-system.js"></script>
-
 <script>
-  let passwordModal = null;
-  
-  document.addEventListener('DOMContentLoaded', async function() {
-    passwordModal = new bootstrap.Modal(document.getElementById('passwordModal'));
-    
-    AuthSystem.init((isLoggedIn) => {
-      if (!isLoggedIn) {
-        window.location.href = '../login.html';
-        return;
-      }
-      
-      loadSettings();
-      loadStats();
-      calculateStorage();
-    });
-  });
-
-  
-function loadSettings() {
-    const user = AuthService.getCurrentUser();
-    if (!user) return;
-    
-    document.getElementById('settingName').value = user.name || '';
-    document.getElementById('settingEmail').value = user.email || '';
-    document.getElementById('settingCompany').value = user.company || '';
-    
-    // Load from localStorage or use defaults
-    document.getElementById('settingCurrency').value = localStorage.getItem('settingCurrency') || user.settings?.currency || 'EUR';
-    document.getElementById('settingLanguage').value = localStorage.getItem('settingLanguage') || user.settings?.language || 'es';
-    document.getElementById('settingTheme').value = localStorage.getItem('settingTheme') || user.settings?.theme || 'light';
-    document.getElementById('settingTimezone').value = localStorage.getItem('settingTimezone') || 'Europe/Madrid';
-    
-    // Invoice settings
-    document.getElementById('invoicePrefix').value = localStorage.getItem('invoicePrefix') || 'FV-';
-    document.getElementById('receivedPrefix').value = localStorage.getItem('receivedPrefix') || 'FR-';
-    document.getElementById('defaultDueDays').value = localStorage.getItem('defaultDueDays') || '30';
-    document.getElementById('defaultVAT').value = localStorage.getItem('defaultVAT') || '21';
-    
-    // Notifications
-    document.getElementById('notifyEmail').checked = localStorage.getItem('notifyEmail') !== 'false';
-    document.getElementById('notifyExpiry').checked = localStorage.getItem('notifyExpiry') !== 'false';
-    document.getElementById('notifyWeekly').checked = localStorage.getItem('notifyWeekly') !== 'false';
-    document.getElementById('notifyBudget').checked = localStorage.getItem('notifyBudget') === 'true';
-  }
-  
-  async function loadStats() {
-    try {
-      const user = AuthService.getCurrentUser();
-      if (!user) return;
-      
-      const invoices = await FirestoreService.getAll('invoices_received');
-      const issued = await FirestoreService.getAll('invoices_issued');
-      const expenses = await FirestoreService.getAll('expenses');
-      const budgets = await FirestoreService.getAll('budgets');
-      
-      document.getElementById('countInvoices').textContent = ((invoices?.length || 0) + (issued?.length || 0)) + ' registros';
-      document.getElementById('countExpenses').textContent = (expenses?.length || 0) + ' registros';
-      document.getElementById('countBudgets').textContent = (budgets?.length || 0) + ' registros';
-    } catch (e) {
-      console.log('Error loading stats', e);
-    }
-  }
-  
-  function calculateStorage() {
-    let total = 0;
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      total += (localStorage.getItem(key) || '').length * 2; // UTF-16
-    }
-    
-    const usedKB = (total / 1024).toFixed(2);
-    const usedMB = (usedKB / 1024).toFixed(2);
-    const percentage = Math.min((usedKB / 5120) * 100, 100); // Assume 5MB limit
-    
-    document.getElementById('storageProgress').style.width = percentage + '%';
-    document.getElementById('storageProgress').textContent = usedMB + ' MB';
-    document.getElementById('storageInfo').textContent = usedMB + ' MB de ~5 MB utilizados';
-  }
-  
-  function showAlert(message, type = 'info') {
-    const el = document.getElementById('alertMessage');
+var currentUser = null;
+function getEl(id) { return document.getElementById(id); }
+function showAlert(message, type) {
+  var el = getEl('alertMessage');
+  if (el) {
     el.textContent = message;
-    el.className = `alert alert-${type}`;
-    el.classList.remove('hidden');
-    
-    setTimeout(() => el.classList.add('hidden'), 5000);
+    el.className = 'alert alert-' + (type || 'info');
+    el.style.display = 'flex';
+    setTimeout(function() { el.style.display = 'none'; }, 5000);
   }
-  
-  async function saveGeneralSettings() {
-    const settings = {
-      currency: document.getElementById('settingCurrency').value,
-      language: document.getElementById('settingLanguage').value,
-      theme: document.getElementById('settingTheme').value,
-      timezone: document.getElementById('settingTimezone').value
-    };
-    
-    localStorage.setItem('settingCurrency', settings.currency);
-    localStorage.setItem('settingLanguage', settings.language);
-    localStorage.setItem('settingTheme', settings.theme);
-    localStorage.setItem('settingTimezone', settings.timezone);
-    
-await AuthService.updateProfile({ settings });
-    showAlert('¡Configuración guardada correctamente!', 'success');
-  }
-  
-  async function saveNotificationSettings() {
-    localStorage.setItem('notifyEmail', document.getElementById('notifyEmail').checked);
-    localStorage.setItem('notifyExpiry', document.getElementById('notifyExpiry').checked);
-    localStorage.setItem('notifyWeekly', document.getElementById('notifyWeekly').checked);
-    localStorage.setItem('notifyBudget', document.getElementById('notifyBudget').checked);
-    
-    showAlert('¡Preferencias de notificación guardadas!', 'success');
-  }
-  
-  function saveInvoiceSettings() {
-    localStorage.setItem('invoicePrefix', document.getElementById('invoicePrefix').value);
-    localStorage.setItem('receivedPrefix', document.getElementById('receivedPrefix').value);
-    localStorage.setItem('defaultDueDays', document.getElementById('defaultDueDays').value);
-    localStorage.setItem('defaultVAT', document.getElementById('defaultVAT').value);
-    
-    showAlert('¡Configuración de facturas guardada!', 'success');
-  }
-  
-  function showPasswordModal() {
-    document.getElementById('currentPassword').value = '';
-    document.getElementById('newPassword').value = '';
-    document.getElementById('confirmPassword').value = '';
-    document.getElementById('passwordAlert').classList.add('hidden');
-    passwordModal.show();
-  }
-  
-  async function changePassword() {
-    const current = document.getElementById('currentPassword').value;
-    const newPass = document.getElementById('newPassword').value;
-    const confirm = document.getElementById('confirmPassword').value;
-    
-    if (newPass !== confirm) {
-      document.getElementById('passwordAlert').textContent = 'Las contraseñas no coinciden.';
-      document.getElementById('passwordAlert').className = 'alert alert-error';
-      return;
-    }
-    
-const result = await AuthService.changePassword(current, newPass);
-    if (result.success) {
-      passwordModal.hide();
-      showAlert('¡Contraseña cambiada!', 'success');
-    } else {
-      document.getElementById('passwordAlert').textContent = result.message || 'Error.';
-      document.getElementById('passwordAlert').className = 'alert alert-error';
-    }
-  }
-  
-function exportData(type) {
-    let data = [];
-    switch(type) {
-      case 'invoices':
-        data = {
-          received: [],
-          issued: [],
-          exportedAt: new Date().toISOString()
-        };
-        break;
-      case 'expenses':
-        data = { expenses: [], exportedAt: new Date().toISOString() };
-        break;
-      case 'budgets':
-        data = { budgets: [], exportedAt: new Date().toISOString() };
-        break;
-    }
-    
-    downloadJSON(data, `upsen_${type}_${new Date().toISOString().split('T')[0]}.json`);
-    showAlert(`${type.charAt(0).toUpperCase() + type.slice(1)} exportado!`, 'success');
-  }
-  
-// Export to PDF functions
-  async function exportDataPDF(type) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    const primaryColor = [42, 77, 156];
-    const secondaryColor = [26, 188, 156];
-    const textColor = [44, 62, 80];
-    const grayColor = [108, 117, 125];
-    
-    // Header
-    doc.setFillColor(...primaryColor);
-    doc.rect(0, 0, 210, 30, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.text('UPSEN Accounting', 105, 20, { align: 'center' });
-    
-    // Title
-    doc.setTextColor(...textColor);
-    doc.setFontSize(14);
-    doc.text(type.charAt(0).toUpperCase() + type.slice(1), 15, 45);
-    
-    doc.setTextColor(...grayColor);
-    doc.setFontSize(10);
-    doc.text('Generado: ' + new Date().toLocaleDateString('es-ES'), 195, 45, { align: 'right' });
-    
-    doc.setDrawColor(...secondaryColor);
-    doc.setLineWidth(0.5);
-    doc.line(15, 40, 195, 40);
-    
-    // Data
-    let y = 55;
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    
-    let data = [];
-    let title = '';
-    
-    if (type === 'invoices') {
-      const received = await FirestoreService.getAll('invoices_received') || [];
-      const issued = await FirestoreService.getAll('invoices_issued') || [];
-      data = [...received.map(r => ({...r, type: 'Recibida'})), ...issued.map(i => ({...i, type: 'Emitida'}))];
-      title = 'Facturas';
-    } else if (type === 'expenses') {
-      data = await FirestoreService.getAll('expenses') || [];
-      title = 'Gastos';
-    } else if (type === 'budgets') {
-      data = await FirestoreService.getAll('budgets') || [];
-      title = 'Presupuestos';
-    }
-    
-    if (data.length === 0) {
-      doc.setTextColor(...grayColor);
-      doc.text('No hay datos disponibles.', 15, y);
-    } else {
-      doc.setFontSize(8);
-      data.slice(0, 30).forEach((item) => {
-        doc.setTextColor(...grayColor);
-        
-        if (type === 'invoices') {
-          doc.text((item.invoiceNumber || '-') + ' | ' + (item.supplier || item.customer || '-') + ' | ' + (item.invoiceDate || '-'), 15, y);
-          doc.setTextColor(...textColor);
-          doc.text((item.amount || 0) + ' EUR | ' + (item.state || '-'), 120, y);
-        } else if (type === 'expenses') {
-          doc.text((item.date || '-') + ' | ' + (item.category || '-'), 15, y);
-          doc.setTextColor(...textColor);
-          doc.text((item.amount || 0) + ' EUR', 120, y);
-          doc.setTextColor(...grayColor);
-          doc.text((item.notes || '').substring(0, 30), 150, y);
-        } else if (type === 'budgets') {
-          doc.text((item.number || '-') + ' | ' + (item.customer || '-'), 15, y);
-          doc.setTextColor(...textColor);
-          doc.text((item.total || 0) + ' EUR | ' + (item.status || '-'), 120, y);
-        }
-        y += 7;
-      });
-      
-      if (data.length > 30) {
-        doc.setTextColor(...grayColor);
-        doc.text('... y ' + (data.length - 30) + ' registros más', 15, y + 3);
-      }
-    }
-    
-    // Footer
-    doc.setFillColor(...primaryColor);
-    doc.rect(0, 277, 210, 20, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(9);
-    doc.text('UPSEN Accounting - ' + title, 105, 287, { align: 'center' });
-    
-    doc.save(`upsen_${type}_${new Date().toISOString().split('T')[0]}.pdf`);
-    showAlert(title + ' exportados en PDF!', 'success');
-  }
-  
-  async function exportAllDataPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    const primaryColor = [42, 77, 156];
-    const secondaryColor = [26, 188, 156];
-    const textColor = [44, 62, 80];
-    const grayColor = [108, 117, 125];
-    
-    // Header
-    doc.setFillColor(...primaryColor);
-    doc.rect(0, 0, 210, 30, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.text('UPSEN Accounting', 105, 20, { align: 'center' });
-    
-    // Title
-    doc.setTextColor(...textColor);
-    doc.setFontSize(14);
-    doc.text('Resumen de Datos', 15, 45);
-    
-    doc.setTextColor(...grayColor);
-    doc.setFontSize(10);
-    doc.text('Generado: ' + new Date().toLocaleDateString('es-ES'), 195, 45, { align: 'right' });
-    
-    doc.setDrawColor(...secondaryColor);
-    doc.setLineWidth(0.5);
-    doc.line(15, 40, 195, 40);
-    
-    // Stats
-    const received = await FirestoreService.getAll('invoices_received') || [];
-    const issued = await FirestoreService.getAll('invoices_issued') || [];
-    const expenses = await FirestoreService.getAll('expenses') || [];
-    const budgets = await FirestoreService.getAll('budgets') || [];
-    
-    let y = 60;
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...textColor);
-    doc.text('Estadisticas Generales', 15, y);
-    y += 10;
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    
-    const stats = [
-      ['Facturas Recibidas:', received.length.toString()],
-      ['Facturas Emitidas:', issued.length.toString()],
-      ['Gastos:', expenses.length.toString()],
-      ['Presupuestos:', budgets.length.toString()]
-    ];
-    
-    stats.forEach(([label, value]) => {
-      doc.setTextColor(...grayColor);
-      doc.text(label, 20, y);
-      doc.setTextColor(...textColor);
-      doc.text(value, 80, y);
-      y += 7;
-    });
-    
-    // Footer
-    doc.setFillColor(...primaryColor);
-    doc.rect(0, 277, 210, 20, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(9);
-    doc.text('UPSEN Accounting - Resumen', 105, 287, { align: 'center' });
-    
-    doc.save(`upsen_resumen_${new Date().toISOString().split('T')[0]}.pdf`);
-    showAlert('Resumen exportado en PDF!', 'success');
-  }
-  
-  async function exportAllData() {
-    const user = AuthService.getCurrentUser();
-    if (!user) {
-      showAlert('Error: Usuario no encontrado.', 'error');
-      return;
-    }
-    
-    const data = {
-      profile: {
-        name: user.name,
-        email: user.email,
-        company: user.company,
-        phone: user.phone,
-        settings: user.settings
-      },
-      invoicesReceived: await FirestoreService.getAll('invoices_received') || [],
-      invoicesIssued: await FirestoreService.getAll('invoices_issued') || [],
-      expenses: await FirestoreService.getAll('expenses') || [],
-      budgets: await FirestoreService.getAll('budgets') || [],
-      exportedAt: new Date().toISOString()
-    };
-    
-    downloadJSON(data, `upsen_backup_${new Date().toISOString().split('T')[0]}.json`);
-    showAlert('¡Todos los datos exportados!', 'success');
-  }
-  
-  function downloadJSON(data, filename) {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-  
-  function importData(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      try {
-        const data = JSON.parse(e.target.result);
-        // Import logic would go here
-        showAlert('Archivo cargado. La importación requiere implementación adicional.', 'info');
-      } catch (err) {
-        showAlert('Error al leer el archivo.', 'error');
-      }
-    };
-    reader.readAsText(file);
-  }
-  
-  function clearCache() {
-    if (confirm('¿Limpiar caché local? Esto no afectará tus datos.')) {
-      const keys = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (!key.startsWith('upsen_') && !key.startsWith('auth_')) {
-          keys.push(key);
-        }
-      }
-      keys.forEach(k => localStorage.removeItem(k));
-      showAlert('¡Caché limpiado!', 'success');
-      loadSettings();
-    }
-  }
-  
-async function resetAllData() {
-    if (confirm('¿Restablecer todos los datos? Esto eliminará todos los documentos guardados.')) {
-      if (confirm('Esta acción eliminará permanentemente todos tus datos. ¿Continuar?')) {
-        const user = AuthService.getCurrentUser();
-        if (user) {
-          // Delete all Firestore collections
-          const collections = ['invoices_received', 'invoices_issued', 'expenses', 'budgets'];
-          for (const collection of collections) {
-            const docs = await FirestoreService.getAll(collection);
-            for (const doc of docs) {
-              await FirestoreService.delete(collection, doc.id);
-            }
-          }
-          showAlert('¡Datos restablecidos!', 'success');
-          loadStats();
-        }
-      }
-    }
-  }
-  
-  async function deleteAccount() {
-    if (confirm('¿ELIMINAR TU CUENTA? Esto borrará TODOS tus datos permanentemente.')) {
-      if (confirm('Esta acción NO se puede deshacer. ¿Estás absolutamente seguro?')) {
-        const result = await AuthService.deleteAccount();
-        if (result.success) {
-          window.location.href = '../login.html';
-        }
-      }
-    }
-  }
-  
-function logout() {
-  console.log('Logout clicked');
-  
-  // Limpar cache local
-  if (window.AuthService) {
-    window.AuthService.currentUser = null;
-    window.AuthService.currentUserData = null;
-  }
-  
-  // Tentar fazer logout através de AuthService
-  if (window.AuthService && typeof window.AuthService.logout === 'function') {
-    window.AuthService.logout().then(() => {
-      window.location.href = '../login.html';
-    }).catch(() => {
-      window.location.href = '../login.html';
-    });
-    return;
-  }
-  
-  // Fallback: tentar através do objeto window.firebase
-  if (window.firebase && window.firebase.auth) {
-    window.firebase.auth().signOut().then(() => {
-      window.location.href = '../login.html';
-    }).catch(() => {
-      window.location.href = '../login.html';
-    });
-    return;
-  }
-  
-  // Se nada funcionar, redirecionar mesmo assim
-  window.location.href = '../login.html';
 }
+function getUser() {
+  var auth = window.AuthService || window.Auth;
+  if (auth && auth.getCurrentUser) {
+    var user = auth.getCurrentUser();
+    if (user) return user;
+  }
+  try {
+    var session = localStorage.getItem('upsen_current_user');
+    if (session) {
+      var data = JSON.parse(session);
+      if (data && data.user) return data.user;
+    }
+  } catch (e) {}
+  return null;
+}
+function getUserId() {
+  var user = getUser();
+  return user ? (user.uid || user.id) : null;
+}
+function loadSettings() {
+  var user = getUser();
+  if (!user) {
+    showAlert('Inicia sesion primero.', 'error');
+    return;
+  }
+  currentUser = user;
+  var nameEl = getEl('userNameSidebar');
+  var emailEl = getEl('userEmailSidebar');
+  if (nameEl) nameEl.textContent = user.name || user.email || 'Usuario';
+  if (emailEl) emailEl.textContent = user.email || '-';
+  var companyData = user.companyData || {};
+  if (getEl('companyName')) getEl('companyName').value = companyData.name || user.company || '';
+  if (getEl('companyTaxId')) getEl('companyTaxId').value = companyData.taxId || '';
+  if (getEl('companyAddress')) getEl('companyAddress').value = companyData.address || '';
+  if (getEl('companyCity')) getEl('companyCity').value = companyData.city || '';
+  if (getEl('companyCountry')) getEl('companyCountry').value = companyData.country || 'Portugal';
+  if (getEl('companyWebsite')) getEl('companyWebsite').value = companyData.website || '';
+  var settings = user.settings || {};
+  if (getEl('settingCurrency')) getEl('settingCurrency').value = settings.currency || 'EUR';
+  if (getEl('settingLanguage')) getEl('settingLanguage').value = settings.language || 'es';
+  if (getEl('settingTheme')) getEl('settingTheme').value = settings.theme || 'light';
+  var notifications = settings.notifications || {};
+  if (getEl('notifyEmail')) getEl('notifyEmail').checked = notifications.email !== false;
+  if (getEl('notifyBrowser')) getEl('notifyBrowser').checked = notifications.browser || false;
+}
+function saveCompanySettings() {
+  var userId = getUserId();
+  if (!userId) { showAlert('Error: No hay usuario.', 'error'); return; }
+  var companyData = {
+    name: getEl('companyName')?.value || '',
+    taxId: getEl('companyTaxId')?.value || '',
+    address: getEl('companyAddress')?.value || '',
+    city: getEl('companyCity')?.value || '',
+    country: getEl('companyCountry')?.value || '',
+    website: getEl('companyWebsite')?.value || ''
+  };
+  try {
+    var session = localStorage.getItem('upsen_current_user');
+    if (session) {
+      var data = JSON.parse(session);
+      if (data && data.user) {
+        data.user.companyData = companyData;
+        localStorage.setItem('upsen_current_user', JSON.stringify(data));
+      }
+    }
+  } catch (e) {}
+  var auth = window.AuthService || window.Auth;
+  if (auth && auth.updateProfile) {
+    auth.updateProfile(userId, { companyData: companyData }).then(function(result) {
+      showAlert(result.message || 'Datos guardados!', 'success');
+      loadSettings();
+    });
+  } else {
+    showAlert('Datos guardados (local)!', 'success');
+  }
+}
+function savePreferences() {
+  var userId = getUserId();
+  if (!userId) { showAlert('Error: No hay usuario.', 'error'); return; }
+  var settings = {
+    currency: getEl('settingCurrency')?.value || 'EUR',
+    language: getEl('settingLanguage')?.value || 'es',
+    theme: getEl('settingTheme')?.value || 'light'
+  };
+  try {
+    var session = localStorage.getItem('upsen_current_user');
+    if (session) {
+      var data = JSON.parse(session);
+      if (data && data.user) {
+        data.user.settings = Object.assign({}, data.user.settings || {}, settings);
+        localStorage.setItem('upsen_current_user', JSON.stringify(data));
+      }
+    }
+  } catch (e) {}
+  var auth = window.AuthService || window.Auth;
+  if (auth && auth.updateProfile) {
+    auth.updateProfile(userId, { settings: settings }).then(function(result) {
+      showAlert(result.message || 'Preferencias guardadas!', 'success');
+      loadSettings();
+    });
+  } else {
+    showAlert('Preferencias guardadas (local)!', 'success');
+  }
+}
+function saveNotifications() {
+  var userId = getUserId();
+  if (!userId) { showAlert('Error: No hay usuario.', 'error'); return; }
+  var notifications = {
+    email: getEl('notifyEmail')?.checked !== false,
+    browser: getEl('notifyBrowser')?.checked || false
+  };
+  var settings = { notifications: notifications };
+  try {
+    var session = localStorage.getItem('upsen_current_user');
+    if (session) {
+      var data = JSON.parse(session);
+      if (data && data.user) {
+        data.user.settings = Object.assign({}, data.user.settings || {}, settings);
+        localStorage.setItem('upsen_current_user', JSON.stringify(data));
+      }
+    }
+  } catch (e) {}
+  var auth = window.AuthService || window.Auth;
+  if (auth && auth.updateProfile) {
+    auth.updateProfile(userId, settings).then(function(result) {
+      showAlert(result.message || 'Notificaciones guardadas!', 'success');
+      loadSettings();
+    });
+  } else {
+    showAlert('Notificaciones guardadas (local)!', 'success');
+  }
+}
+function doLogout() {
+  var auth = window.AuthService || window.Auth;
+  if (auth && auth.logout) {
+    auth.logout().then(function() { window.location.href = '../login.html'; });
+  } else { window.location.href = '../login.html'; }
+}
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() { loadSettings(); }, 300);
+});
 </script>
 </body>
 </html>
-

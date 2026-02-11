@@ -1,11 +1,49 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Redirect to Frontpage</title>
+    <title>UPSEN Accounting</title>
+    <meta charset="utf-8" />
     <meta http-equiv="refresh" content="0; url=./public/frontPage/frontPage.html">
+    <script src="./public/shared/auth-system.js"></script>
+    <script>
+    // Verificar autenticacao antes de redirecionar
+    function checkAuthAndRedirect() {
+        // Esperar auth-system carregar
+        setTimeout(function() {
+            var isLoggedIn = false;
+            
+            if (window.AuthSystem && typeof AuthSystem.isLoggedIn === 'function') {
+                isLoggedIn = AuthSystem.isLoggedIn();
+            } else {
+                // Verificar localStorage diretamente
+                try {
+                    var session = localStorage.getItem('upsen_current_user');
+                    if (session) {
+                        var data = JSON.parse(session);
+                        if (data && data.user) {
+                            isLoggedIn = true;
+                        }
+                    }
+                } catch (e) {}
+            }
+            
+            if (isLoggedIn) {
+                // Ja logado, ir para dashboard
+                window.location.href = './public/frontPage/frontPage.html';
+            } else {
+                // Nao logado, ir para login
+                window.location.href = './public/login.html';
+            }
+        }, 100);
+    }
+    
+    checkAuthAndRedirect();
+    </script>
 </head>
 <body>
-    <p>Redirecting to <a href="./public/frontPage/frontPage.html">Frontpage</a>...</p>
+    <p style="font-family: Arial, sans-serif; padding: 50px; text-align: center;">
+        Verificando autenticacao...<br>
+        Se nao for redirecionado automaticamente, <a href="./public/login.html">clique aqui para fazer login</a>
+    </p>
 </body>
 </html>
-
