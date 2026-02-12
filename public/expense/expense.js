@@ -5,35 +5,54 @@ function $(id) {
 }
 
 function moneyEUR(n) {
-  const v = Number(n ?? 0);
-  return `€${v.toFixed(2)}`;
+  var v = Number(n || 0);
+  return 'EUR ' + v.toFixed(2);
 }
 
 // ========== MARK ACTIVE PAGE ==========
 function markActivePage() {
-  const currentPage = window.location.href;
-  const links = document.querySelectorAll('.sidebar-link');
+  var currentPage = window.location.href;
+  var links = document.querySelectorAll('.sidebar-link');
   
-  links.forEach(link => {
-    link.parentElement.classList.remove('active');
-    if (link.href === currentPage) {
-      link.parentElement.classList.add('active');
+  for (var i = 0; i < links.length; i++) {
+    links[i].parentElement.classList.remove('active');
+    if (links[i].href === currentPage) {
+      links[i].parentElement.classList.add('active');
     }
-  });
+  }
 }
 
 // Chart instance
-let expenseChart = null;
+var expenseChart = null;
 
 // ========== DADOS DO USUÁRIO LOGADO ==========
+function getUserId() {
+  try {
+    var session = localStorage.getItem('upsen_current_user');
+    if (session) {
+      var data = JSON.parse(session);
+      if (data && data.user) {
+        return data.user.uid || data.user.id || 'demo';
+      }
+    }
+  } catch (e) {}
+  return 'demo';
+}
+
 function getUserExpenses() {
-  return AuthSystem.getUserData('upsen_expenses') || [];
+  var key = 'upsen_expenses_' + getUserId();
+  try {
+    var data = localStorage.getItem(key);
+    if (data) return JSON.parse(data);
+  } catch (e) {}
+  return [];
 }
 
 function saveUserExpense(expense) {
-  const list = getUserExpenses();
+  var key = 'upsen_expenses_' + getUserId();
+  var list = getUserExpenses();
   list.push({
-    id: AuthSystem.generateId(),
+    id: 'exp-' + Date.now() + '-' + Math.random().toString(16).slice(2),
     date: expense.date || '',
     category: expense.category || '',
     amount: Number(expense.amount || 0),
@@ -41,67 +60,84 @@ function saveUserExpense(expense) {
     paymentMethod: expense.paymentMethod || '',
     createdAt: new Date().toISOString()
   });
-  AuthSystem.saveUserData('upsen_expenses', list);
+  localStorage.setItem(key, JSON.stringify(list));
 }
 
 function deleteUserExpense(id) {
-  const list = getUserExpenses().filter(e => e.id !== id);
-  AuthSystem.saveUserData('upsen_expenses', list);
+  var key = 'upsen_expenses_' + getUserId();
+  var list = getUserExpenses();
+  var filtered = [];
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].id !== id) {
+      filtered.push(list[i]);
+    }
+  }
+  localStorage.setItem(key, JSON.stringify(filtered));
 }
 
 // ========== RENDER FUNCTIONS ==========
 function renderSummaryCards() {
-  const list = getUserExpenses();
+  var list = getUserExpenses();
+  var now = new Date();
+  var currentMonth = now.getMonth();
+  var currentYear = now.getFullYear();
   
-  // Calculate monthly total (current month)
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
+  var monthlyTotal = 0;
+  var categoryTotals = {};
+  var lastExpense = null;
   
-  let monthlyTotal = 0;
-  let categoryTotals = {};
-  let lastExpense = null;
-  
-  list.forEach(exp => {
+  for (var i = 0; i < list.length; i++) {
+    var exp = list[i];
+    
     // Monthly total
     if (exp.date) {
-      const [year, month, day] = exp.date.split('-').map(Number);
-      if (year === currentYear && month - 1 === currentMonth) {
-        monthlyTotal += Number(exp.amount || 0);
+      var parts = exp.date.split('-');
+      if (parts.length >= 2) {
+        var year = parseInt(parts[0]);
+        var month = parseInt(parts[1]) - 1;
+        if (year === currentYear && month === currentMonth) {
+          monthlyTotal += Number(exp.amount || 0);
+        }
       }
     }
     
     // Category totals
-    const cat = exp.category || "Sin categoría";
+    var cat = exp.category || "Sin categoría";
     categoryTotals[cat] = (categoryTotals[cat] || 0) + Number(exp.amount || 0);
     
     // Last expense by date
     if (!lastExpense || (exp.date && exp.date > lastExpense.date)) {
       lastExpense = exp;
     }
-  });
+  }
   
-  // Update DOM
-  const monthlyTotalEl = $("monthlyTotal");
+  var monthlyTotalEl = $("monthlyTotal");
   if (monthlyTotalEl) {
     monthlyTotalEl.textContent = moneyEUR(monthlyTotal);
   }
   
-  const topCategoryEl = $("topCategory");
+  var topCategoryEl = $("topCategory");
   if (topCategoryEl) {
-    if (Object.keys(categoryTotals).length > 0) {
-      const topCat = Object.entries(categoryTotals)
-        .sort((a, b) => b[1] - a[1])[0];
-      topCategoryEl.textContent = topCat[0];
+    var keys = Object.keys(categoryTotals);
+    if (keys.length > 0) {
+      var topCat = keys[0];
+      var topVal = categoryTotals[topCat];
+      for (var k = 0; k < keys.length; k++) {
+        if (categoryTotals[keys[k]] > topVal) {
+          topCat = keys[k];
+          topVal = categoryTotals[keys[k]];
+        }
+      }
+      topCategoryEl.textContent = topCat;
     } else {
       topCategoryEl.textContent = "Sin datos";
     }
   }
   
-  const lastExpenseEl = $("lastExpense");
+  var lastExpenseEl = $("lastExpense");
   if (lastExpenseEl) {
     if (lastExpense) {
-      lastExpenseEl.textContent = `${lastExpense.date || "-"} – ${lastExpense.category || "-"}`;
+      lastExpenseEl.innerHTML = lastExpense.date + ' - ' + lastExpense.category;
     } else {
       lastExpenseEl.textContent = "Sin gastos";
     }
@@ -109,22 +145,22 @@ function renderSummaryCards() {
 }
 
 function renderChart() {
-  const chartContainer = document.getElementById('expenseChartCanvas');
+  var chartContainer = document.getElementById('expenseChartCanvas');
   if (!chartContainer) return;
 
-  const list = getUserExpenses();
+  var list = getUserExpenses();
+  var categoryTotals = {};
   
-  // Calculate totals by category
-  const categoryTotals = {};
-  list.forEach(exp => {
-    const cat = exp.category || "Sin categoría";
+  for (var i = 0; i < list.length; i++) {
+    var exp = list[i];
+    var cat = exp.category || "Sin categoría";
     categoryTotals[cat] = (categoryTotals[cat] || 0) + Number(exp.amount || 0);
-  });
+  }
 
-  const labels = Object.keys(categoryTotals);
-  const data = Object.values(categoryTotals);
+  var labels = Object.keys(categoryTotals);
+  var data = Object.values(categoryTotals);
 
-  const ctx = chartContainer.getContext('2d');
+  var ctx = chartContainer.getContext('2d');
 
   // Destroy existing chart
   if (expenseChart) {
@@ -159,7 +195,7 @@ function renderChart() {
           beginAtZero: true,
           ticks: {
             callback: function(value) {
-              return '€' + value;
+              return 'EUR ' + value;
             }
           }
         }
@@ -169,87 +205,133 @@ function renderChart() {
 }
 
 function renderExpenses() {
-  const tbody = $("expenseTBody");
+  var tbody = $("expenseTBody");
   if (!tbody) return;
 
-  const list = getUserExpenses();
+  var list = getUserExpenses();
   tbody.innerHTML = "";
 
   if (!list.length) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="4" class="text-center text-muted">
-          No hay gastos registrados todavía.
-        </td>
-      </tr>
-    `;
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay gastos registrados todavía.</td></tr>';
     return;
   }
 
-  list.forEach((e) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${e.date || "-"}</td>
-      <td>${e.category || "-"}</td>
-      <td>${moneyEUR(e.amount)}</td>
-      <td>
-        <span>${e.notes || ""}</span>
-        <button class="btn btn-sm btn-outline-danger" data-del="${e.id}" style="float:right;">
-          Eliminar
-        </button>
-      </td>
-    `;
+  for (var i = 0; i < list.length; i++) {
+    var e = list[i];
+    var tr = document.createElement("tr");
+    tr.innerHTML = '<td>' + (e.date || "-") + '</td>' +
+      '<td>' + (e.category || "-") + '</td>' +
+      '<td>' + moneyEUR(e.amount) + '</td>' +
+      '<td>' + (e.notes || "") + '</td>' +
+      '<td><button class="btn btn-sm btn-outline-danger" data-del="' + e.id + '" style="float:right;">Eliminar</button></td>';
     tbody.appendChild(tr);
-  });
-
-  tbody.querySelectorAll("[data-del]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      deleteUserExpense(btn.getAttribute("data-del"));
-      renderExpenses();
-      renderChart();
-      renderSummaryCards();
-    });
-  });
-}
-
-
-document.addEventListener("DOMContentLoaded", () => {
-  // Mark current page as active
-  markActivePage();
-  
-  // Guardar gasto
-  const saveBtn = $("saveExpenseBtn");
-  if (saveBtn) {
-    saveBtn.addEventListener("click", () => {
-      const form = $("formNewExpense");
-      if (!form) return;
-
-      const fd = new FormData(form);
-      const date = String(fd.get("date") || "");
-      const category = String(fd.get("category") || "");
-      const amount = String(fd.get("amount") || "");
-      const notes = String(fd.get("notes") || "");
-
-      if (!date || !category || !amount) {
-        alert("Completa: fecha, categoría e importe.");
-        return;
-      }
-
-      saveUserExpense({ date, category, amount, notes });
-
-      // fechar modal
-      const el = $("modalNewExpense");
-      if (el) {
-        el.classList.remove("show");
-      }
-
-      form.reset();
-      renderExpenses();
-      renderChart();
-      renderSummaryCards();
-    });
   }
 
+  var delBtns = tbody.querySelectorAll("[data-del]");
+  for (var j = 0; j < delBtns.length; j++) {
+    delBtns[j].addEventListener("click", function() {
+      var id = this.getAttribute("data-del");
+      if (confirm('Eliminar este gasto?')) {
+        deleteUserExpense(id);
+        renderExpenses();
+        renderChart();
+        renderSummaryCards();
+      }
+    });
+  }
+}
+
+// ========== GUARDAR GASTO ==========
+function saveExpense() {
+  var form = $("formNewExpense");
+  if (!form) return;
+
+  var date = "";
+  var category = "";
+  var amount = "";
+  var notes = "";
+  var paymentMethod = "";
+  
+  var dateInput = form.querySelector('input[name="date"]');
+  var categoryInput = form.querySelector('input[name="category"]');
+  var amountInput = form.querySelector('input[name="amount"]');
+  var notesInput = form.querySelector('input[name="notes"]');
+  
+  if (dateInput) date = dateInput.value;
+  if (categoryInput) category = categoryInput.value;
+  if (amountInput) amount = amountInput.value;
+  if (notesInput) notes = notesInput.value;
+
+  if (!date || !category || !amount) {
+    alert("Completa: fecha, categoría e importe.");
+    return;
+  }
+
+  saveUserExpense({ date: date, category: category, amount: amount, notes: notes, paymentMethod: paymentMethod });
+
+  // Close modal
+  var modalEl = document.getElementById('modalNewExpense');
+  if (modalEl) {
+    var modal = bootstrap.Modal.getInstance(modalEl);
+    if (modal) {
+      modal.hide();
+    } else {
+      var bsModal = new bootstrap.Modal(modalEl);
+      bsModal.hide();
+    }
+  }
+
+  form.reset();
+  renderExpenses();
+  renderChart();
+  renderSummaryCards();
+}
+
+// ========== ABRIR MODAL ==========
+function openNewExpenseModal() {
+  var dateInput = document.querySelector('#formNewExpense input[name="date"]');
+  if (dateInput && !dateInput.value) {
+    dateInput.value = new Date().toISOString().split('T')[0];
+  }
+  
+  var modalEl = document.getElementById('modalNewExpense');
+  if (modalEl) {
+    var modal = bootstrap.Modal.getInstance(modalEl);
+    if (!modal) {
+      modal = new bootstrap.Modal(modalEl);
+    }
+    modal.show();
+  }
+}
+
+// ========== INICIALIZAR ==========
+document.addEventListener("DOMContentLoaded", function() {
+  markActivePage();
+  
+  // New Expense Button
+  var newExpenseBtn = document.getElementById('newExpenseBtn');
+  if (newExpenseBtn) {
+    newExpenseBtn.addEventListener('click', function() {
+      openNewExpenseModal();
+    });
+  }
+  
+  // Save Button
+  var saveBtn = document.getElementById('saveExpenseBtn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', function() {
+      saveExpense();
+    });
+  }
+  
+  // Refresh button
+  var refreshBtn = document.getElementById('refreshBtn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', function() {
+      location.reload();
+    });
+  }
+  
   renderExpenses();
   renderChart();
   renderSummaryCards();

@@ -70,13 +70,6 @@
     return hash.toString(16);
   }
   
-  function generateId() {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-      return crypto.randomUUID();
-    }
-    return 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2);
-  }
-  
   var AuthService = {
     currentUser: null,
     currentUserData: null,
@@ -351,27 +344,74 @@
       var self = this;
       
       return new Promise(function(resolve) {
+        // Also update localStorage session
         var session = localStorage.getItem('upsen_current_user');
         if (session) {
           var data = JSON.parse(session);
           for (var key in updates) {
-            data.user[key] = updates[key];
+            if (key === 'settings') {
+              data.user.settings = Object.assign({}, data.user.settings || {}, updates.settings);
+            } else {
+              data.user[key] = updates[key];
+            }
           }
           localStorage.setItem('upsen_current_user', JSON.stringify(data));
         }
         
-        if (window.firebaseDb) {
+        if (window.firebaseDb && uid) {
           window.firebaseDb.collection('users').doc(uid).update(updates)
             .then(function() {
               resolve({ success: true, message: 'Perfil atualizado!' });
             })
             .catch(function(error) {
-              resolve({ success: true, message: 'Perfil atualizado (local)!' });
+              // Try with set instead of update
+              if (window.firebaseDb && uid) {
+                window.firebaseDb.collection('users').doc(uid).set(updates, { merge: true })
+                  .then(function() {
+                    resolve({ success: true, message: 'Perfil atualizado!' });
+                  })
+                  .catch(function() {
+                    resolve({ success: true, message: 'Perfil atualizado (local)!' });
+                  });
+              } else {
+                resolve({ success: true, message: 'Perfil atualizado (local)!' });
+              }
             });
         } else {
           resolve({ success: true, message: 'Perfil atualizado (local)!' });
         }
       });
+    },
+    
+    // Convenience method for updating current user profile (auto-gets uid)
+    updateUserProfile: function(updates) {
+      var self = this;
+      var user = this.getCurrentUser();
+      var uid = user ? (user.uid || user.id) : null;
+      return this.updateProfile(uid, updates);
+    },
+    
+    // Get user data from localStorage
+    getUserData: function(key) {
+      try {
+        var data = localStorage.getItem(key);
+        if (data) return JSON.parse(data);
+      } catch (e) {}
+      return [];
+    },
+    
+    // Save user data to localStorage
+    saveUserData: function(key, data) {
+      localStorage.setItem(key, JSON.stringify(data));
+      return data;
+    },
+    
+    // Generate unique ID
+    generateId: function() {
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+      }
+      return 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2);
     },
     
     changePassword: function(newPassword) {

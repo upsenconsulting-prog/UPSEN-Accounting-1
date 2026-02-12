@@ -1,4 +1,4 @@
-// Invoice_recieved.js - Sistema com suporte a Firebase + localStorage
+// Invoice_recieved.js - Sistema de facturas recibidas
 
 function $(id) {
   return document.getElementById(id);
@@ -17,30 +17,25 @@ function formatDate(dateStr) {
 function markActivePage() {
   var currentPage = window.location.href;
   var links = document.querySelectorAll('.sidebar-link');
-  links.forEach(function(link) {
-    link.parentElement.classList.remove('active');
-    if (link.href === currentPage) {
-      link.parentElement.classList.add('active');
+  for (var i = 0; i < links.length; i++) {
+    links[i].parentElement.classList.remove('active');
+    if (links[i].href === currentPage) {
+      links[i].parentElement.classList.add('active');
     }
-  });
+  }
 }
 
 var receivedChart = null;
 
 function getUserId() {
-  var auth = window.AuthService || window.Auth;
-  if (auth && auth.getCurrentUser) {
-    var user = auth.getCurrentUser();
-    if (user) return user.uid || user.id || 'unknown';
-  }
   try {
     var session = localStorage.getItem('upsen_current_user');
     if (session) {
       var data = JSON.parse(session);
-      if (data && data.user) return data.user.uid || data.user.id || 'unknown';
+      if (data && data.user) return data.user.uid || data.user.id || 'demo';
     }
   } catch (e) {}
-  return 'unknown';
+  return 'demo';
 }
 
 function getDataKey() {
@@ -61,42 +56,14 @@ function saveUserInvoicesReceived(invoices) {
 }
 
 function generateId() {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+  return 'rec-' + Date.now() + '-' + Math.random().toString(16).slice(2);
 }
 
-async function saveToFirestore(data) {
-  if (!window.USE_FIREBASE || !window.firebaseDb) return null;
-  var userId = getUserId();
-  if (userId === 'unknown') return null;
-  try {
-    var docRef = await window.firebaseDb.collection('users').doc(userId).collection('invoicesReceived').add(data);
-    return docRef.id;
-  } catch (error) {
-    console.warn('Erro ao guardar no Firestore:', error.message);
-    return null;
-  }
-}
-
-async function deleteFromFirestore(id) {
-  if (!window.USE_FIREBASE || !window.firebaseDb) return false;
-  var userId = getUserId();
-  if (userId === 'unknown') return false;
-  try {
-    await window.firebaseDb.collection('users').doc(userId).collection('invoicesReceived').doc(id).delete();
-    return true;
-  } catch (error) {
-    return false;
-  }
-}
-
-async function getAllInvoicesReceived() {
+function getAllInvoicesReceived() {
   return getUserInvoicesReceived();
 }
 
-async function addInvoiceReceived(invoice) {
+function addInvoiceReceived(invoice) {
   var invoices = getUserInvoicesReceived();
   var newInvoice = {
     id: generateId(),
@@ -110,41 +77,41 @@ async function addInvoiceReceived(invoice) {
   };
   invoices.push(newInvoice);
   saveUserInvoicesReceived(invoices);
-  await saveToFirestore(newInvoice);
   return newInvoice;
 }
 
-async function deleteInvoiceReceived(id) {
+function deleteInvoiceReceived(id) {
   var invoices = getUserInvoicesReceived();
-  var filtered = invoices.filter(function(i) { return i.id !== id; });
+  var filtered = [];
+  for (var i = 0; i < invoices.length; i++) {
+    if (invoices[i].id !== id) {
+      filtered.push(invoices[i]);
+    }
+  }
   saveUserInvoicesReceived(filtered);
-  await deleteFromFirestore(id);
 }
 
-async function updateInvoiceReceived(id, updates) {
+function updateInvoiceReceived(id, updates) {
   var invoices = getUserInvoicesReceived();
   for (var i = 0; i < invoices.length; i++) {
     if (invoices[i].id === id) {
       invoices[i] = Object.assign({}, invoices[i], updates);
       saveUserInvoicesReceived(invoices);
-      
-      if (window.USE_FIREBASE && window.firebaseDb) {
-        window.firebaseDb.collection('users').doc(getUserId()).collection('invoicesReceived').doc(id).update(updates);
-      }
       break;
     }
   }
 }
 
 async function renderSummaryCards() {
-  var list = await getAllInvoicesReceived();
+  var list = getAllInvoicesReceived();
   var now = new Date();
   var pendingTotal = 0;
   var paidTotal = 0;
   var monthlyTotal = 0;
   var overdueCount = 0;
   
-  list.forEach(function(inv) {
+  for (var i = 0; i < list.length; i++) {
+    var inv = list[i];
     var amount = Number(inv.amount || 0);
     
     if (inv.state === 'Pendiente') {
@@ -172,7 +139,7 @@ async function renderSummaryCards() {
         }
       }
     }
-  });
+  }
   
   if ($('pendingTotal')) $('pendingTotal').textContent = moneyEUR(pendingTotal);
   if ($('paidTotal')) $('paidTotal').textContent = moneyEUR(paidTotal);
@@ -184,13 +151,14 @@ async function renderChart() {
   var chartContainer = document.getElementById('receivedChartCanvas');
   if (!chartContainer) return;
 
-  var list = await getAllInvoicesReceived();
+  var list = getAllInvoicesReceived();
   var supplierTotals = {};
   
-  list.forEach(function(inv) {
+  for (var i = 0; i < list.length; i++) {
+    var inv = list[i];
     var supplier = inv.supplier || 'Sin proveedor';
     supplierTotals[supplier] = (supplierTotals[supplier] || 0) + Number(inv.amount || 0);
-  });
+  }
 
   var labels = Object.keys(supplierTotals);
   var data = Object.values(supplierTotals);
@@ -219,7 +187,7 @@ async function renderInvoices() {
   var tbody = $('invoiceTBody');
   if (!tbody) return;
 
-  var list = await getAllInvoicesReceived();
+  var list = getAllInvoicesReceived();
   tbody.innerHTML = '';
 
   if (!list.length) {
@@ -227,7 +195,8 @@ async function renderInvoices() {
     return;
   }
 
-  list.forEach(function(inv) {
+  for (var i = 0; i < list.length; i++) {
+    var inv = list[i];
     var statusClass = 'status-pending';
     var statusText = 'Pendiente';
     
@@ -248,81 +217,136 @@ async function renderInvoices() {
       '<td><button class="btn btn-sm btn-outline-success" data-paid="' + inv.id + '">✓</button> ' +
       '<button class="btn btn-sm btn-outline-danger" data-del="' + inv.id + '">X</button></td>';
     tbody.appendChild(tr);
-  });
+  }
 
-  tbody.querySelectorAll('[data-del]').forEach(function(btn) {
-    btn.addEventListener('click', async function() {
+  var delBtns = tbody.querySelectorAll('[data-del]');
+  for (var j = 0; j < delBtns.length; j++) {
+    delBtns[j].addEventListener('click', function() {
+      var id = this.getAttribute('data-del');
       if (confirm('Eliminar factura?')) {
-        await deleteInvoiceReceived(btn.getAttribute('data-del'));
-        await renderInvoices();
-        await renderChart();
-        await renderSummaryCards();
+        deleteInvoiceReceived(id);
+        renderInvoices();
+        renderChart();
+        renderSummaryCards();
       }
     });
-  });
+  }
 
-  tbody.querySelectorAll('[data-paid]').forEach(function(btn) {
-    btn.addEventListener('click', async function() {
-      await updateInvoiceReceived(btn.getAttribute('data-paid'), { state: 'Pagada' });
-      await renderInvoices();
-      await renderSummaryCards();
+  var paidBtns = tbody.querySelectorAll('[data-paid]');
+  for (var k = 0; k < paidBtns.length; k++) {
+    paidBtns[k].addEventListener('click', function() {
+      var id = this.getAttribute('data-paid');
+      updateInvoiceReceived(id, { state: 'Pagada' });
+      renderInvoices();
+      renderSummaryCards();
     });
-  });
+  }
 }
 
-window.saveInvoiceReceivedData = async function() {
+// ========== GUARDAR FACTURA ==========
+function saveInvoiceReceived() {
   var form = $('formNewInvoiceReceived');
   if (!form) return false;
 
-  var fd = new FormData(form);
-  var data = {
-    invoiceNumber: String(fd.get('invoiceNumber') || ''),
-    supplier: String(fd.get('supplier') || ''),
-    invoiceDate: String(fd.get('invoiceDate') || ''),
-    amount: String(fd.get('amount') || ''),
-    state: String(fd.get('state') || 'Pendiente')
-  };
+  var invoiceNumber = "";
+  var supplier = "";
+  var invoiceDate = "";
+  var amount = "";
+  var state = "Pendiente";
+  
+  var inputs = form.querySelectorAll('input, select');
+  for (var i = 0; i < inputs.length; i++) {
+    var name = inputs[i].name || inputs[i].getAttribute('name');
+    if (name === 'invoiceNumber') invoiceNumber = inputs[i].value;
+    if (name === 'supplier') supplier = inputs[i].value;
+    if (name === 'invoiceDate') invoiceDate = inputs[i].value;
+    if (name === 'amount') amount = inputs[i].value;
+    if (name === 'state') state = inputs[i].value;
+  }
 
-  if (!data.invoiceNumber || !data.supplier || !data.invoiceDate || !data.amount) {
+  if (!invoiceNumber || !supplier || !invoiceDate || !amount) {
     alert('Completa todos los campos.');
     return false;
   }
 
-  await addInvoiceReceived(data);
-  
-  // Refresh the UI
-  await renderInvoices();
-  await renderChart();
-  await renderSummaryCards();
-  
-  // Hide modal
-  var modal = bootstrap.Modal.getInstance(document.getElementById('modalNewInvoiceReceived'));
-  if (modal) modal.hide();
-  
-  return true;
-};
+  addInvoiceReceived({
+    invoiceNumber: invoiceNumber,
+    supplier: supplier,
+    invoiceDate: invoiceDate,
+    amount: amount,
+    state: state
+  });
 
+  // Close modal
+  var modalEl = document.getElementById('modalNewInvoiceReceived');
+  if (modalEl) {
+    var modal = bootstrap.Modal.getInstance(modalEl);
+    if (modal) {
+      modal.hide();
+    } else {
+      new bootstrap.Modal(modalEl).hide();
+    }
+  }
+
+  form.reset();
+  renderInvoices();
+  renderChart();
+  renderSummaryCards();
+  return true;
+}
+
+// ========== ABRIR MODAL ==========
+function openNewInvoiceModal() {
+  // Generate invoice number
+  var date = new Date();
+  var num = 'REC-' + date.getFullYear() + '-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+  var numberInput = document.querySelector('#formNewInvoiceReceived input[name="invoiceNumber"]');
+  if (numberInput) numberInput.value = num;
+  
+  // Set today's date
+  var invoiceDate = document.querySelector('#formNewInvoiceReceived input[name="invoiceDate"]');
+  if (invoiceDate) invoiceDate.value = new Date().toISOString().split('T')[0];
+  
+  var modalEl = document.getElementById('modalNewInvoiceReceived');
+  if (modalEl) {
+    var modal = bootstrap.Modal.getInstance(modalEl);
+    if (!modal) {
+      modal = new bootstrap.Modal(modalEl);
+    }
+    modal.show();
+  }
+}
+
+// ========== INICIALIZAR ==========
 document.addEventListener('DOMContentLoaded', async function() {
   markActivePage();
   
-  // Add event listener for save button
-  var saveBtn = $('saveInvoiceReceivedBtn');
-  if (saveBtn) {
-    saveBtn.addEventListener('click', async function() {
-      await saveInvoiceReceivedData();
+  // New Invoice Button
+  var newInvoiceBtn = document.getElementById('btnNewInvoice');
+  if (newInvoiceBtn) {
+    newInvoiceBtn.addEventListener('click', function() {
+      openNewInvoiceModal();
     });
   }
   
-  function waitForAuth() {
-    var auth = window.AuthService || window.Auth;
-    if (auth && typeof auth.isLoggedIn === 'function') {
-      renderInvoices();
-      renderChart();
-      renderSummaryCards();
-    } else {
-      setTimeout(waitForAuth, 100);
-    }
+  // Save Button
+  var saveBtn = document.getElementById('saveInvoiceReceivedBtn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', function() {
+      saveInvoiceReceived();
+    });
   }
   
-  setTimeout(waitForAuth, 200);
+  // Refresh button
+  var refreshBtn = document.getElementById('refreshBtn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', function() {
+      location.reload();
+    });
+  }
+  
+  renderInvoices();
+  renderChart();
+  renderSummaryCards();
 });
+

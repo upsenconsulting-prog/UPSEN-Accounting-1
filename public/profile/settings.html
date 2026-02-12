@@ -65,12 +65,12 @@
       <div class="user-info">
         <div class="user-info-name" id="userNameSidebar">Cargando...</div>
         <div class="user-info-email" id="userEmailSidebar">-</div>
-        <button class="btn btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt me-2"></i>Cerrar sesion</button>
       </div>
     </aside>
     <main class="main-content col-md-9">
       <div class="page-header">
         <h1 class="page-title"><i class="fas fa-cog me-3"></i>Configuracion</h1>
+        <button class="btn btn-danger" onclick="doLogout()"><i class="fas fa-sign-out-alt me-2"></i>Cerrar sesion</button>
       </div>
       <div id="alertMessage" class="alert" style="display: none;"></div>
       <div class="modern-card">
@@ -210,6 +210,10 @@ function loadSettings() {
 function saveCompanySettings() {
   var userId = getUserId();
   if (!userId) { showAlert('Error: No hay usuario.', 'error'); return; }
+  
+  var saveBtn = document.querySelector('.modern-card:first-child .btn-primary');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...'; }
+  
   var companyData = {
     name: getEl('companyName')?.value || '',
     taxId: getEl('companyTaxId')?.value || '',
@@ -218,6 +222,7 @@ function saveCompanySettings() {
     country: getEl('companyCountry')?.value || '',
     website: getEl('companyWebsite')?.value || ''
   };
+  
   try {
     var session = localStorage.getItem('upsen_current_user');
     if (session) {
@@ -228,24 +233,26 @@ function saveCompanySettings() {
       }
     }
   } catch (e) {}
-  var auth = window.AuthService || window.Auth;
-  if (auth && auth.updateProfile) {
-    auth.updateProfile(userId, { companyData: companyData }).then(function(result) {
-      showAlert(result.message || 'Datos guardados!', 'success');
-      loadSettings();
-    });
-  } else {
-    showAlert('Datos guardados (local)!', 'success');
-  }
+  
+  AuthService.updateUserProfile({ companyData: companyData }).then(function(result) {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-save me-2"></i>Guardar Empresa'; }
+    showAlert(result.message || 'Datos guardados!', 'success');
+  });
 }
+
 function savePreferences() {
   var userId = getUserId();
   if (!userId) { showAlert('Error: No hay usuario.', 'error'); return; }
+  
+  var saveBtn = document.querySelector('.modern-card:nth-child(2) .btn-success');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...'; }
+  
   var settings = {
     currency: getEl('settingCurrency')?.value || 'EUR',
     language: getEl('settingLanguage')?.value || 'es',
     theme: getEl('settingTheme')?.value || 'light'
   };
+  
   try {
     var session = localStorage.getItem('upsen_current_user');
     if (session) {
@@ -256,24 +263,29 @@ function savePreferences() {
       }
     }
   } catch (e) {}
-  var auth = window.AuthService || window.Auth;
-  if (auth && auth.updateProfile) {
-    auth.updateProfile(userId, { settings: settings }).then(function(result) {
-      showAlert(result.message || 'Preferencias guardadas!', 'success');
-      loadSettings();
-    });
-  } else {
-    showAlert('Preferencias guardadas (local)!', 'success');
-  }
+  
+  AuthService.updateUserProfile({ settings: settings }).then(function(result) {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-check me-2"></i>Guardar Preferencias'; }
+    showAlert(result.message || 'Preferencias guardadas!', 'success');
+    // Apply theme
+    applyTheme(settings.theme);
+  });
 }
+
 function saveNotifications() {
   var userId = getUserId();
   if (!userId) { showAlert('Error: No hay usuario.', 'error'); return; }
+  
+  var saveBtn = document.querySelector('.modern-card:nth-child(3) .btn-primary');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...'; }
+  
   var notifications = {
     email: getEl('notifyEmail')?.checked !== false,
     browser: getEl('notifyBrowser')?.checked || false
   };
+  
   var settings = { notifications: notifications };
+  
   try {
     var session = localStorage.getItem('upsen_current_user');
     if (session) {
@@ -284,14 +296,34 @@ function saveNotifications() {
       }
     }
   } catch (e) {}
-  var auth = window.AuthService || window.Auth;
-  if (auth && auth.updateProfile) {
-    auth.updateProfile(userId, settings).then(function(result) {
-      showAlert(result.message || 'Notificaciones guardadas!', 'success');
-      loadSettings();
+  
+  AuthService.updateUserProfile({ settings: settings }).then(function(result) {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-bell me-2"></i>Guardar Notificaciones'; }
+    showAlert(result.message || 'Notificaciones guardadas!', 'success');
+  });
+}
+
+function applyTheme(theme) {
+  if (theme === 'dark') {
+    document.body.style.backgroundColor = '#1a1a2e';
+    document.body.style.color = '#ffffff';
+    var cards = document.querySelectorAll('.modern-card');
+    cards.forEach(function(card) {
+      card.style.backgroundColor = '#16213e';
+      card.style.color = '#ffffff';
+    });
+    var titles = document.querySelectorAll('.section-title, .page-title, .form-label');
+    titles.forEach(function(t) {
+      t.style.color = '#ffffff';
     });
   } else {
-    showAlert('Notificaciones guardadas (local)!', 'success');
+    document.body.style.backgroundColor = '#eef1f7';
+    document.body.style.color = '#2c3e50';
+    var cards = document.querySelectorAll('.modern-card');
+    cards.forEach(function(card) {
+      card.style.backgroundColor = 'white';
+      card.style.color = '';
+    });
   }
 }
 function doLogout() {
