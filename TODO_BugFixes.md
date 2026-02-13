@@ -1,46 +1,50 @@
-# TODO - Bug Fixes Completados
+# TODO - Bug Fixes
 
-## ✅ Profile Page (profile.html)
-- ✅ Corregido problema de carga del perfil (AuthSystem loading con retry)
-- ✅ Agregado fallback para localStorage cuando AuthSystem no esta listo
-- ✅ Mejorado el estilo visual (modern-card, gradients, shadows)
-- ✅ Conectado correctamente los modales de editar perfil y password
-- ✅ Stats se cargan desde localStorage
+## ✅ 1. Fix Google Login (auth/cancelled-popup-request)
+- File: `public/shared/auth-system.js`
+- Added protection flag to prevent multiple concurrent popup requests
+- Reset flag on success and error
 
-## ✅ Expense Page (expense.html + expense.js)
-- ✅ Corregido ID del modal: `modalNewExpense` -> `expenseModal`
-- ✅ Agregados IDs faltantes a los campos del formulario
-- ✅ Conectado boton newExpenseBtn al modal
-- ✅ El formulario ahora guarda gastos correctamente
+## ✅ 2. Clean up Invoice Received Page
+- File: `public/Invoice_recieved/Invoice_recieved.html`
+- Removed duplicate code at the end of the file (loadUserInfo, confirmLogout, duplicate DOMContentLoaded)
 
-## ✅ Invoice Issued Page (invoice-issued.js)
-- ✅ Conectado boton saveInvoiceIssuedBtn a la funcion saveInvoiceIssuedData
-- ✅ Agregado refresh de UI despues de guardar (tabla, grafico, resumen)
-- ✅ Modal se oculta despues de guardar exitosamente
+## ✅ 3. Make buttons smaller and minimalist
+- File: `public/Invoice_recieved/Invoice_recieved.js` - buttons: Ver, Pagar, Eliminar
+- File: `public/Invoice-issued/invoice-issued.js` - buttons: Ver, Pagar, Eliminar
+- File: `public/expense/expense.js` - buttons: Ver, Eliminar
+- Added `py-1 px-2` classes for smaller padding
+- Added `font-size:0.75rem` for smaller text
+- Changed text buttons to icon-only buttons (eye, check, trash icons)
 
-## ✅ Invoice Received Page (Invoice_recieved.js)
-- ✅ Conectado boton saveInvoiceReceivedBtn a la funcion saveInvoiceReceivedData
-- ✅ Agregado refresh de UI despues de guardar
-- ✅ Modal se oculta despues de guardar exitosamente
+## ✅ 4. Email Verification & Account Security
+- File: `public/shared/auth-system.js`
+- **Register**: 
+  - Sends email verification after account creation
+  - Signs out user until email is verified
+  - Sets `emailVerified: false` in user document
+- **Login**: 
+  - Checks if email is verified before allowing login
+  - Shows error message if not verified
+  - Resends verification email if needed
+- **Delete Account**: 
+  - Deletes from Firestore (user document + all subcollections)
+  - Deletes from Firebase Auth
+  - Handles `requires-recent-login` error
 
-## ✅ Settings Page (settings.html)
-- ✅ Corregido tag `</div>` faltante en la fila de preferencias
-- ✅ Mejorado el estilo visual (modern-card, sidebar consistente)
-- ✅ Funciones de guardado mejoradas con mensajes apropiados
-- ✅ Los ajustes ahora se guardan en localStorage y persisten
+## ✅ 5. New Function Added
+- `AuthService.sendVerificationEmail()` - allows user to resend verification email
 
-## Archivos Modificados:
-1. `/workspaces/UPSEN-Accounting/public/profile/profile.html` - Perfil completo
-2. `/workspaces/UPSEN-Accounting/public/profile/settings.html` - Configuracion
-3. `/workspaces/UPSEN-Accounting/public/expense/expense.html` - Modal改正
-4. `/workspaces/UPSEN-Accounting/public/expense/expense.js` - Guardar gastos
-5. `/workspaces/UPSEN-Accounting/public/Invoice-issued/invoice-issued.js` - Guardar facturas
-6. `/workspaces/UPSEN-Accounting/public/Invoice_recieved/Invoice_recieved.js` - Guardar facturas
-
-## Funcionalidades Verificadas:
-- Perfil carga datos del usuario correctamente
-- Boton nuevo gasto abre modal y guarda datos
-- Botones de nueva factura en ambas paginas funcionan
-- Ajustes se guardan y persisten correctamente
-- Estilo visual consistente con el resto de la aplicacion
+## ✅ 6. Email & Password Validation
+- File: `public/login.html` & `public/shared/auth-system.js`
+- **Email validation**:
+  - Client-side: Validates email format with regex
+  - Backend: Checks if email is valid format before registration
+- **Password strength requirements**:
+  - Minimum 8 characters
+  - At least 1 uppercase letter
+  - At least 1 lowercase letter
+  - At least 1 number
+  - Visual feedback showing which requirements are met
+  - Both client-side and server-side validation
 

@@ -214,8 +214,11 @@ async function renderInvoices() {
       '<td>' + formatDate(inv.invoiceDate) + '</td>' +
       '<td>' + moneyEUR(inv.amount) + '</td>' +
       '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>' +
-      '<td><button class="btn btn-sm btn-outline-success" data-paid="' + inv.id + '">✓</button> ' +
-      '<button class="btn btn-sm btn-outline-danger" data-del="' + inv.id + '">X</button></td>';
+      '<td class="action-buttons">' +
+        '<button class="btn btn-primary btn-sm py-1 px-2 me-1" style="font-size:0.75rem" data-view="' + inv.id + '"><i class="fas fa-eye"></i></button>' +
+        '<button class="btn btn-success btn-sm py-1 px-2 me-1" style="font-size:0.75rem" data-paid="' + inv.id + '"><i class="fas fa-check"></i></button>' +
+        '<button class="btn btn-danger btn-sm py-1 px-2" style="font-size:0.75rem" data-del="' + inv.id + '"><i class="fas fa-trash"></i></button>' +
+      '</td>';
     tbody.appendChild(tr);
   }
 
@@ -241,7 +244,43 @@ async function renderInvoices() {
       renderSummaryCards();
     });
   }
+
+  var viewBtns = tbody.querySelectorAll('[data-view]');
+  for (var l = 0; l < viewBtns.length; l++) {
+    viewBtns[l].addEventListener('click', function() {
+      var id = this.getAttribute('data-view');
+      viewInvoice(id);
+    });
+  }
 }
+
+// ========== VER FACTURA ==========
+window.viewInvoice = function(id) {
+  var list = getAllInvoicesReceived();
+  var invoice = list.find(function(inv) { return inv.id === id; });
+  if (!invoice) return;
+
+  var content = document.getElementById('viewInvoiceContent');
+  if (content) {
+    var statusLabels = { Pendiente: 'Pendiente', Pagada: 'Pagada', Vencida: 'Vencida' };
+    content.innerHTML = '<div class="row mb-3">' +
+      '<div class="col-md-6"><strong>Numero:</strong> ' + (invoice.invoiceNumber || '-') + '</div>' +
+      '<div class="col-md-6"><strong>Proveedor:</strong> ' + (invoice.supplier || '-') + '</div>' +
+      '</div>' +
+      '<div class="row mb-3">' +
+      '<div class="col-md-6"><strong>Fecha:</strong> ' + formatDate(invoice.invoiceDate) + '</div>' +
+      '<div class="col-md-6"><strong>Importe:</strong> <span class="fs-4 fw-bold">' + moneyEUR(invoice.amount) + '</span></div>' +
+      '</div>' +
+      '<div class="row mb-3">' +
+      '<div class="col-md-6"><strong>Estado:</strong> <span class="badge bg-primary">' + (statusLabels[invoice.state] || 'Pendiente') + '</span></div>' +
+      '</div>' +
+      '<div class="text-muted mt-3 text-end"><small>Creado: ' + new Date(invoice.createdAt || '').toLocaleString() + '</small></div>';
+  }
+
+  if (window.viewInvoiceModal) {
+    window.viewInvoiceModal.show();
+  }
+};
 
 // ========== GUARDAR FACTURA ==========
 function saveInvoiceReceived() {

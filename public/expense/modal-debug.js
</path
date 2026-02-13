@@ -1,0 +1,39 @@
+// Test Bootstrap Modal
+// Add this at the end of expense.html to debug modal issues
+
+<script>
+// Debug modal on load
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('=== Modal Debug ===');
+  
+  var modalEl = document.getElementById('modalNewExpense');
+  console.log('Modal element exists:', !!modalEl);
+  
+  var saveBtn = document.getElementById('saveExpenseBtn');
+  console.log('Save button exists:', !!saveBtn);
+  
+  var newExpenseBtn = document.getElementById('newExpenseBtn');
+  console.log('New Expense button exists:', !!newExpenseBtn);
+  
+  // Test if Bootstrap is loaded
+  console.log('Bootstrap loaded:', typeof bootstrap !== 'undefined');
+  console.log('Bootstrap Modal class:', typeof bootstrap !== 'undefined' ? typeof bootstrap.Modal : 'N/A');
+  
+  // Click handler test
+  if (saveBtn) {
+    saveBtn.addEventListener('click', function() {
+      console.log('Save button clicked!');
+      
+      var form = document.getElementById('formNewExpense');
+      if (form) {
+        var fd = new FormData(form);
+        console.log('Form data:');
+        console.log('  date:', fd.get('date'));
+        console.log('  category:', fd.get('category'));
+        console.log('  amount:', fd.get('amount'));
+        console.log('  notes:', fd.get('notes'));
+      }
+    });
+  }
+});
+</script>

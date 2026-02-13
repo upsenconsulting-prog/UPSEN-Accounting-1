@@ -179,10 +179,54 @@
     /* Chart Container */
     .chart-container { position: relative; height: 300px; }
     
+    /* Sidebar User Info & Logout */
+    .user-info-sidebar {
+      position: absolute;
+      bottom: 60px;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.2);
+      padding: 15px 20px;
+    }
+    .user-name-sidebar {
+      font-weight: 600;
+      font-size: 0.9em;
+      margin-bottom: 5px;
+    }
+    .user-email-sidebar {
+      font-size: 0.75em;
+      opacity: 0.7;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .btn-logout-sidebar {
+      width: calc(100% - 40px);
+      margin: 15px 20px;
+      margin-top: 10px;
+      background: rgba(231, 76, 60, 0.15);
+      color: #e74c3c;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-size: 0.85em;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-logout-sidebar:hover {
+      background: #e74c3c;
+      color: white;
+    }
+    
     /* Responsive */
     @media (max-width: 992px) {
       .sidebar { position: relative; width: 100%; min-height: auto; }
       .main-content { margin-left: 0; }
+      .user-info-sidebar { position: relative; bottom: auto; }
     }
   </style>
 </head>
@@ -202,6 +246,11 @@
         <li><a href="../budgetPage/budget.html" class="sidebar-link"><i class="fas fa-calculator"></i> Presupuestos</a></li>
         <li><a href="../profile/profile.html" class="sidebar-link"><i class="fas fa-user"></i> Perfil</a></li>
         <li><a href="../profile/settings.html" class="sidebar-link"><i class="fas fa-cog"></i> Configuración</a></li>
+        <li style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 10px; padding-top: 10px;">
+          <a href="javascript:void(0)" class="sidebar-link" onclick="confirmLogout()" style="color: #e74c3c;">
+            <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+          </a>
+        </li>
       </ul>
     </aside>
     
@@ -338,42 +387,21 @@
 <script src="../shared/auth-system.js"></script>
 <script src="./Invoice_recieved.js"></script>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const modalInvoice = new bootstrap.Modal(document.getElementById('modalNewInvoiceReceived'));
-  
-  // New Invoice Button
-  document.getElementById('btnNewInvoice').addEventListener('click', function() {
-    // Generate invoice number
-    const date = new Date();
-    const num = 'REC-' + date.getFullYear() + '-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
-    const numberInput = document.querySelector('#formNewInvoiceReceived input[name="invoiceNumber"]');
-    if (numberInput) numberInput.value = num;
-    
-    // Set today's date
-    const invoiceDate = document.querySelector('#formNewInvoiceReceived input[name="invoiceDate"]');
-    if (invoiceDate) invoiceDate.value = new Date().toISOString().split('T')[0];
-    
-    modalInvoice.show();
-  });
-  
-  // Refresh button
-  document.getElementById('refreshBtn').addEventListener('click', function() {
-    location.reload();
-  });
-  
-  // Sidebar link handling
-  document.querySelectorAll('.sidebar-link').forEach(link => {
-    link.addEventListener('click', function(e) {
-      const href = this.getAttribute('href');
-      if (href.startsWith('#') || href.startsWith('javascript')) {
-        return;
-      }
-      e.preventDefault();
-      window.location.href = href;
-    });
-  });
-});
-</script>
+<!-- Modal Ver Factura -->
+<div class="modal fade" id="viewInvoiceModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-file-import me-2"></i>Detalle de factura</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="viewInvoiceContent"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

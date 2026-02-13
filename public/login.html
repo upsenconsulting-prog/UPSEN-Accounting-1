@@ -42,6 +42,10 @@
     .form-footer { text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e9ecef; }
     .link-btn { background: none; border: none; color: #2a4d9c; font-weight: 500; cursor: pointer; padding: 0; font-size: 14px; text-decoration: underline; }
     .icon-margin { margin-right: 8px; }
+    .password-requirements { font-size: 12px; color: #6c757d; margin-top: 5px; }
+    .password-requirements li { margin-bottom: 3px; }
+    .password-requirements .valid { color: #1abc9c; }
+    .password-requirements .invalid { color: #e74c3c; }
   </style>
 </head>
 <body>
@@ -83,7 +87,7 @@
         </div>
         <div class="form-group">
           <label for="regEmail"><i class="fas fa-envelope icon-margin"></i>Correo electronico *</label>
-          <input type="email" id="regEmail" placeholder="Tu correo electronico" required>
+          <input type="email" id="regEmail" placeholder="nombre@ejemplo.com" required>
         </div>
         <div class="form-group">
           <label for="regPhone"><i class="fas fa-phone icon-margin"></i>Telefono</label>
@@ -91,7 +95,13 @@
         </div>
         <div class="form-group">
           <label for="regPassword"><i class="fas fa-lock icon-margin"></i>Contrasena *</label>
-          <input type="password" id="regPassword" placeholder="Minimo 6 caracteres" required minlength="6">
+          <input type="password" id="regPassword" placeholder="Minimo 8 caracteres" required minlength="8">
+          <ul class="password-requirements" id="passwordRequirements">
+            <li id="req-length"><i class="fas fa-circle"></i> Minimo 8 caracteres</li>
+            <li id="req-upper"><i class="fas fa-circle"></i> Una letra mayuscula</li>
+            <li id="req-lower"><i class="fas fa-circle"></i> Una letra minuscula</li>
+            <li id="req-number"><i class="fas fa-circle"></i> Un numero</li>
+          </ul>
         </div>
         <div class="form-group">
           <label for="regPasswordConfirm"><i class="fas fa-lock icon-margin"></i>Confirmar contrasena *</label>
@@ -130,6 +140,52 @@
     var messageText = document.getElementById('messageText');
     var loginBtn = document.getElementById('loginBtn');
     var registerBtn = document.getElementById('registerBtn');
+    
+    // Email validation regex
+    function isValidEmail(email) {
+      var emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      return emailRegex.test(email);
+    }
+    
+    // Password strength validation
+    function validatePassword(password) {
+      var requirements = {
+        length: password.length >= 8,
+        upper: /[A-Z]/.test(password),
+        lower: /[a-z]/.test(password),
+        number: /[0-9]/.test(password)
+      };
+      return requirements;
+    }
+    
+    // Update password requirement indicators
+    function updatePasswordIndicators(password) {
+      var reqs = validatePassword(password);
+      
+      var reqLength = document.getElementById('req-length');
+      var reqUpper = document.getElementById('req-upper');
+      var reqLower = document.getElementById('req-lower');
+      var reqNumber = document.getElementById('req-number');
+      
+      if (reqLength) {
+        reqLength.className = reqs.length ? 'valid' : 'invalid';
+        reqLength.querySelector('i').className = reqs.length ? 'fas fa-check-circle' : 'fas fa-circle';
+      }
+      if (reqUpper) {
+        reqUpper.className = reqs.upper ? 'valid' : 'invalid';
+        reqUpper.querySelector('i').className = reqs.upper ? 'fas fa-check-circle' : 'fas fa-circle';
+      }
+      if (reqLower) {
+        reqLower.className = reqs.lower ? 'valid' : 'invalid';
+        reqLower.querySelector('i').className = reqs.lower ? 'fas fa-check-circle' : 'fas fa-circle';
+      }
+      if (reqNumber) {
+        reqNumber.className = reqs.number ? 'valid' : 'invalid';
+        reqNumber.querySelector('i').className = reqs.number ? 'fas fa-check-circle' : 'fas fa-circle';
+      }
+      
+      return reqs.length && reqs.upper && reqs.lower && reqs.number;
+    }
     
     function showMessage(text, type) {
       messageText.textContent = text;
@@ -172,6 +228,14 @@
       });
     }
     
+    // Add password strength listener
+    var regPasswordInput = document.getElementById('regPassword');
+    if (regPasswordInput) {
+      regPasswordInput.addEventListener('input', function() {
+        updatePasswordIndicators(this.value);
+      });
+    }
+    
     loginForm.addEventListener('submit', function(e) {
       e.preventDefault();
       var email = document.getElementById('email').value.trim();
@@ -179,6 +243,11 @@
       
       if (!email || !password) {
         showMessage('Por favor, completa todos los campos.', 'error');
+        return;
+      }
+      
+      if (!isValidEmail(email)) {
+        showMessage('Por favor, introduce un correo electronico valido.', 'error');
         return;
       }
       
@@ -211,13 +280,19 @@
         return;
       }
       
+      if (!isValidEmail(email)) {
+        showMessage('Por favor, introduce un correo electronico valido (nombre@ejemplo.com).', 'error');
+        return;
+      }
+      
       if (password !== passwordConfirm) {
         showMessage('Las contrasenas no coinciden.', 'error');
         return;
       }
       
-      if (password.length < 6) {
-        showMessage('La contrasena debe tener al menos 6 caracteres.', 'error');
+      var passwordValid = validatePassword(password);
+      if (!passwordValid.length || !passwordValid.upper || !passwordValid.lower || !passwordValid.number) {
+        showMessage('La contrasena no cumple todos los requisitos.', 'error');
         return;
       }
       
@@ -233,7 +308,13 @@
         
         if (result.success) {
           showMessage(result.message, 'success');
-          setTimeout(redirectToDashboard, 1500);
+          // Clear form and switch to login after delay
+          setTimeout(function() {
+            registerForm.reset();
+            // Reset password indicators
+            updatePasswordIndicators('');
+            showLogin();
+          }, 3000);
         } else {
           showMessage(result.message, 'error');
         }

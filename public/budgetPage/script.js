@@ -361,8 +361,8 @@ window.loadSavedBudgets = async function() {
       '<td>' + (budget.customer || '-') + '</td>' +
       '<td><strong>' + moneyEUR(budget.total) + '</strong></td>' +
       '<td><span class="badge ' + statusClass + '">' + statusLabel + '</span></td>' +
-      '<td><button class="btn btn-primary btn-sm me-1" onclick="viewBudget(\'' + budget.id + '\')">👁️ Ver</button>' +
-      '<button class="btn btn-danger btn-sm" onclick="deleteBudgetPrompt(\'' + budget.id + '\')">🗑️</button></td></tr>';
+      '<td><button class="btn btn-primary btn-sm me-1" onclick="viewBudget(\'' + budget.id + '\')">Ver</button>' +
+      '<button class="btn btn-danger btn-sm" onclick="deleteBudgetPrompt(\'' + budget.id + '\')">Eliminar</button></td></tr>';
   }).join('');
 };
 

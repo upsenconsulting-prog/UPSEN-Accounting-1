@@ -189,6 +189,13 @@
         if (window.firebaseAuth) {
           window.firebaseAuth.signInWithEmailAndPassword(email, password)
             .then(function(result) {
+              // Check if email is verified
+              if (!result.user.emailVerified) {
+                resolve({ success: false, message: 'Verifica o teu email antes de fazer login. Recebeste um email de verificacao?' });
+                // Send verification email again if needed
+                result.user.sendEmailVerification().catch(function() {});
+                return;
+              }
               self.loadUserData(result.user);
               resolve({ success: true, user: self.getCurrentUser(), message: 'Login realizado!' });
             })
@@ -220,6 +227,26 @@
     register: function(email, password, userData) {
       var self = this;
       
+      // Client-side validation
+      var emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(email)) {
+        return Promise.resolve({ success: false, message: 'Email invalido. Usa o formato: nome@exemplo.com' });
+      }
+      
+      // Password strength validation
+      if (password.length < 8) {
+        return Promise.resolve({ success: false, message: 'Password muito curta. Minimo 8 caracteres.' });
+      }
+      if (!/[A-Z]/.test(password)) {
+        return Promise.resolve({ success: false, message: 'Password precisa de uma letra maiuscula.' });
+      }
+      if (!/[a-z]/.test(password)) {
+        return Promise.resolve({ success: false, message: 'Password precisa de uma letra minuscula.' });
+      }
+      if (!/[0-9]/.test(password)) {
+        return Promise.resolve({ success: false, message: 'Password precisa de um numero.' });
+      }
+      
       return new Promise(function(resolve) {
         if (window.firebaseAuth) {
           window.firebaseAuth.fetchSignInMethodsForEmail(email)
@@ -242,14 +269,38 @@
                 company: userData.company || '',
                 phone: userData.phone || '',
                 role: 'user',
-                emailVerified: true,
+                emailVerified: false,
                 createdAt: new Date().toISOString(),
                 settings: { currency: 'EUR', language: 'pt', theme: 'light' }
               };
               
               self.createUserDocument(user.uid, docData);
-              self.loadUserData(user);
-              resolve({ success: true, user: self.getCurrentUser(), message: 'Conta criada!' });
+              
+              // Send email verification
+              user.sendEmailVerification()
+                .then(function() {
+                  console.log('Email de verificacao enviado');
+                })
+                .catch(function(error) {
+                  console.warn('Erro ao enviar email de verificacao:', error.message);
+                });
+              
+              // Sign out until email is verified
+              window.firebaseAuth.signOut()
+                .then(function() {
+                  resolve({ 
+                    success: true, 
+                    user: null, 
+                    message: 'Conta criada! Verifica o teu email para ativar a conta. (Verifica spam se nao encontrares o email)' 
+                  });
+                })
+                .catch(function() {
+                  resolve({ 
+                    success: true, 
+                    user: null, 
+                    message: 'Conta criada! Verifica o teu email para ativar a conta. (Verifica spam se nao encontrares o email)' 
+                  });
+                });
             })
             .catch(function(error) {
               resolve({ success: false, message: self.getErrorMessage(error.code) });
@@ -289,8 +340,16 @@
     loginWithGoogle: function() {
       var self = this;
       
+      // Protection flag to prevent multiple concurrent popup requests
+      if (this.googleLoginInProgress) {
+        console.log('Google login already in progress');
+        return Promise.resolve({ success: false, message: 'Login em progresso.' });
+      }
+      this.googleLoginInProgress = true;
+      
       return new Promise(function(resolve) {
         if (!window.firebaseAuth) {
+          self.googleLoginInProgress = false;
           resolve({ success: false, message: 'Google Login requer Firebase.' });
           return;
         }
@@ -299,6 +358,7 @@
         
         window.firebaseAuth.signInWithPopup(provider)
           .then(function(result) {
+            self.googleLoginInProgress = false;
             var user = result.user;
             var docData = {
               uid: user.uid,
@@ -317,6 +377,7 @@
             resolve({ success: true, user: self.getCurrentUser(), message: 'Google OK!' });
           })
           .catch(function(error) {
+            self.googleLoginInProgress = false;
             resolve({ success: false, message: self.getErrorMessage(error.code) });
           });
       });
@@ -433,11 +494,32 @@
       });
     },
     
+    // Send email verification again
+    sendVerificationEmail: function() {
+      var self = this;
+      
+      return new Promise(function(resolve) {
+        if (!window.firebaseAuth || !window.firebaseAuth.currentUser) {
+          resolve({ success: false, message: 'Nenhum utilizador logado.' });
+          return;
+        }
+        
+        window.firebaseAuth.currentUser.sendEmailVerification()
+          .then(function() {
+            resolve({ success: true, message: 'Email de verificacao enviado!' });
+          })
+          .catch(function(error) {
+            resolve({ success: false, message: self.getErrorMessage(error.code) });
+          });
+      });
+    },
+    
     deleteAccount: function() {
       var self = this;
       
       return new Promise(function(resolve) {
         var user = window.firebaseAuth ? window.firebaseAuth.currentUser : null;
+        var userId = user ? user.uid : null;
         
         if (!user) {
           localStorage.removeItem('upsen_current_user');
@@ -447,11 +529,51 @@
           return;
         }
         
-        if (window.firebaseDb) {
-          window.firebaseDb.collection('users').doc(user.uid).delete()
-            .then(function() {
-              return user.delete();
-            })
+        // Delete from Firestore first (user data)
+        if (window.firebaseDb && userId) {
+          window.firebaseDb.collection('users').doc(userId).delete()
+            .catch(function(error) {
+              console.warn('Erro ao eliminar documento do Firestore:', error.message);
+            });
+          
+          // Delete user's invoice collections
+          var collections = ['invoices_issued', 'invoices_received', 'expenses'];
+          var deletePromises = [];
+          
+          for (var i = 0; i < collections.length; i++) {
+            (function(collectionName) {
+              var p = window.firebaseDb.collection('users').doc(userId).collection(collectionName).get()
+                .then(function(snapshot) {
+                  var batch = window.firebaseDb.batch();
+                  snapshot.forEach(function(doc) {
+                    batch.delete(doc.ref);
+                  });
+                  return batch.commit();
+                })
+                .catch(function() {});
+              deletePromises.push(p);
+            })(collections[i]);
+          }
+          
+          // Wait for all deletions
+          Promise.all(deletePromises).then(function() {
+            // Now delete from Firebase Auth
+            user.delete()
+              .then(function() {
+                self.logout();
+                resolve({ success: true, message: 'Conta eliminada com sucesso.' });
+              })
+              .catch(function(error) {
+                // If requires recent login, try re-authenticating
+                if (error.code === 'auth/requires-recent-login') {
+                  resolve({ success: false, message: 'Faz logout e login novamente para eliminar a conta (requer autenticacao recente).' });
+                } else {
+                  resolve({ success: false, message: self.getErrorMessage(error.code) });
+                }
+              });
+          });
+        } else {
+          user.delete()
             .then(function() {
               self.logout();
               resolve({ success: true, message: 'Conta eliminada.' });
@@ -459,9 +581,6 @@
             .catch(function(error) {
               resolve({ success: false, message: self.getErrorMessage(error.code) });
             });
-        } else {
-          self.logout();
-          resolve({ success: true, message: 'Conta eliminada.' });
         }
       });
     },
@@ -620,11 +739,61 @@
     }
   };
   
+  // Global theme application function
+  function applyTheme(theme) {
+    if (theme === 'dark') {
+      document.body.style.backgroundColor = '#1a1a2e';
+      document.body.style.color = '#ffffff';
+      
+      // Apply to all cards
+      var cards = document.querySelectorAll('.modern-card, .stat-card, .summary-card');
+      cards.forEach(function(card) {
+        card.style.backgroundColor = '#16213e';
+        card.style.color = '#ffffff';
+      });
+      
+      // Apply to titles and text
+      var texts = document.querySelectorAll('.section-title, .page-title, .form-label, .info-label, .info-value, .stat-value, .stat-label, .kpi-card h3, .summary-card h3, .kpi-value');
+      texts.forEach(function(t) {
+        t.style.color = '#ffffff';
+      });
+      
+      // Apply to tables
+      var tableCells = document.querySelectorAll('td');
+      tableCells.forEach(function(td) {
+        td.style.color = '#ffffff';
+      });
+    } else {
+      document.body.style.backgroundColor = '#eef1f7';
+      document.body.style.color = '#2c3e50';
+      
+      // Reset all cards
+      var cards = document.querySelectorAll('.modern-card, .stat-card, .summary-card');
+      cards.forEach(function(card) {
+        card.style.backgroundColor = '';
+        card.style.color = '';
+      });
+      
+      // Reset texts
+      var texts = document.querySelectorAll('.section-title, .page-title, .form-label, .info-label, .info-value, .stat-value, .stat-label, .kpi-card h3, .summary-card h3, .kpi-value');
+      texts.forEach(function(t) {
+        t.style.color = '';
+      });
+      
+      // Reset table cells
+      var tableCells = document.querySelectorAll('td');
+      tableCells.forEach(function(td) {
+        td.style.color = '';
+      });
+    }
+  }
+  
   AuthService.init();
   
   window.AuthService = AuthService;
   window.Auth = AuthService;
   window.FirestoreService = FirestoreService;
+  window.applyTheme = applyTheme;
   
   console.log('Auth System carregado');
   

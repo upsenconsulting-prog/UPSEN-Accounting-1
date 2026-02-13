@@ -384,7 +384,7 @@ function exportDataPDF() {
   showAlert('alertMessage', 'PDF exportado!', 'success');
 }
 function deleteAccount() { if (confirm('Eliminar cuenta? Esta accion no se puede deshacer.')) { AuthSystem.deleteAccount(); window.location.href = '../login.html'; } }
-function logout() { AuthSystem.logout(); window.location.href = '../login.html'; }
+function logout() { if (confirm('¿Cerrar sesión?')) { AuthSystem.logout(); window.location.href = '../login.html'; } }
 </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
  * SISTEMA DE AUTENTICAÇÃO UPSEN ACCOUNTING
  * Firebase Auth + Firestore para dados
  * Suporta usuários demo em localStorage
- * @version 2.6.0 - Correção de dados
+ * @version 2.7.0 - Correção Google Login
  */
 
 // Variáveis globais
@@ -11,6 +11,7 @@ window.USE_FIREBASE = false;
 window.firebaseAuth = null;
 window.firebaseDb = null;
 window.firebaseReady = false;
+window.googleLoginInProgress = false;
 
 // Inicializar Firebase com retry
 function initFirebaseNow() {
@@ -336,7 +337,7 @@ var AuthSystem = {
     }));
   },
   
-  // Dados do usuário - CORRIGIDO com prefixo "upsen_"
+  // Dados do usuário
   getUserData: function(key) {
     var user = this.getCurrentUser();
     if (!user) return [];
@@ -512,14 +513,31 @@ var AuthSystem = {
     return { success: true, user: sessionUser, message: 'Conta criada com sucesso' };
   },
   
-  // Login Google
+  // Login Google - CORRIGIDO
   loginWithGoogle: async function() {
     if (!window.USE_FIREBASE || !window.firebaseAuth) {
       return { success: false, message: 'Google Login não disponível' };
     }
     
+    // Verificar se já existe uma operação em andamento
+    if (window.googleLoginInProgress) {
+      console.warn('Login Google já está em andamento');
+      return { success: false, message: 'Login já está em processo. Aguarde...' };
+    }
+    
+    window.googleLoginInProgress = true;
+    
     try {
       var provider = new firebase.auth.GoogleAuthProvider();
+      // Adicionar scopes necessários
+      provider.addScope('https://www.googleapis.com/auth/userinfo.email');
+      provider.addScope('https://www.googleapis.com/auth/userinfo.profile');
+      
+      // Configurar para não forçar seleção de conta
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      
       var result = await window.firebaseAuth.signInWithPopup(provider);
       var user = result.user;
       
@@ -552,7 +570,15 @@ var AuthSystem = {
       return { success: true, user: userData };
     } catch (error) {
       console.error('Erro Google Login:', error);
+      
+      // Tratamento específico para popup fechado
+      if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+        return { success: false, message: 'Janela de login fechada. Tenta novamente.' };
+      }
+      
       return { success: false, message: this.getErrorMessage(error.code) };
+    } finally {
+      window.googleLoginInProgress = false;
     }
   },
   
@@ -634,9 +660,11 @@ var AuthSystem = {
       'auth/user-not-found': 'Utilizador não encontrado.',
       'auth/wrong-password': 'Password incorreta.',
       'auth/popup-closed-by-user': 'Janela de login cancelada.',
+      'auth/cancelled-popup-request': 'Pedido cancelado. Tenta novamente.',
       'auth/network-request-failed': 'Erro de rede.',
       'auth/too-many-requests': 'Muitas tentativas. Tenta novamente mais tarde.',
-      'auth/email-not-verified': 'Por favor verifica o teu email.'
+      'auth/email-not-verified': 'Por favor verifica o teu email.',
+      'auth/requires-recent-login': 'Faz logout e login novamente.'
     };
     return messages[code] || 'Ocorreu um erro. Tente novamente: ' + (code || '');
   },

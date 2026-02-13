@@ -327,10 +327,12 @@ function applyTheme(theme) {
   }
 }
 function doLogout() {
-  var auth = window.AuthService || window.Auth;
-  if (auth && auth.logout) {
-    auth.logout().then(function() { window.location.href = '../login.html'; });
-  } else { window.location.href = '../login.html'; }
+  if (confirm('¿Cerrar sesión?')) {
+    var auth = window.AuthService || window.Auth;
+    if (auth && auth.logout) {
+      auth.logout().then(function() { window.location.href = '../login.html'; });
+    } else { window.location.href = '../login.html'; }
+  }
 }
 document.addEventListener('DOMContentLoaded', function() {
   setTimeout(function() { loadSettings(); }, 300);

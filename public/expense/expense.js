@@ -212,7 +212,7 @@ function renderExpenses() {
   tbody.innerHTML = "";
 
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay gastos registrados todavía.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay gastos registrados todavía.</td></tr>';
     return;
   }
 
@@ -223,7 +223,10 @@ function renderExpenses() {
       '<td>' + (e.category || "-") + '</td>' +
       '<td>' + moneyEUR(e.amount) + '</td>' +
       '<td>' + (e.notes || "") + '</td>' +
-      '<td><button class="btn btn-sm btn-outline-danger" data-del="' + e.id + '" style="float:right;">Eliminar</button></td>';
+      '<td class="action-buttons">' +
+        '<button class="btn btn-primary btn-sm py-1 px-2 me-1" style="font-size:0.75rem" data-view="' + e.id + '"><i class="fas fa-eye"></i></button>' +
+        '<button class="btn btn-danger btn-sm py-1 px-2" style="font-size:0.75rem" data-del="' + e.id + '"><i class="fas fa-trash"></i></button>' +
+      '</td>';
     tbody.appendChild(tr);
   }
 
@@ -239,7 +242,40 @@ function renderExpenses() {
       }
     });
   }
+
+  var viewBtns = tbody.querySelectorAll("[data-view]");
+  for (var k = 0; k < viewBtns.length; k++) {
+    viewBtns[k].addEventListener("click", function() {
+      var id = this.getAttribute("data-view");
+      viewExpense(id);
+    });
+  }
 }
+
+// ========== VER GASTO ==========
+window.viewExpense = function(id) {
+  var list = getUserExpenses();
+  var expense = list.find(function(e) { return e.id === id; });
+  if (!expense) return;
+
+  var content = document.getElementById('viewExpenseContent');
+  if (content) {
+    content.innerHTML = '<div class="row mb-3">' +
+      '<div class="col-md-6"><strong>Fecha:</strong> ' + (expense.date || '-') + '</div>' +
+      '<div class="col-md-6"><strong>Categoria:</strong> ' + (expense.category || '-') + '</div>' +
+      '</div>' +
+      '<div class="row mb-3">' +
+      '<div class="col-md-6"><strong>Importe:</strong> <span class="fs-4 fw-bold">' + moneyEUR(expense.amount) + '</span></div>' +
+      '<div class="col-md-6"><strong>Metodo de pago:</strong> ' + (expense.paymentMethod || '-') + '</div>' +
+      '</div>' +
+      (expense.notes ? '<div class="mb-3"><strong>Notas:</strong> ' + expense.notes + '</div>' : '') +
+      '<div class="text-muted mt-3 text-end"><small>Creado: ' + new Date(expense.createdAt || '').toLocaleString() + '</small></div>';
+  }
+
+  if (window.viewExpenseModal) {
+    window.viewExpenseModal.show();
+  }
+};
 
 // ========== GUARDAR GASTO ==========
 function saveExpense() {
