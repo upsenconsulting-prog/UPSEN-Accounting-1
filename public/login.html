@@ -141,10 +141,41 @@
     var loginBtn = document.getElementById('loginBtn');
     var registerBtn = document.getElementById('registerBtn');
     
-    // Email validation regex
+    // Email validation regex - enhanced version
     function isValidEmail(email) {
+      if (!email || email.trim() === '') {
+        return { valid: false, message: 'O campo email não pode estar vazio.' };
+      }
+      
+      // Basic format check
       var emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-      return emailRegex.test(email);
+      if (!emailRegex.test(email)) {
+        return { valid: false, message: 'Formato de email inválido. Use o formato: nome@exemplo.com' };
+      }
+      
+      // Check for minimum domain length (must have at least one dot)
+      var domain = email.split('@')[1];
+      if (!domain || domain.indexOf('.') === -1) {
+        return { valid: false, message: 'O domínio do email deve ser válido (ex: .com, .pt, .org)' };
+      }
+      
+      // Check for valid characters (no spaces, no consecutive dots)
+      if (email.includes(' ') || email.includes('..')) {
+        return { valid: false, message: 'Email contém caracteres inválidos.' };
+      }
+      
+      // Check email length limits
+      if (email.length > 254) {
+        return { valid: false, message: 'Email demasiado longo.' };
+      }
+      
+      // Check local part (before @) - cannot start or end with certain characters
+      var localPart = email.split('@')[0];
+      if (localPart && (localPart.startsWith('.') || localPart.endsWith('.') || localPart.startsWith('-') || localPart.endsWith('-'))) {
+        return { valid: false, message: 'O email não pode começar ou terminar com caracteres especiais.' };
+      }
+      
+      return { valid: true, message: 'Email válido.' };
     }
     
     // Password strength validation
@@ -246,8 +277,9 @@
         return;
       }
       
-      if (!isValidEmail(email)) {
-        showMessage('Por favor, introduce un correo electronico valido.', 'error');
+      var emailValidation = isValidEmail(email);
+      if (!emailValidation.valid) {
+        showMessage(emailValidation.message, 'error');
         return;
       }
       
@@ -280,8 +312,9 @@
         return;
       }
       
-      if (!isValidEmail(email)) {
-        showMessage('Por favor, introduce un correo electronico valido (nombre@ejemplo.com).', 'error');
+      var emailValidation = isValidEmail(email);
+      if (!emailValidation.valid) {
+        showMessage(emailValidation.message, 'error');
         return;
       }
       

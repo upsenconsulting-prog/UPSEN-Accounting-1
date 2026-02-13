@@ -227,13 +227,50 @@
     register: function(email, password, userData) {
       var self = this;
       
-      // Client-side validation
-      var emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-      if (!emailRegex.test(email)) {
-        return Promise.resolve({ success: false, message: 'Email invalido. Usa o formato: nome@exemplo.com' });
+      // Enhanced email validation - return object with valid status and message
+      function validateEmail(email) {
+        if (!email || email.trim() === '') {
+          return { valid: false, message: 'O campo email não pode estar vazio.' };
+        }
+        
+        // Basic format check
+        var emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(email)) {
+          return { valid: false, message: 'Formato de email inválido. Usa o formato: nome@exemplo.com' };
+        }
+        
+        // Check for minimum domain length (must have at least one dot)
+        var domain = email.split('@')[1];
+        if (!domain || domain.indexOf('.') === -1) {
+          return { valid: false, message: 'O domínio do email deve ser válido (ex: .com, .pt, .org)' };
+        }
+        
+        // Check for valid characters (no spaces, no consecutive dots)
+        if (email.includes(' ') || email.includes('..')) {
+          return { valid: false, message: 'Email contém caracteres inválidos.' };
+        }
+        
+        // Check email length limits
+        if (email.length > 254) {
+          return { valid: false, message: 'Email demasiado longo.' };
+        }
+        
+        // Check local part (before @)
+        var localPart = email.split('@')[0];
+        if (localPart && (localPart.startsWith('.') || localPart.endsWith('.') || localPart.startsWith('-') || localPart.endsWith('-'))) {
+          return { valid: false, message: 'O email não pode começar ou terminar com caracteres especiais.' };
+        }
+        
+        return { valid: true, message: 'Email válido.' };
       }
       
-      // Password strength validation
+      // Run email validation
+      var emailValidation = validateEmail(email);
+      if (!emailValidation.valid) {
+        return Promise.resolve({ success: false, message: emailValidation.message });
+      }
+      
+      // Client-side password validation (keep existing)
       if (password.length < 8) {
         return Promise.resolve({ success: false, message: 'Password muito curta. Minimo 8 caracteres.' });
       }
@@ -249,19 +286,23 @@
       
       return new Promise(function(resolve) {
         if (window.firebaseAuth) {
+          // First check if email already exists
           window.firebaseAuth.fetchSignInMethodsForEmail(email)
             .then(function(methods) {
               if (methods.length > 0) {
-                resolve({ success: false, message: 'Email ja registado.' });
+                resolve({ success: false, message: 'Este email já está registado. Tenta fazer login ou usa outro email.' });
                 return;
               }
               
+              // Create the user
               return window.firebaseAuth.createUserWithEmailAndPassword(email, password);
             })
             .then(function(result) {
-              if (!result) return;
+              if (!result) return; // Email already exists, resolved already
               
               var user = result.user;
+              
+              // Prepare user document data
               var docData = {
                 uid: user.uid,
                 email: user.email,
@@ -274,40 +315,62 @@
                 settings: { currency: 'EUR', language: 'pt', theme: 'light' }
               };
               
-              self.createUserDocument(user.uid, docData);
-              
-              // Send email verification
-              user.sendEmailVerification()
-                .then(function() {
-                  console.log('Email de verificacao enviado');
-                })
-                .catch(function(error) {
-                  console.warn('Erro ao enviar email de verificacao:', error.message);
-                });
-              
-              // Sign out until email is verified
-              window.firebaseAuth.signOut()
-                .then(function() {
-                  resolve({ 
-                    success: true, 
-                    user: null, 
-                    message: 'Conta criada! Verifica o teu email para ativar a conta. (Verifica spam se nao encontrares o email)' 
+              // Try to create user document in Firestore
+              var createDocPromise;
+              if (window.firebaseDb) {
+                createDocPromise = window.firebaseDb.collection('users').doc(user.uid).set(docData)
+                  .then(function() {
+                    console.log('Documento criado no Firestore:', user.uid);
+                    return { success: true, firestore: true };
+                  })
+                  .catch(function(error) {
+                    console.warn('Erro ao criar documento no Firestore:', error.message);
+                    return { success: true, firestore: false };
                   });
-                })
-                .catch(function() {
-                  resolve({ 
-                    success: true, 
-                    user: null, 
-                    message: 'Conta criada! Verifica o teu email para ativar a conta. (Verifica spam se nao encontrares o email)' 
+              } else {
+                createDocPromise = Promise.resolve({ success: true, firestore: false });
+              }
+              
+              // After creating document, send verification email
+              createDocPromise.then(function(firestoreResult) {
+                user.sendEmailVerification()
+                  .then(function() {
+                    console.log('Email de verificação enviado com sucesso');
+                  })
+                  .catch(function(error) {
+                    console.warn('Erro ao enviar email de verificação:', error.message);
                   });
-                });
+                
+                // Sign out until email is verified
+                window.firebaseAuth.signOut()
+                  .then(function() {
+                    var message = 'Conta criada! Verifica o teu email para ativar a conta.';
+                    if (!firestoreResult.firestore) {
+                      message += ' (Dados guardados localmente)';
+                    }
+                    resolve({ 
+                      success: true, 
+                      user: null, 
+                      message: message
+                    });
+                  })
+                  .catch(function() {
+                    resolve({ 
+                      success: true, 
+                      user: null, 
+                      message: 'Conta criada! Verifica o teu email para ativar a conta.' 
+                    });
+                  });
+              });
             })
             .catch(function(error) {
+              console.error('Erro no registo:', error);
               resolve({ success: false, message: self.getErrorMessage(error.code) });
             });
           return;
         }
         
+        // Demo mode (no Firebase)
         var users = getDemoUsers();
         
         for (var i = 0; i < users.length; i++) {

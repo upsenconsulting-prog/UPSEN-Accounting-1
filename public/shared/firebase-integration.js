@@ -97,6 +97,53 @@
     
     // Registrar nova empresa/utilizador
     async register(email, password, userData) {
+      // Enhanced email validation
+      function validateEmail(email) {
+        if (!email || email.trim() === '') {
+          return { valid: false, message: 'O campo email não pode estar vazio.' };
+        }
+        
+        // Basic format check
+        var emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(email)) {
+          return { valid: false, message: 'Formato de email inválido. Usa o formato: nome@exemplo.com' };
+        }
+        
+        // Check for minimum domain length (must have at least one dot)
+        var domain = email.split('@')[1];
+        if (!domain || domain.indexOf('.') === -1) {
+          return { valid: false, message: 'O domínio do email deve ser válido (ex: .com, .pt, .org)' };
+        }
+        
+        // Check for valid characters (no spaces, no consecutive dots)
+        if (email.includes(' ') || email.includes('..')) {
+          return { valid: false, message: 'Email contém caracteres inválidos.' };
+        }
+        
+        // Check email length limits
+        if (email.length > 254) {
+          return { valid: false, message: 'Email demasiado longo.' };
+        }
+        
+        // Check local part (before @)
+        var localPart = email.split('@')[0];
+        if (localPart && (localPart.startsWith('.') || localPart.endsWith('.') || localPart.startsWith('-') || localPart.endsWith('-'))) {
+          return { valid: false, message: 'O email não pode começar ou terminar com caracteres especiais.' };
+        }
+        
+        return { valid: true, message: 'Email válido.' };
+      }
+      
+      // Run email validation
+      var emailValidation = validateEmail(email);
+      if (!emailValidation.valid) {
+        return {
+          success: false,
+          message: emailValidation.message,
+          code: 'auth/invalid-email'
+        };
+      }
+      
       try {
         const { user } = await auth.createUserWithEmailAndPassword(email, password);
         
