@@ -1,50 +1,53 @@
-# TODO - Bug Fixes
+# Plano de Correções - UPSEN Accounting
 
-## ✅ 1. Fix Google Login (auth/cancelled-popup-request)
-- File: `public/shared/auth-system.js`
-- Added protection flag to prevent multiple concurrent popup requests
-- Reset flag on success and error
+## 1. Faturas Recebidas (Invoice_recieved)
+### HTML (Invoice_recieved.html)
+- [ ] Adicionar botões OCR, Filtros, Descargar PDF no header
+- [ ] Adicionar filter-card com filtros
+- [ ] Adicionar modalNewInvoiceOCR
+- [ ] Corrigir script tag do Bootstrap (versão errada)
 
-## ✅ 2. Clean up Invoice Received Page
-- File: `public/Invoice_recieved/Invoice_recieved.html`
-- Removed duplicate code at the end of the file (loadUserInfo, confirmLogout, duplicate DOMContentLoaded)
+### JS (Invoice_recieved.js)
+- [ ] Adicionar event listeners para btnNewInvoiceOCR
+- [ ] Adicionar event listeners para btnFilter
+- [ ] Adicionar event listeners para btnDownload (export PDF)
+- [ ] Adicionar funções: openOCRModal, toggleFilter, exportToPDF
+- [ ] Implementar filtros
 
-## ✅ 3. Make buttons smaller and minimalist
-- File: `public/Invoice_recieved/Invoice_recieved.js` - buttons: Ver, Pagar, Eliminar
-- File: `public/Invoice-issued/invoice-issued.js` - buttons: Ver, Pagar, Eliminar
-- File: `public/expense/expense.js` - buttons: Ver, Eliminar
-- Added `py-1 px-2` classes for smaller padding
-- Added `font-size:0.75rem` for smaller text
-- Changed text buttons to icon-only buttons (eye, check, trash icons)
+## 2. Faturas Emitidas (Invoice-issued)
+### HTML (invoice-issued.html)
+- [ ] Adicionar modalExport com opções PDF, CSV, Excel
 
-## ✅ 4. Email Verification & Account Security
-- File: `public/shared/auth-system.js`
-- **Register**: 
-  - Sends email verification after account creation
-  - Signs out user until email is verified
-  - Sets `emailVerified: false` in user document
-- **Login**: 
-  - Checks if email is verified before allowing login
-  - Shows error message if not verified
-  - Resends verification email if needed
-- **Delete Account**: 
-  - Deletes from Firestore (user document + all subcollections)
-  - Deletes from Firebase Auth
-  - Handles `requires-recent-login` error
+### JS (invoice-issued.js)
+- [ ] Adicionar event listener para btnExport
+- [ ] Adicionar funções: openExportModal, exportInvoices
 
-## ✅ 5. New Function Added
-- `AuthService.sendVerificationEmail()` - allows user to resend verification email
+## 3. Gastos (expense)
+### HTML (expense.html)
+- [ ] Adicionar botões de Exportar se necessário
 
-## ✅ 6. Email & Password Validation
-- File: `public/login.html` & `public/shared/auth-system.js`
-- **Email validation**:
-  - Client-side: Validates email format with regex
-  - Backend: Checks if email is valid format before registration
-- **Password strength requirements**:
-  - Minimum 8 characters
-  - At least 1 uppercase letter
-  - At least 1 lowercase letter
-  - At least 1 number
-  - Visual feedback showing which requirements are met
-  - Both client-side and server-side validation
+### JS (expense.js)
+- [ ] Adicionar função de exportar se necessário
+
+## 4. Página de Configurações (settings.html)
+### Verificação
+- [ ] Verificar se AuthService.updateUserProfile existe
+- [ ] Verificar event listeners dos botões
+- [ ] Corrigir se necessário
+
+## 5. Página de Perfil (profile.html)
+### Verificação
+- [ ] Verificar funções: showEditModal, showPasswordModal, exportDataPDF, deleteAccount, logout
+- [ ] Corrigir event listeners
+- [ ] Verificar AuthSystem
+
+## Tarefas por arquivo:
+1. public/Invoice_recieved/Invoice_recieved.html
+2. public/Invoice_recieved/Invoice_recieved.js
+3. public/Invoice-issued/invoice-issued.html
+4. public/Invoice-issued/invoice-issued.js
+5. public/expense/expense.html (se necessário)
+6. public/expense/expense.js (se necessário)
+7. public/profile/settings.html (verificar/corrigir)
+8. public/profile/profile.html (verificar/corrigir)
 

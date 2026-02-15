@@ -188,6 +188,9 @@
           <button class="btn btn-primary" id="newExpenseBtn">
             <i class="fas fa-plus me-2"></i>Nuevo gasto
           </button>
+          <button class="btn btn-success" id="btnExport">
+            <i class="fas fa-file-export me-2"></i>Exportar
+          </button>
           <button class="btn btn-secondary" id="refreshBtn">
             <i class="fas fa-sync-alt me-2"></i>Actualizar
           </button>
@@ -312,7 +315,34 @@
   </div>
 </div>
 
+<!-- Modal Exportar Gastos -->
+<div class="modal fade" id="modalExport" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-file-export me-2"></i>Exportar Gastos</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Formato</label>
+          <select id="exportFormat" class="form-select">
+            <option value="pdf">PDF</option>
+            <option value="csv">CSV</option>
+            <option value="excel">Excel</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="confirmExportBtn">Exportar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="../shared/auth-system.js"></script>
 <script src="./expense.js"></script>
@@ -321,6 +351,7 @@
 // Modal instances
 var modalExpense = null;
 var viewExpenseModal = null;
+var modalExport = null;
 
 // Load user info
 function loadUserInfo() {
@@ -362,6 +393,11 @@ document.addEventListener('DOMContentLoaded', function() {
     viewExpenseModal = new bootstrap.Modal(viewModalEl);
   }
   
+  var exportModalEl = document.getElementById('modalExport');
+  if (exportModalEl) {
+    modalExport = new bootstrap.Modal(exportModalEl);
+  }
+  
   loadUserInfo();
   
   document.getElementById('newExpenseBtn').addEventListener('click', function() {
@@ -377,6 +413,28 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('saveExpenseBtn').addEventListener('click', function() {
     if (typeof saveExpense === 'function') {
       saveExpense();
+    }
+  });
+  
+  // Export Button
+  document.getElementById('btnExport').addEventListener('click', function() {
+    if (modalExport) {
+      modalExport.show();
+    }
+  });
+  
+  // Confirm Export Button
+  document.getElementById('confirmExportBtn').addEventListener('click', function() {
+    var format = document.getElementById('exportFormat')?.value || 'pdf';
+    
+    if (typeof exportExpenses === 'function') {
+      exportExpenses(format);
+    } else {
+      exportExpensesFallback(format);
+    }
+    
+    if (modalExport) {
+      modalExport.hide();
     }
   });
   

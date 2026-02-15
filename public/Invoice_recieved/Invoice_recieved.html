@@ -179,6 +179,21 @@
     /* Chart Container */
     .chart-container { position: relative; height: 300px; }
     
+    /* Filter Card */
+    .filter-card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      margin-bottom: 25px;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    .filter-form .form-label {
+      font-weight: 500;
+      color: #495057;
+      margin-bottom: 5px;
+    }
+    
     /* Sidebar User Info & Logout */
     .user-info-sidebar {
       position: absolute;
@@ -262,10 +277,48 @@
           <button class="btn btn-primary" id="btnNewInvoice">
             <i class="fas fa-plus me-2"></i>Nueva factura
           </button>
+          <button class="btn btn-primary" id="btnNewInvoiceOCR">
+            <i class="fas fa-file-invoice me-2"></i>Factura por OCR
+          </button>
+          <button class="btn btn-secondary" id="btnFilter" style="margin-left:auto;">
+            <i class="fas fa-filter me-2"></i>Filtros
+          </button>
+          <button class="btn btn-success" id="btnDownload">
+            <i class="fas fa-file-pdf me-2"></i>Descargar PDF
+          </button>
           <button class="btn btn-secondary" id="refreshBtn">
             <i class="fas fa-sync-alt me-2"></i>Actualizar
           </button>
         </div>
+      </div>
+
+      <!-- Filter Card -->
+      <div class="filter-card" id="filterCard" style="display: none;">
+        <form id="filterForm" class="filter-form">
+          <div class="row">
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Estado</label>
+              <select name="state" class="form-select">
+                <option value="">Todos</option>
+                <option value="Pagada">Pagada</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Vencida">Vencida</option>
+              </select>
+            </div>
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Desde fecha</label>
+              <input type="date" name="dateFrom" class="form-control" />
+            </div>
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Hasta fecha</label>
+              <input type="date" name="dateTo" class="form-control" />
+            </div>
+            <div class="col-md-3 mb-3 d-flex align-items-end">
+              <button type="button" class="btn btn-primary" id="applyFilter">Aplicar filtros</button>
+              <button type="button" class="btn btn-secondary ms-2" id="clearFilter">Limpiar</button>
+            </div>
+          </div>
+        </form>
       </div>
 
       <!-- Summary Cards -->
@@ -381,8 +434,36 @@
   </div>
 </div>
 
+<!-- Modal Nueva Factura por OCR -->
+<div class="modal fade" id="modalNewInvoiceOCR" tabindex="-1" aria-labelledby="modalNewInvoiceOCRLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalNewInvoiceOCRLabel"><i class="fas fa-camera me-2"></i>Nueva factura recibida por OCR</h5>
+        <button type="button" class="btn-close" id="closeOCRModal" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formNewInvoiceOCR">
+          <div class="mb-3">
+            <label class="form-label">Subir archivo de factura</label>
+            <input type="file" name="ocrFile" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
+          </div>
+          <div class="alert alert-info">
+            El archivo será procesado automáticamente para extraer los datos de la factura.
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancelOCRBtn" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="saveOCRBtn"><i class="fas fa-cog me-2"></i>Procesar OCR</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="../shared/auth-system.js"></script>
 <script src="./Invoice_recieved.js"></script>

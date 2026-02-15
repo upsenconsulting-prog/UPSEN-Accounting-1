@@ -1,4 +1,4 @@
-// invoice-issued.js - Sistema de facturas emitidas
+ // invoice-issued.js - Sistema de facturas emitidas
 
 function $(id) {
   return document.getElementById(id);
@@ -418,4 +418,159 @@ document.addEventListener('DOMContentLoaded', async function() {
   renderChart();
   renderSummaryCards();
 });
+
+// ========== EXPORTAR FACTURAS ==========
+function exportInvoices(format, period) {
+  var list = getAllInvoicesIssued();
+  if (!list.length) {
+    alert('No hay facturas para exportar.');
+    return;
+  }
+  
+  // Filtrar por período
+  var now = new Date();
+  var filtered = list;
+  
+  if (period === 'month') {
+    filtered = list.filter(function(inv) {
+      if (!inv.invoiceDate) return false;
+      var parts = inv.invoiceDate.split('-');
+      var year = parseInt(parts[0]);
+      var month = parseInt(parts[1]) - 1;
+      return year === now.getFullYear() && month === now.getMonth();
+    });
+  } else if (period === 'year') {
+    filtered = list.filter(function(inv) {
+      if (!inv.invoiceDate) return false;
+      var parts = inv.invoiceDate.split('-');
+      var year = parseInt(parts[0]);
+      return year === now.getFullYear();
+    });
+  }
+  
+  if (format === 'pdf') {
+    exportToPDF(filtered);
+  } else if (format === 'csv') {
+    exportToCSV(filtered);
+  } else if (format === 'excel') {
+    exportToExcel(filtered);
+  }
+}
+
+function exportInvoicesFallback(format, period) {
+  exportInvoices(format, period);
+}
+
+function exportToPDF(list) {
+  if (typeof window.jspdf === 'undefined') {
+    alert('Biblioteca PDF no disponible.');
+    return;
+  }
+  
+  var doc = new window.jspdf.jsPDF();
+  
+  // Header
+  doc.setFillColor(42, 77, 156);
+  doc.rect(0, 0, 210, 35, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.text('UPSEN Accounting', 105, 18, {align: 'center'});
+  doc.setFontSize(12);
+  doc.text('Facturas Emitidas', 105, 28, {align: 'center'});
+  
+  // Data
+  doc.setTextColor(100);
+  doc.setFontSize(10);
+  doc.text('Generado: ' + new Date().toLocaleDateString('es-ES'), 195, 45, {align: 'right'});
+  doc.line(15, 40, 195, 40);
+  
+  var y = 55;
+  doc.setTextColor(0);
+  doc.setFontSize(12);
+  doc.text('Numero', 15, y);
+  doc.text('Cliente', 50, y);
+  doc.text('Fecha', 105, y);
+  doc.text('Importe', 155, y);
+  doc.text('Estado', 185, y);
+  
+  y += 8;
+  doc.setFontSize(10);
+  doc.line(15, y - 3, 195, y - 3);
+  
+  for (var i = 0; i < list.length && y < 270; i++) {
+    var inv = list[i];
+    doc.text(inv.invoiceNumber || '-', 15, y);
+    doc.text((inv.customer || '-').substring(0, 20), 50, y);
+    doc.text(formatDate(inv.invoiceDate), 105, y);
+    doc.text(moneyEUR(inv.amount), 155, y);
+    doc.text(inv.state || 'Pendiente', 185, y);
+    y += 8;
+  }
+  
+  // Total
+  var total = 0;
+  for (var j = 0; j < list.length; j++) {
+    total += Number(list[j].amount || 0);
+  }
+  y += 5;
+  doc.setFontSize(12);
+  doc.text('Total:', 130, y);
+  doc.setFontSize(14);
+  doc.setTextColor(42, 77, 156);
+  doc.text(moneyEUR(total), 165, y);
+  
+  doc.save('facturas_emitidas.pdf');
+  alert('PDF descargado correctamente!');
+}
+
+function exportToCSV(list) {
+  var csv = 'Numero,Cliente,Fecha,Vence,Importe,Estado\n';
+  
+  for (var i = 0; i < list.length; i++) {
+    var inv = list[i];
+    csv += '"' + (inv.invoiceNumber || '') + '",';
+    csv += '"' + (inv.customer || '') + '",';
+    csv += '"' + (inv.invoiceDate || '') + '",';
+    csv += '"' + (inv.dueDate || '') + '",';
+    csv += '"' + (inv.amount || 0) + '",';
+    csv += '"' + (inv.state || 'Pendiente') + '"\n';
+  }
+  
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  var link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'facturas_emitidas.csv';
+  link.click();
+  alert('CSV descargado correctamente!');
+}
+
+function exportToExcel(list) {
+  // Criar tabela HTML
+  var html = '<table border="1">';
+  html += '<tr><th>Numero</th><th>Cliente</th><th>Fecha</th><th>Vence</th><th>Importe</th><th>Estado</th></tr>';
+  
+  for (var i = 0; i < list.length; i++) {
+    var inv = list[i];
+    html += '<tr>';
+    html += '<td>' + (inv.invoiceNumber || '') + '</td>';
+    html += '<td>' + (inv.customer || '') + '</td>';
+    html += '<td>' + (inv.invoiceDate || '') + '</td>';
+    html += '<td>' + (inv.dueDate || '') + '</td>';
+    html += '<td>' + (inv.amount || 0) + '</td>';
+    html += '<td>' + (inv.state || 'Pendiente') + '</td>';
+    html += '</tr>';
+  }
+  html += '</table>';
+  
+  // Converter para Excel
+  var excelHtml = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+  excelHtml += '<head><meta charset="UTF-8"></head><body>' + html + '</body></html>';
+  
+  var blob = new Blob([excelHtml], { type: 'application/vnd.ms-excel' });
+  var link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'facturas_emitidas.xls';
+  link.click();
+  alert('Excel descargado correctamente!');
+}
 

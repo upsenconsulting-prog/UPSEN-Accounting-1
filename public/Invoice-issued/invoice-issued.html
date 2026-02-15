@@ -186,6 +186,9 @@
           <button class="btn btn-primary" id="newInvoiceBtn">
             <i class="fas fa-plus me-2"></i>Nueva factura
           </button>
+          <button class="btn btn-success" id="btnExport">
+            <i class="fas fa-file-export me-2"></i>Exportar
+          </button>
           <button class="btn btn-secondary" id="refreshBtn">
             <i class="fas fa-sync-alt me-2"></i>Actualizar
           </button>
@@ -257,6 +260,7 @@
   </div>
 </div>
 
+<!-- Modal Nueva Factura -->
 <div class="modal fade" id="modalNewInvoiceIssued">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -308,6 +312,7 @@
   </div>
 </div>
 
+<!-- Modal Ver Factura -->
 <div class="modal fade" id="viewInvoiceModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -323,7 +328,42 @@
   </div>
 </div>
 
+<!-- Modal Exportar Facturas -->
+<div class="modal fade" id="modalExport" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-file-export me-2"></i>Exportar Facturas</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Formato</label>
+          <select id="exportFormat" class="form-select">
+            <option value="pdf">PDF</option>
+            <option value="csv">CSV</option>
+            <option value="excel">Excel</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Periodo</label>
+          <select id="exportPeriod" class="form-select">
+            <option value="all">Todas</option>
+            <option value="month">Este mes</option>
+            <option value="year">Este ano</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="confirmExportBtn">Exportar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="../shared/auth-system.js"></script>
 <script src="./invoice-issued.js"></script>
@@ -332,6 +372,7 @@
 // Modal instances
 var modalInvoice = null;
 var viewInvoiceModal = null;
+var modalExport = null;
 
 // Initialize modals
 document.addEventListener('DOMContentLoaded', function() {
@@ -343,6 +384,11 @@ document.addEventListener('DOMContentLoaded', function() {
   var viewModalEl = document.getElementById('viewInvoiceModal');
   if (viewModalEl) {
     viewInvoiceModal = new bootstrap.Modal(viewModalEl);
+  }
+  
+  var exportModalEl = document.getElementById('modalExport');
+  if (exportModalEl) {
+    modalExport = new bootstrap.Modal(exportModalEl);
   }
   
   // New Invoice Button
@@ -363,6 +409,30 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (modalInvoice) {
       modalInvoice.show();
+    }
+  });
+  
+  // Export Button
+  document.getElementById('btnExport').addEventListener('click', function() {
+    if (modalExport) {
+      modalExport.show();
+    }
+  });
+  
+  // Confirm Export Button
+  document.getElementById('confirmExportBtn').addEventListener('click', function() {
+    var format = document.getElementById('exportFormat')?.value || 'pdf';
+    var period = document.getElementById('exportPeriod')?.value || 'all';
+    
+    if (typeof exportInvoices === 'function') {
+      exportInvoices(format, period);
+    } else {
+      // Fallback export
+      exportInvoicesFallback(format, period);
+    }
+    
+    if (modalExport) {
+      modalExport.hide();
     }
   });
   

@@ -373,3 +373,127 @@ document.addEventListener("DOMContentLoaded", function() {
   renderSummaryCards();
 });
 
+// ========== EXPORTAR GASTOS ==========
+function exportExpenses(format) {
+  var list = getUserExpenses();
+  if (!list.length) {
+    alert('No hay gastos para exportar.');
+    return;
+  }
+  
+  if (format === 'pdf') {
+    exportExpensesToPDF(list);
+  } else if (format === 'csv') {
+    exportExpensesToCSV(list);
+  } else if (format === 'excel') {
+    exportExpensesToExcel(list);
+  }
+}
+
+function exportExpensesFallback(format) {
+  exportExpenses(format);
+}
+
+function exportExpensesToPDF(list) {
+  if (typeof window.jspdf === 'undefined') {
+    alert('Biblioteca PDF no disponible.');
+    return;
+  }
+  
+  var doc = new window.jspdf.jsPDF();
+  
+  // Header
+  doc.setFillColor(42, 77, 156);
+  doc.rect(0, 0, 210, 35, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.text('UPSEN Accounting', 105, 18, {align: 'center'});
+  doc.setFontSize(12);
+  doc.text('Gastos', 105, 28, {align: 'center'});
+  
+  // Data
+  doc.setTextColor(100);
+  doc.setFontSize(10);
+  doc.text('Generado: ' + new Date().toLocaleDateString('es-ES'), 195, 45, {align: 'right'});
+  doc.line(15, 40, 195, 40);
+  
+  var y = 55;
+  doc.setTextColor(0);
+  doc.setFontSize(12);
+  doc.text('Fecha', 15, y);
+  doc.text('Categoria', 50, y);
+  doc.text('Importe', 140, y);
+  
+  y += 8;
+  doc.setFontSize(10);
+  doc.line(15, y - 3, 195, y - 3);
+  
+  for (var i = 0; i < list.length && y < 270; i++) {
+    var exp = list[i];
+    doc.text(exp.date || '-', 15, y);
+    doc.text((exp.category || '-').substring(0, 30), 50, y);
+    doc.text(moneyEUR(exp.amount), 140, y);
+    y += 8;
+  }
+  
+  // Total
+  var total = 0;
+  for (var j = 0; j < list.length; j++) {
+    total += Number(list[j].amount || 0);
+  }
+  y += 5;
+  doc.setFontSize(12);
+  doc.text('Total:', 120, y);
+  doc.setFontSize(14);
+  doc.setTextColor(42, 77, 156);
+  doc.text(moneyEUR(total), 155, y);
+  
+  doc.save('gastos.pdf');
+  alert('PDF descargado correctamente!');
+}
+
+function exportExpensesToCSV(list) {
+  var csv = 'Fecha,Categoria,Importe,Notas\n';
+  
+  for (var i = 0; i < list.length; i++) {
+    var exp = list[i];
+    csv += '"' + (exp.date || '') + '",';
+    csv += '"' + (exp.category || '') + '",';
+    csv += '"' + (exp.amount || 0) + '",';
+    csv += '"' + (exp.notes || '') + '"\n';
+  }
+  
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  var link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'gastos.csv';
+  link.click();
+  alert('CSV descargado correctamente!');
+}
+
+function exportExpensesToExcel(list) {
+  var html = '<table border="1">';
+  html += '<tr><th>Fecha</th><th>Categoria</th><th>Importe</th><th>Notas</th></tr>';
+  
+  for (var i = 0; i < list.length; i++) {
+    var exp = list[i];
+    html += '<tr>';
+    html += '<td>' + (exp.date || '') + '</td>';
+    html += '<td>' + (exp.category || '') + '</td>';
+    html += '<td>' + (exp.amount || 0) + '</td>';
+    html += '<td>' + (exp.notes || '') + '</td>';
+    html += '</tr>';
+  }
+  html += '</table>';
+  
+  var excelHtml = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+  excelHtml += '<head><meta charset="UTF-8"></head><body>' + html + '</body></html>';
+  
+  var blob = new Blob([excelHtml], { type: 'application/vnd.ms-excel' });
+  var link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'gastos.xls';
+  link.click();
+  alert('Excel descargado correctamente!');
+}
+
