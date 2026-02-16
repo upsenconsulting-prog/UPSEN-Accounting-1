@@ -1,4 +1,5 @@
-// Invoice_recieved.js - Sistema de facturas recibidas
+
+// Invoice_recieved.js - Sistema de facturas recibidas - COM FIREBASE
 
 function $(id) {
   return document.getElementById(id);
@@ -77,7 +78,32 @@ function addInvoiceReceived(invoice) {
   };
   invoices.push(newInvoice);
   saveUserInvoicesReceived(invoices);
+  
+  // Also save to Firebase
+  saveInvoiceReceivedToFirebase(newInvoice);
+  
   return newInvoice;
+}
+
+function saveInvoiceReceivedToFirebase(invoice) {
+  var userId = getUserId();
+  if (!userId || userId === 'unknown' || userId === 'demo') return;
+  if (!window.firebaseDb) return;
+  
+  window.firebaseDb.collection('companies').doc(userId).collection('invoicesReceived').add({
+    id: invoice.id,
+    invoiceNumber: invoice.invoiceNumber,
+    supplier: invoice.supplier,
+    invoiceDate: invoice.invoiceDate,
+    amount: invoice.amount,
+    state: invoice.state,
+    description: invoice.description,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function() {
+    console.log('Fatura recebida salva no Firebase');
+  }).catch(function(error) {
+    console.warn('Erro ao salvar no Firebase:', error.message);
+  });
 }
 
 function deleteInvoiceReceived(id) {
@@ -89,6 +115,28 @@ function deleteInvoiceReceived(id) {
     }
   }
   saveUserInvoicesReceived(filtered);
+  
+  // Also delete from Firebase
+  deleteInvoiceReceivedFromFirebase(id);
+}
+
+function deleteInvoiceReceivedFromFirebase(id) {
+  var userId = getUserId();
+  if (!userId || userId === 'unknown' || userId === 'demo') return;
+  if (!window.firebaseDb) return;
+  
+  window.firebaseDb.collection('companies').doc(userId).collection('invoicesReceived')
+    .where('id', '==', id)
+    .get()
+    .then(function(snapshot) {
+      snapshot.forEach(function(doc) {
+        doc.ref.delete();
+      });
+      console.log('Fatura recebida eliminada do Firebase');
+    })
+    .catch(function(error) {
+      console.warn('Erro ao eliminar do Firebase:', error.message);
+    });
 }
 
 function updateInvoiceReceived(id, updates) {
@@ -254,7 +302,6 @@ async function renderInvoices() {
   }
 }
 
-// ========== VER FACTURA ==========
 window.viewInvoice = function(id) {
   var list = getAllInvoicesReceived();
   var invoice = list.find(function(inv) { return inv.id === id; });
@@ -282,7 +329,6 @@ window.viewInvoice = function(id) {
   }
 };
 
-// ========== GUARDAR FACTURA ==========
 function saveInvoiceReceived() {
   var form = $('formNewInvoiceReceived');
   if (!form) return false;
@@ -316,7 +362,6 @@ function saveInvoiceReceived() {
     state: state
   });
 
-  // Close modal
   var modalEl = document.getElementById('modalNewInvoiceReceived');
   if (modalEl) {
     var modal = bootstrap.Modal.getInstance(modalEl);
@@ -334,15 +379,12 @@ function saveInvoiceReceived() {
   return true;
 }
 
-// ========== ABRIR MODAL ==========
 function openNewInvoiceModal() {
-  // Generate invoice number
   var date = new Date();
   var num = 'REC-' + date.getFullYear() + '-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
   var numberInput = document.querySelector('#formNewInvoiceReceived input[name="invoiceNumber"]');
   if (numberInput) numberInput.value = num;
   
-  // Set today's date
   var invoiceDate = document.querySelector('#formNewInvoiceReceived input[name="invoiceDate"]');
   if (invoiceDate) invoiceDate.value = new Date().toISOString().split('T')[0];
   
@@ -356,11 +398,9 @@ function openNewInvoiceModal() {
   }
 }
 
-// ========== INICIALIZAR ==========
 document.addEventListener('DOMContentLoaded', async function() {
   markActivePage();
   
-  // New Invoice Button
   var newInvoiceBtn = document.getElementById('btnNewInvoice');
   if (newInvoiceBtn) {
     newInvoiceBtn.addEventListener('click', function() {
@@ -368,7 +408,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
   }
   
-  // Save Button
   var saveBtn = document.getElementById('saveInvoiceReceivedBtn');
   if (saveBtn) {
     saveBtn.addEventListener('click', function() {
@@ -376,7 +415,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
   }
   
-  // OCR Button
   var ocrBtn = document.getElementById('btnNewInvoiceOCR');
   if (ocrBtn) {
     ocrBtn.addEventListener('click', function() {
@@ -384,7 +422,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
   }
   
-  // OCR Save Button
   var saveOCRBtn = document.getElementById('saveOCRBtn');
   if (saveOCRBtn) {
     saveOCRBtn.addEventListener('click', function() {
@@ -392,7 +429,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
   }
   
-  // Filter Button
   var filterBtn = document.getElementById('btnFilter');
   if (filterBtn) {
     filterBtn.addEventListener('click', function() {
@@ -400,7 +436,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
   }
   
-  // Apply Filter Button
   var applyFilterBtn = document.getElementById('applyFilter');
   if (applyFilterBtn) {
     applyFilterBtn.addEventListener('click', function() {
@@ -408,7 +443,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
   }
   
-  // Clear Filter Button
   var clearFilterBtn = document.getElementById('clearFilter');
   if (clearFilterBtn) {
     clearFilterBtn.addEventListener('click', function() {
@@ -416,7 +450,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
   }
   
-  // Download PDF Button
   var downloadBtn = document.getElementById('btnDownload');
   if (downloadBtn) {
     downloadBtn.addEventListener('click', function() {
@@ -424,7 +457,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
   }
   
-  // Refresh button
   var refreshBtn = document.getElementById('refreshBtn');
   if (refreshBtn) {
     refreshBtn.addEventListener('click', function() {
@@ -437,7 +469,6 @@ document.addEventListener('DOMContentLoaded', async function() {
   renderSummaryCards();
 });
 
-// ========== OCR MODAL ==========
 function openOCRModal() {
   var modalEl = document.getElementById('modalNewInvoiceOCR');
   if (modalEl) {
@@ -456,10 +487,8 @@ function processOCR() {
     return;
   }
   
-  // Simular processamento OCR
-  alert('El archivo está siendo procesado. Esta función requiere integración con un servicio OCR.');
+  alert('El archivo esta siendo procesado. Esta funcion requiere integracion con un servicio OCR.');
   
-  // Fechar modal
   var modalEl = document.getElementById('modalNewInvoiceOCR');
   if (modalEl) {
     var modal = bootstrap.Modal.getInstance(modalEl);
@@ -469,7 +498,6 @@ function processOCR() {
   }
 }
 
-// ========== FILTROS ==========
 var currentFilters = {
   state: '',
   dateFrom: '',
@@ -497,7 +525,6 @@ function applyFilters() {
   
   renderInvoicesFiltered();
   
-  // Ocultar filtro após aplicar
   var filterCard = document.getElementById('filterCard');
   if (filterCard) {
     filterCard.style.display = 'none';
@@ -530,17 +557,14 @@ function renderInvoicesFiltered() {
     var inv = allInvoices[i];
     var include = true;
     
-    // Filtro por estado
     if (currentFilters.state && inv.state !== currentFilters.state) {
       include = false;
     }
     
-    // Filtro por data desde
     if (currentFilters.dateFrom && inv.invoiceDate && inv.invoiceDate < currentFilters.dateFrom) {
       include = false;
     }
     
-    // Filtro por data até
     if (currentFilters.dateTo && inv.invoiceDate && inv.invoiceDate > currentFilters.dateTo) {
       include = false;
     }
@@ -638,7 +662,6 @@ function attachInvoiceListeners() {
   }
 }
 
-// ========== EXPORTAR PDF ==========
 function exportToPDF() {
   var list = getAllInvoicesReceived();
   if (!list.length) {
@@ -646,16 +669,14 @@ function exportToPDF() {
     return;
   }
   
-  // Verificar se jsPDF está disponível
   if (typeof window.jspdf === 'undefined') {
-    // Carregar jsPDF dinamicamente
     var script = document.createElement('script');
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
     script.onload = function() {
       generatePDF(list);
     };
     script.onerror = function() {
-      alert('Error al cargar la biblioteca PDF. Por favor, inténtalo de nuevo.');
+      alert('Error al cargar la biblioteca PDF. Por favor, intentelo de nuevo.');
     };
     document.head.appendChild(script);
   } else {
@@ -666,7 +687,6 @@ function exportToPDF() {
 function generatePDF(list) {
   var doc = new window.jspdf.jsPDF();
   
-  // Header
   doc.setFillColor(42, 77, 156);
   doc.rect(0, 0, 210, 35, 'F');
   doc.setTextColor(255, 255, 255);
@@ -675,7 +695,6 @@ function generatePDF(list) {
   doc.setFontSize(12);
   doc.text('Facturas Recibidas', 105, 28, {align: 'center'});
   
-  // Data
   doc.setTextColor(100);
   doc.setFontSize(10);
   doc.text('Generado: ' + new Date().toLocaleDateString('es-ES'), 195, 45, {align: 'right'});
@@ -684,7 +703,7 @@ function generatePDF(list) {
   var y = 55;
   doc.setTextColor(0);
   doc.setFontSize(12);
-  doc.text('Número', 15, y);
+  doc.text('Numero', 15, y);
   doc.text('Proveedor', 55, y);
   doc.text('Fecha', 105, y);
   doc.text('Importe', 155, y);
@@ -704,7 +723,6 @@ function generatePDF(list) {
     y += 8;
   }
   
-  // Total
   var total = 0;
   for (var j = 0; j < list.length; j++) {
     total += Number(list[j].amount || 0);

@@ -78,7 +78,33 @@ function addInvoiceIssued(invoice) {
   };
   invoices.push(newInvoice);
   saveUserInvoicesIssued(invoices);
+  
+  // Também salvar no Firebase
+  saveInvoiceIssuedToFirebase(newInvoice);
+  
   return newInvoice;
+}
+
+function saveInvoiceIssuedToFirebase(invoice) {
+  var userId = getUserId();
+  if (!userId || userId === 'unknown' || userId === 'demo') return;
+  if (!window.firebaseDb) return;
+  
+  window.firebaseDb.collection('companies').doc(userId).collection('invoicesIssued').add({
+    id: invoice.id,
+    invoiceNumber: invoice.invoiceNumber,
+    customer: invoice.customer,
+    invoiceDate: invoice.invoiceDate,
+    dueDate: invoice.dueDate,
+    amount: invoice.amount,
+    state: invoice.state,
+    description: invoice.description,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function() {
+    console.log('✅ Fatura emitida salva no Firebase');
+  }).catch(function(error) {
+    console.warn('Erro ao salvar no Firebase:', error.message);
+  });
 }
 
 function deleteInvoiceIssued(id) {
@@ -90,6 +116,28 @@ function deleteInvoiceIssued(id) {
     }
   }
   saveUserInvoicesIssued(filtered);
+  
+  // Também eliminar do Firebase
+  deleteInvoiceIssuedFromFirebase(id);
+}
+
+function deleteInvoiceIssuedFromFirebase(id) {
+  var userId = getUserId();
+  if (!userId || userId === 'unknown' || userId === 'demo') return;
+  if (!window.firebaseDb) return;
+  
+  window.firebaseDb.collection('companies').doc(userId).collection('invoicesIssued')
+    .where('id', '==', id)
+    .get()
+    .then(function(snapshot) {
+      snapshot.forEach(function(doc) {
+        doc.ref.delete();
+      });
+      console.log('✅ Fatura emitida eliminada do Firebase');
+    })
+    .catch(function(error) {
+      console.warn('Erro ao eliminar do Firebase:', error.message);
+    });
 }
 
 function updateInvoiceIssued(id, updates) {

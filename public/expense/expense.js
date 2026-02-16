@@ -51,7 +51,7 @@ function getUserExpenses() {
 function saveUserExpense(expense) {
   var key = 'upsen_expenses_' + getUserId();
   var list = getUserExpenses();
-  list.push({
+  var newExpense = {
     id: 'exp-' + Date.now() + '-' + Math.random().toString(16).slice(2),
     date: expense.date || '',
     category: expense.category || '',
@@ -59,8 +59,32 @@ function saveUserExpense(expense) {
     notes: expense.notes || '',
     paymentMethod: expense.paymentMethod || '',
     createdAt: new Date().toISOString()
-  });
+  };
+  list.push(newExpense);
   localStorage.setItem(key, JSON.stringify(list));
+  
+  // Também salvar no Firebase
+  saveExpenseToFirebase(newExpense);
+}
+
+function saveExpenseToFirebase(expense) {
+  var userId = getUserId();
+  if (!userId || userId === 'unknown' || userId === 'demo') return;
+  if (!window.firebaseDb) return;
+  
+  window.firebaseDb.collection('companies').doc(userId).collection('expenses').add({
+    id: expense.id,
+    date: expense.date,
+    category: expense.category,
+    amount: expense.amount,
+    notes: expense.notes,
+    paymentMethod: expense.paymentMethod,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function() {
+    console.log('✅ Despesa salva no Firebase');
+  }).catch(function(error) {
+    console.warn('Erro ao salvar no Firebase:', error.message);
+  });
 }
 
 function deleteUserExpense(id) {
@@ -73,6 +97,29 @@ function deleteUserExpense(id) {
     }
   }
   localStorage.setItem(key, JSON.stringify(filtered));
+  
+  // Também eliminar do Firebase
+  deleteExpenseFromFirebase(id);
+}
+
+function deleteExpenseFromFirebase(id) {
+  var userId = getUserId();
+  if (!userId || userId === 'unknown' || userId === 'demo') return;
+  if (!window.firebaseDb) return;
+  
+  // Buscar o documento pelo id e eliminar
+  window.firebaseDb.collection('companies').doc(userId).collection('expenses')
+    .where('id', '==', id)
+    .get()
+    .then(function(snapshot) {
+      snapshot.forEach(function(doc) {
+        doc.ref.delete();
+      });
+      console.log('✅ Despesa eliminada do Firebase');
+    })
+    .catch(function(error) {
+      console.warn('Erro ao eliminar do Firebase:', error.message);
+    });
 }
 
 // ========== RENDER FUNCTIONS ==========
