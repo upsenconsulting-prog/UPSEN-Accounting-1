@@ -8,21 +8,23 @@
 (function() {
   'use strict';
   
-  var FirebaseConfigured = typeof firebase !== 'undefined' && window.FIREBASE_CONFIG;
+  // Fixed: use !! to convert to boolean
+  var FirebaseConfigured = typeof firebase !== 'undefined' && !!window.FIREBASE_CONFIG;
   
   // Theme key for localStorage
   var THEME_KEY = 'upsen_theme';
   
-  // ========== SYNC SERVICE ==========
+// ========== SYNC SERVICE ==========
   var SyncService = {
     syncFromFirebase: function(userId) {
       return new Promise(function(resolve) {
         if (!window.firebaseDb || !userId || userId === 'unknown') {
+          console.log('SYNC: FirebaseDB ou UserID não disponível');
           resolve();
           return;
         }
         
-        console.log('Sincronizando dados do Firebase...');
+        console.log('Sincronizando dados do Firebase para:', userId);
         
         var promises = [];
         
@@ -30,21 +32,27 @@
         var expensesPromise = window.firebaseDb.collection('users').doc(userId).collection('documents').doc('expenses').collection('items').get()
           .then(function(snapshot) {
             var expenses = [];
+            console.log('Sync: Expenses snapshot size:', snapshot.size);
             snapshot.forEach(function(doc) {
               var data = doc.data();
               expenses.push({
                 id: doc.id,
                 date: data.date || '',
                 category: data.category || '',
-                amount: data.amount || 0,
+                amount: parseFloat(data.amount) || 0,
+                ivaRate: parseFloat(data.ivaRate) || 0,
+                ivaAmount: parseFloat(data.ivaAmount) || 0,
+                totalAmount: parseFloat(data.totalAmount) || 0,
                 notes: data.notes || '',
                 paymentMethod: data.paymentMethod || '',
+                supplierNif: data.supplierNif || '',
+                supplierName: data.supplierName || '',
                 createdAt: data.createdAt ? new Date(data.createdAt.seconds * 1000).toISOString() : new Date().toISOString()
               });
             });
             localStorage.setItem('upsen_expenses_' + userId, JSON.stringify(expenses));
             console.log('Expenses sincronizados:', expenses.length);
-          }).catch(function() {});
+          }).catch(function(err) { console.log('Erro sync expenses:', err); });
         promises.push(expensesPromise);
         
         // Sync invoices issued
@@ -56,17 +64,22 @@
               invoicesIssued.push({
                 id: doc.id,
                 invoiceNumber: data.invoiceNumber || '',
+                customer: data.customer || '',
+                customerNif: data.customerNif || '',
                 invoiceDate: data.invoiceDate || '',
-                clientName: data.clientName || '',
-                amount: data.amount || 0,
-                state: data.state || '',
-                notes: data.notes || '',
+                dueDate: data.dueDate || '',
+                amount: parseFloat(data.amount) || 0,
+                ivaRate: parseFloat(data.ivaRate) || 0,
+                ivaAmount: parseFloat(data.ivaAmount) || 0,
+                totalAmount: parseFloat(data.totalAmount) || 0,
+                state: data.state || 'Pendiente',
+                description: data.description || '',
                 createdAt: data.createdAt ? new Date(data.createdAt.seconds * 1000).toISOString() : new Date().toISOString()
               });
             });
             localStorage.setItem('upsen_invoices_issued_' + userId, JSON.stringify(invoicesIssued));
             console.log('Invoices Issued sincronizados:', invoicesIssued.length);
-          }).catch(function() {});
+          }).catch(function(err) { console.log('Erro sync invoices issued:', err); });
         promises.push(invoicesIssuedPromise);
         
         // Sync invoices received
@@ -78,17 +91,21 @@
               invoicesReceived.push({
                 id: doc.id,
                 invoiceNumber: data.invoiceNumber || '',
+                supplier: data.supplier || '',
+                supplierNif: data.supplierNif || '',
                 invoiceDate: data.invoiceDate || '',
-                supplierName: data.supplierName || '',
-                amount: data.amount || 0,
-                state: data.state || '',
-                notes: data.notes || '',
+                amount: parseFloat(data.amount) || 0,
+                ivaRate: parseFloat(data.ivaRate) || 0,
+                ivaAmount: parseFloat(data.ivaAmount) || 0,
+                totalAmount: parseFloat(data.totalAmount) || 0,
+                state: data.state || 'Pendiente',
+                description: data.description || '',
                 createdAt: data.createdAt ? new Date(data.createdAt.seconds * 1000).toISOString() : new Date().toISOString()
               });
             });
             localStorage.setItem('upsen_invoices_received_' + userId, JSON.stringify(invoicesReceived));
             console.log('Invoices Received sincronizados:', invoicesReceived.length);
-          }).catch(function() {});
+          }).catch(function(err) { console.log('Erro sync invoices received:', err); });
         promises.push(invoicesReceivedPromise);
         
         Promise.all(promises).then(function() {
@@ -111,15 +128,20 @@
     function check() {
       attempts++;
       
+      console.log('Firebase check attempt:', attempts, 'FirebaseConfigured:', FirebaseConfigured, 'typeof firebase:', typeof firebase);
+      
       if (FirebaseConfigured && typeof firebase !== 'undefined' && firebase.apps) {
         try {
           if (firebase.apps.length > 0) {
             window.firebaseApp = firebase.apps[0];
+            console.log('Firebase app already initialized');
           } else {
             window.firebaseApp = firebase.initializeApp(window.FIREBASE_CONFIG);
+            console.log('Firebase app initialized');
           }
           window.firebaseAuth = firebase.auth(window.firebaseApp);
           window.firebaseDb = firebase.firestore(window.firebaseApp);
+          console.log('Firebase Auth and Firestore ready');
           callback(true);
         } catch (e) {
           console.warn('Firebase config error:', e.message);
@@ -128,6 +150,7 @@
       } else if (attempts < maxAttempts) {
         setTimeout(check, 100);
       } else {
+        console.error('Firebase não inicializou após', maxAttempts, 'tentativas');
         callback(false);
       }
     }
@@ -167,26 +190,42 @@
     return hash.toString(16);
   }
   
-  // ========== AUTH SERVICE ==========
+// ========== AUTH SERVICE ==========
   var AuthService = {
     currentUser: null,
     currentUserData: null,
     firebaseReady: false,
     firebaseError: null,
+    isLoadingUserData: false,
     
-    init: function() {
+init: function() {
       var self = this;
+      console.log('AuthService.init() chamado');
       
       // Apply saved theme on init
       this.applySavedTheme();
       
       waitForFirebase(function(ready) {
+        console.log('waitForFirebase callback, ready:', ready);
         self.firebaseReady = ready;
         
         if (ready && window.firebaseAuth) {
+          // Check if user is already logged in on page load
+          var currentFirebaseUser = window.firebaseAuth.currentUser;
+          if (currentFirebaseUser) {
+            console.log('User already logged in on init:', currentFirebaseUser.email);
+            self.loadUserData(currentFirebaseUser);
+          }
+          
+          // Register auth state change listener
           window.firebaseAuth.onAuthStateChanged(function(user) {
             if (user) {
-              self.loadUserData(user);
+              console.log('Auth state changed, user:', user.email);
+              // Check if this is a fresh login or page refresh
+              var currentUserId = self.getCurrentUser();
+              if (!currentUserId || currentUserId.uid !== user.uid) {
+                self.loadUserData(user);
+              }
             }
           });
         }
@@ -202,23 +241,31 @@
       }
     },
     
-    loadUserData: function(firebaseUser) {
+loadUserData: function(firebaseUser) {
       var self = this;
-      this.currentUser = firebaseUser;
       
+      // Prevent multiple simultaneous loads
+      if (this.isLoadingUserData) {
+        console.log('User data already loading, skipping...');
+        return;
+      }
+      this.isLoadingUserData = true;
+      
+      this.currentUser = firebaseUser;
+      console.log('loadUserData chamado para:', firebaseUser.email, 'uid:', firebaseUser.uid);
+      
+      // Default user data - role will be loaded from Firestore
       var userData = {
         uid: firebaseUser.uid,
         email: firebaseUser.email,
         name: firebaseUser.displayName || '',
         company: '',
         phone: firebaseUser.phoneNumber || '',
-        role: 'user',
+        role: 'user', // Default role - will be updated from Firestore
         emailVerified: firebaseUser.emailVerified || true,
         createdAt: new Date().toISOString(),
         settings: { currency: 'EUR', language: 'pt', theme: 'light' }
       };
-      
-      this.saveSession(userData);
       
       // Load from users collection
       if (window.firebaseDb) {
@@ -226,25 +273,47 @@
           .then(function(doc) {
             if (doc.exists) {
               var data = doc.data();
-              for (var key in data) {
-                userData[key] = data[key];
+              // Preserve the role from Firestore, don't overwrite with default
+              var existingRole = data.role;
+              userData = Object.assign({}, userData, data);
+              
+              // If role exists in Firestore, use it; otherwise keep default 'user'
+              if (existingRole) {
+                userData.role = existingRole;
               }
-              self.currentUserData = userData;
-              self.saveSession(userData);
-              console.log('Dados carregados do Firestore:', userData.email);
+              
+              console.log('Dados carregados do Firestore:', userData.email, userData.company, 'Role:', userData.role);
               
               // Apply user theme preference
               if (userData.settings && userData.settings.theme) {
                 applyTheme(userData.settings.theme);
                 localStorage.setItem(THEME_KEY, userData.settings.theme);
               }
-              
-              // Sync data
-              if (SyncService && SyncService.syncFromFirebase) {
-                SyncService.syncFromFirebase(firebaseUser.uid);
-              }
             } else {
+              // New user - create document with default role 'user'
               self.createUserDocument(firebaseUser.uid, userData);
+              console.log('Novo documento criado para:', userData.email, 'Role:', userData.role);
+            }
+            
+            // Save session with fresh data
+            self.currentUserData = userData;
+            self.saveSession(userData);
+            
+            console.log('Session saved, chamando sincronizacao... Role:', userData.role);
+            
+            // Sync data from Firestore subcollections
+            if (SyncService && SyncService.syncFromFirebase) {
+              SyncService.syncFromFirebase(firebaseUser.uid).then(function() {
+                console.log('Sincronizacao completa!');
+                self.isLoadingUserData = false;
+                // Trigger auth ready after sync is complete
+                triggerAuthReady();
+              });
+            } else {
+              console.log('SyncService nao disponivel');
+              self.isLoadingUserData = false;
+              // Trigger auth ready
+              triggerAuthReady();
             }
           })
           .catch(function(error) {
@@ -252,10 +321,16 @@
             self.firebaseError = error.message;
             self.currentUserData = userData;
             self.saveSession(userData);
+            self.isLoadingUserData = false;
+            // Trigger auth ready even on error
+            triggerAuthReady();
           });
       } else {
         this.currentUserData = userData;
         this.saveSession(userData);
+        this.isLoadingUserData = false;
+        // Trigger auth ready when Firebase DB not available
+        triggerAuthReady();
       }
     },
     
@@ -282,25 +357,52 @@
         });
     },
     
-    saveSession: function(user) {
-      localStorage.setItem('upsen_current_user', JSON.stringify({
-        user: user,
-        loginTime: Date.now()
-      }));
+saveSession: function(user) {
+      try {
+        localStorage.setItem('upsen_current_user', JSON.stringify({
+          user: user,
+          loginTime: Date.now()
+        }));
+      } catch (e) {
+        console.warn('LocalStorage not available, using sessionStorage');
+        try {
+          sessionStorage.setItem('upsen_current_user', JSON.stringify({
+            user: user,
+            loginTime: Date.now()
+          }));
+        } catch (e2) {
+          console.error('Storage not available:', e2);
+        }
+      }
     },
     
-    getCurrentUser: function() {
+getCurrentUser: function() {
+      // First check Firebase Auth directly (this always works)
       if (window.firebaseAuth && window.firebaseAuth.currentUser) {
         return window.firebaseAuth.currentUser;
       }
       
+      // Try localStorage
       try {
         var session = localStorage.getItem('upsen_current_user');
         if (session) {
           var data = JSON.parse(session);
           if (data && data.user) return data.user;
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('LocalStorage not available');
+      }
+      
+      // Try sessionStorage as fallback
+      try {
+        var session = sessionStorage.getItem('upsen_current_user');
+        if (session) {
+          var data = JSON.parse(session);
+          if (data && data.user) return data.user;
+        }
+      } catch (e) {
+        console.warn('sessionStorage not available');
+      }
       
       return this.currentUserData || this.currentUser;
     },
@@ -309,7 +411,7 @@
       return this.getCurrentUser() !== null;
     },
     
-    login: function(email, password) {
+login: function(email, password) {
       var self = this;
       
       return new Promise(function(resolve) {
@@ -322,15 +424,9 @@
                 return;
               }
               
+              // loadUserData already handles sync, so we just resolve
               self.loadUserData(result.user);
-              
-              if (SyncService && SyncService.syncFromFirebase) {
-                SyncService.syncFromFirebase(result.user.uid).then(function() {
-                  resolve({ success: true, user: self.getCurrentUser(), message: 'Login realizado!' });
-                });
-              } else {
-                resolve({ success: true, user: self.getCurrentUser(), message: 'Login realizado!' });
-              }
+              resolve({ success: true, user: self.getCurrentUser(), message: 'Login realizado!' });
             })
             .catch(function(error) {
               resolve({ success: false, message: self.getErrorMessage(error.code) });
@@ -418,7 +514,7 @@
                 name: userData.name || '',
                 company: userData.company || '',
                 phone: userData.phone || '',
-                role: 'admin',
+                role: 'user',
                 emailVerified: false,
                 createdAt: new Date().toISOString(),
                 settings: { currency: 'EUR', language: 'pt', theme: 'light' }
@@ -494,7 +590,7 @@
       });
     },
     
-    loginWithGoogle: function() {
+loginWithGoogle: function() {
       var self = this;
       
       if (this.googleLoginInProgress) {
@@ -521,22 +617,21 @@
               name: user.displayName || '',
               company: '',
               phone: '',
-              role: 'admin',
+              role: 'user',
               emailVerified: true,
               createdAt: new Date().toISOString(),
               settings: { currency: 'EUR', language: 'pt', theme: 'light' }
             };
             
+            // Create user document in Firestore
             self.createUserDocument(user.uid, docData);
-            self.loadUserData(user);
             
-            if (SyncService && SyncService.syncFromFirebase) {
-              SyncService.syncFromFirebase(user.uid).then(function() {
-                resolve({ success: true, user: self.getCurrentUser(), message: 'Login com Google realizado!' });
-              });
-            } else {
-              resolve({ success: true, user: self.getCurrentUser(), message: 'Login com Google realizado!' });
-            }
+            // Save session immediately with user data
+            self.currentUserData = docData;
+            self.saveSession(docData);
+            
+            // Now resolve the promise AFTER saving session
+            resolve({ success: true, user: docData, message: 'Login com Google realizado!' });
           })
           .catch(function(error) {
             self.googleLoginInProgress = false;
@@ -884,6 +979,51 @@
       });
     }
   }
+  
+  // ========== AUTH READY CHECK ==========
+  // Global flag to track if auth is ready
+  window.isAuthReady = false;
+  window.authReadyCallbacks = [];
+  
+  function onAuthReady(callback) {
+    if (window.isAuthReady) {
+      // Auth already ready, execute callback immediately
+      setTimeout(callback, 0);
+    } else {
+      // Queue callback for later
+      window.authReadyCallbacks.push(callback);
+    }
+  }
+  
+  function triggerAuthReady() {
+    window.isAuthReady = true;
+    console.log('Auth is now ready!');
+    
+    // Execute all queued callbacks
+    window.authReadyCallbacks.forEach(function(callback) {
+      try {
+        callback();
+      } catch (e) {
+        console.warn('Error in auth ready callback:', e);
+      }
+    });
+    window.authReadyCallbacks = [];
+  }
+  
+  // Also expose waitForAuth for simpler usage
+  window.waitForAuth = function(callback) {
+    onAuthReady(callback);
+  };
+  
+  // Fallback: trigger auth ready after 3 seconds if not already ready
+  setTimeout(function() {
+    if (!window.isAuthReady) {
+      console.log('Auth fallback: triggering ready after timeout');
+      window.isAuthReady = true;
+      window.authReadyCallbacks.forEach(function(cb) { try { cb(); } catch(e) {} });
+      window.authReadyCallbacks = [];
+    }
+  }, 3000);
   
   // ========== INIT ==========
   AuthService.init();

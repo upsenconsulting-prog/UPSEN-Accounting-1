@@ -1,4 +1,4 @@
- // invoice-issued.js - Sistema de facturas emitidas
+// invoice-issued.js - Sistema de facturas emitidas com IVA e Importação em massa
 
 function $(id) {
   return document.getElementById(id);
@@ -27,15 +27,34 @@ function markActivePage() {
 
 var issuedChart = null;
 
+// ========== USER ID - CORRIGIDO ==========
 function getUserId() {
+  // Try to get from AuthService/Firebase
+  try {
+    var auth = window.AuthService || window.Auth;
+    if (auth && auth.getCurrentUser) {
+      var user = auth.getCurrentUser();
+      if (user && user.uid) return user.uid;
+    }
+  } catch (e) {}
+  
+  // Try session storage
   try {
     var session = localStorage.getItem('upsen_current_user');
     if (session) {
       var data = JSON.parse(session);
-      if (data && data.user) return data.user.uid || data.user.id || 'demo';
+      if (data && data.user) {
+        return data.user.uid || data.user.id || 'demo';
+      }
     }
   } catch (e) {}
+  
   return 'demo';
+}
+
+function isLoggedIn() {
+  var userId = getUserId();
+  return userId && userId !== 'demo' && userId !== 'unknown';
 }
 
 function getDataKey() {
@@ -65,13 +84,24 @@ function getAllInvoicesIssued() {
 
 function addInvoiceIssued(invoice) {
   var invoices = getUserInvoicesIssued();
+  
+  // Calcular IVA
+  var baseImponible = Number(invoice.amount || 0);
+  var ivaRate = Number(invoice.ivaRate || 0);
+  var ivaAmount = baseImponible * (ivaRate / 100);
+  var totalAmount = baseImponible + ivaAmount;
+  
   var newInvoice = {
     id: generateId(),
     invoiceNumber: invoice.invoiceNumber || '',
     customer: invoice.customer || '',
+    customerNif: invoice.customerNif || '',
     invoiceDate: invoice.invoiceDate || '',
     dueDate: invoice.dueDate || '',
-    amount: Number(invoice.amount || 0),
+    amount: baseImponible,
+    ivaRate: ivaRate,
+    ivaAmount: ivaAmount,
+    totalAmount: totalAmount,
     state: invoice.state || 'Pendiente',
     description: invoice.description || '',
     createdAt: new Date().toISOString()
@@ -87,18 +117,33 @@ function addInvoiceIssued(invoice) {
 
 function saveInvoiceIssuedToFirebase(invoice) {
   var userId = getUserId();
-  if (!userId || userId === 'unknown' || userId === 'demo') return;
-  if (!window.firebaseDb) return;
+  console.log('=== SAVE INVOICE ISSUED TO FIREBASE ===');
+  console.log('userId:', userId);
   
-  window.firebaseDb.collection('companies').doc(userId).collection('invoicesIssued').add({
+  // Sempre salvar no Firebase se não for demo
+  if (!userId || userId === 'unknown' || userId === 'demo') {
+    console.log('Utilizador não está logado, salvando apenas localmente');
+    return;
+  }
+  
+  if (!window.firebaseDb) {
+    console.log('Firebase não disponível, salvando apenas localmente');
+    return;
+  }
+  
+  window.firebaseDb.collection('users').doc(userId).collection('documents').doc('invoicesIssued').collection('items').add({
     id: invoice.id,
     invoiceNumber: invoice.invoiceNumber,
     customer: invoice.customer,
+    customerNif: invoice.customerNif || '',
     invoiceDate: invoice.invoiceDate,
     dueDate: invoice.dueDate,
     amount: invoice.amount,
+    ivaRate: invoice.ivaRate || 0,
+    ivaAmount: invoice.ivaAmount || 0,
+    totalAmount: invoice.totalAmount || invoice.amount,
     state: invoice.state,
-    description: invoice.description,
+    description: invoice.description || '',
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   }).then(function() {
     console.log('✅ Fatura emitida salva no Firebase');
@@ -123,10 +168,10 @@ function deleteInvoiceIssued(id) {
 
 function deleteInvoiceIssuedFromFirebase(id) {
   var userId = getUserId();
-  if (!userId || userId === 'unknown' || userId === 'demo') return;
+  if (!userId || userId === 'unknown') return;
   if (!window.firebaseDb) return;
   
-  window.firebaseDb.collection('companies').doc(userId).collection('invoicesIssued')
+  window.firebaseDb.collection('users').doc(userId).collection('documents').doc('invoicesIssued').collection('items')
     .where('id', '==', id)
     .get()
     .then(function(snapshot) {
@@ -191,8 +236,22 @@ async function renderSummaryCards() {
   
   if ($('pendingTotal')) $('pendingTotal').textContent = moneyEUR(pendingTotal);
   if ($('overdueTotal')) $('overdueTotal').textContent = moneyEUR(overdueTotal);
-  if ($('monthlyCount')) $('monthlyCount').textContent = monthlyCount + ' facturas';
-  if ($('averageAmount')) $('averageAmount').textContent = moneyEUR(avgAmount);
+  if ($('monthlyCount')) {
+    var monthlyCountSpan = $('monthlyCount').querySelector('span');
+    if (monthlyCountSpan) {
+      monthlyCountSpan.textContent = monthlyCount + ' facturas';
+    } else {
+      $('monthlyCount').textContent = monthlyCount + ' facturas';
+    }
+  }
+  if ($('averageAmount')) {
+    var avgAmountSpan = $('averageAmount').querySelector('span');
+    if (avgAmountSpan) {
+      avgAmountSpan.textContent = moneyEUR(avgAmount);
+    } else {
+      $('averageAmount').textContent = moneyEUR(avgAmount);
+    }
+  }
 }
 
 async function renderChart() {
@@ -258,7 +317,7 @@ async function renderInvoices() {
   tbody.innerHTML = '';
 
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay facturas emitidas.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No hay facturas emitidas.</td></tr>';
     return;
   }
 
@@ -275,12 +334,16 @@ async function renderInvoices() {
       statusText = 'Vencida';
     }
     
+    var ivaDisplay = inv.ivaRate > 0 ? inv.ivaRate + '%' : '-';
     var tr = document.createElement('tr');
     tr.innerHTML = '<td>' + (inv.invoiceNumber || '-') + '</td>' +
       '<td>' + (inv.customer || '-') + '</td>' +
       '<td>' + formatDate(inv.invoiceDate) + '</td>' +
       '<td>' + formatDate(inv.dueDate) + '</td>' +
       '<td>' + moneyEUR(inv.amount) + '</td>' +
+      '<td>' + ivaDisplay + '</td>' +
+      '<td>' + moneyEUR(inv.ivaAmount || 0) + '</td>' +
+      '<td>' + moneyEUR(inv.totalAmount || inv.amount) + '</td>' +
       '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>' +
       '<td class="action-buttons">' +
         '<button class="btn btn-primary btn-sm py-1 px-2 me-1" style="font-size:0.75rem" data-view="' + inv.id + '"><i class="fas fa-eye"></i></button>' +
@@ -335,12 +398,17 @@ window.viewInvoice = function(id) {
       '<div class="col-md-6"><strong>Numero:</strong> ' + (invoice.invoiceNumber || '-') + '</div>' +
       '<div class="col-md-6"><strong>Cliente:</strong> ' + (invoice.customer || '-') + '</div>' +
       '</div>' +
+      (invoice.customerNif ? '<div class="row mb-3"><div class="col-md-6"><strong>NIF Cliente:</strong> ' + invoice.customerNif + '</div></div>' : '') +
       '<div class="row mb-3">' +
       '<div class="col-md-6"><strong>Fecha:</strong> ' + formatDate(invoice.invoiceDate) + '</div>' +
       '<div class="col-md-6"><strong>Vence:</strong> ' + formatDate(invoice.dueDate) + '</div>' +
       '</div>' +
       '<div class="row mb-3">' +
-      '<div class="col-md-6"><strong>Importe:</strong> <span class="fs-4 fw-bold">' + moneyEUR(invoice.amount) + '</span></div>' +
+      '<div class="col-md-6"><strong>Base Imponible:</strong> <span class="fs-5 fw-bold">' + moneyEUR(invoice.amount) + '</span></div>' +
+      '<div class="col-md-6"><strong>IVA (' + (invoice.ivaRate || 0) + '%):</strong> ' + moneyEUR(invoice.ivaAmount || 0) + '</div>' +
+      '</div>' +
+      '<div class="row mb-3">' +
+      '<div class="col-md-6"><strong>Total:</strong> <span class="fs-4 fw-bold text-success">' + moneyEUR(invoice.totalAmount || invoice.amount) + '</span></div>' +
       '<div class="col-md-6"><strong>Estado:</strong> <span class="badge bg-primary">' + (statusLabels[invoice.state] || 'Pendiente') + '</span></div>' +
       '</div>' +
       '<div class="text-muted mt-3 text-end"><small>Creado: ' + new Date(invoice.createdAt || '').toLocaleString() + '</small></div>';
@@ -358,9 +426,11 @@ function saveInvoiceIssued() {
 
   var invoiceNumber = "";
   var customer = "";
+  var customerNif = "";
   var invoiceDate = "";
   var dueDate = "";
   var amount = "";
+  var ivaRate = "";
   var state = "Pendiente";
   
   var inputs = form.querySelectorAll('input, select');
@@ -368,9 +438,11 @@ function saveInvoiceIssued() {
     var name = inputs[i].name || inputs[i].getAttribute('name');
     if (name === 'invoiceNumber') invoiceNumber = inputs[i].value;
     if (name === 'customer') customer = inputs[i].value;
+    if (name === 'customerNif') customerNif = inputs[i].value;
     if (name === 'invoiceDate') invoiceDate = inputs[i].value;
     if (name === 'dueDate') dueDate = inputs[i].value;
     if (name === 'amount') amount = inputs[i].value;
+    if (name === 'ivaRate') ivaRate = inputs[i].value;
     if (name === 'state') state = inputs[i].value;
   }
 
@@ -382,9 +454,11 @@ function saveInvoiceIssued() {
   addInvoiceIssued({
     invoiceNumber: invoiceNumber,
     customer: customer,
+    customerNif: customerNif,
     invoiceDate: invoiceDate,
     dueDate: dueDate,
     amount: amount,
+    ivaRate: ivaRate || 0,
     state: state
   });
 
@@ -394,8 +468,6 @@ function saveInvoiceIssued() {
     var modal = bootstrap.Modal.getInstance(modalEl);
     if (modal) {
       modal.hide();
-    } else {
-      new bootstrap.Modal(modalEl).hide();
     }
   }
 
@@ -438,33 +510,38 @@ function openNewInvoiceModal() {
 document.addEventListener('DOMContentLoaded', async function() {
   markActivePage();
   
-  // New Invoice Button
-  var newInvoiceBtn = document.getElementById('newInvoiceBtn');
-  if (newInvoiceBtn) {
-    newInvoiceBtn.addEventListener('click', function() {
-      openNewInvoiceModal();
-    });
-  }
-  
-  // Save Button
-  var saveBtn = document.getElementById('saveInvoiceIssuedBtn');
-  if (saveBtn) {
-    saveBtn.addEventListener('click', function() {
-      saveInvoiceIssued();
-    });
-  }
-  
-  // Refresh button
-  var refreshBtn = document.getElementById('refreshBtn');
-  if (refreshBtn) {
-    refreshBtn.addEventListener('click', function() {
-      location.reload();
-    });
-  }
-  
-  renderInvoices();
-  renderChart();
-  renderSummaryCards();
+  // Wait for auth to be ready before loading data
+  window.waitForAuth(function() {
+    console.log('Auth ready, initializing invoice issued page...');
+    
+    // New Invoice Button
+    var newInvoiceBtn = document.getElementById('newInvoiceBtn');
+    if (newInvoiceBtn) {
+      newInvoiceBtn.addEventListener('click', function() {
+        openNewInvoiceModal();
+      });
+    }
+    
+    // Save Button
+    var saveBtn = document.getElementById('saveInvoiceIssuedBtn');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', function() {
+        saveInvoiceIssued();
+      });
+    }
+    
+    // Refresh button
+    var refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', function() {
+        location.reload();
+      });
+    }
+    
+    renderInvoices();
+    renderChart();
+    renderSummaryCards();
+  });
 });
 
 // ========== EXPORTAR FACTURAS ==========
@@ -620,5 +697,108 @@ function exportToExcel(list) {
   link.download = 'facturas_emitidas.xls';
   link.click();
   alert('Excel descargado correctamente!');
+}
+
+// ========== TEMPLATE CSV ==========
+function downloadIssuedInvoiceTemplate() {
+  var template = 'Numero,Cliente,NIF,Fecha,Vence,Base Imponible,IVA Rate,Estado\n';
+  template += 'INV-2025-001,Cliente SL,12345678A,2025-01-15,2025-02-15,1000.00,21,Pendiente\n';
+  template += 'INV-2025-002,Empresa SA,87654321B,2025-01-20,2025-02-20,2500.00,21,Pagada\n';
+  
+  var blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
+  var link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'template_facturas_emitidas.csv';
+  link.click();
+  alert('Template descargado! Use este formato para importar facturas.');
+}
+
+// ========== IMPORTAR FACTURAS EMITIDAS ==========
+function importInvoicesFromCSV(csvContent) {
+  var lines = csvContent.split('\n');
+  if (lines.length < 2) {
+    alert('CSV vacío o sin datos.');
+    return 0;
+  }
+  
+  var headers = lines[0].split(',').map(function(h) { return h.trim().toLowerCase().replace(/"/g, ''); });
+  var importedCount = 0;
+  
+  for (var i = 1; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line) continue;
+    
+    // Parse CSV line (handling quoted values)
+    var values = [];
+    var current = '';
+    var inQuotes = false;
+    for (var j = 0; j < line.length; j++) {
+      var char = line[j];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        values.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    values.push(current.trim());
+    
+    // Map values to fields
+    var invoice = {};
+    for (var k = 0; k < headers.length && k < values.length; k++) {
+      var header = headers[k].replace(/"/g, '');
+      var value = values[k].replace(/"/g, '');
+      
+      if (header.includes('numero') || header.includes('number')) invoice.invoiceNumber = value;
+      else if (header.includes('cliente') || header.includes('customer')) invoice.customer = value;
+      else if (header.includes('nif') || header.includes('nit')) invoice.customerNif = value;
+      else if (header.includes('fecha') || header.includes('date')) invoice.invoiceDate = value;
+      else if (header.includes('vence') || header.includes('due')) invoice.dueDate = value;
+      else if (header.includes('base') || header.includes('importe') || header.includes('amount')) invoice.amount = parseFloat(value) || 0;
+      else if (header.includes('iva') || header.includes('rate') || header.includes('tax')) invoice.ivaRate = parseFloat(value) || 0;
+      else if (header.includes('estado') || header.includes('state')) invoice.state = value;
+    }
+    
+    if (invoice.invoiceNumber && invoice.customer && invoice.amount) {
+      addInvoiceIssued(invoice);
+      importedCount++;
+    }
+  }
+  
+  return importedCount;
+}
+
+function handleFileImportIssued(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var content = e.target.result;
+    var count = 0;
+    
+    if (file.name.endsWith('.csv')) {
+      count = importInvoicesFromCSV(content);
+    } else if (file.name.endsWith('.xls') || file.name.endsWith('.xlsx')) {
+      alert('Para Excel, por favor convierte a CSV primero.');
+    } else {
+      alert('Formato no soportado. Usa CSV.');
+    }
+    
+    if (count > 0) {
+      alert(count + ' facturas importadas con éxito!');
+      renderInvoices();
+      renderChart();
+      renderSummaryCards();
+    } else {
+      alert('Ninguna factura importada. Verifica el formato del CSV.');
+    }
+    
+    // Reset file input
+    event.target.value = '';
+  };
+  reader.readAsText(file);
 }
 
