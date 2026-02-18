@@ -607,14 +607,18 @@ function initDashboard() {
   var auth = window.AuthService || window.Auth;
   var user = auth ? auth.getCurrentUser() : null;
   console.log('Usuario atual:', user ? (user.email || user.name) : 'null');
+  console.log('Firebase Auth:', window.firebaseAuth ? 'disponivel' : 'nao disponivel');
+  console.log('Firebase DB:', window.firebaseDb ? 'disponivel' : 'nao disponivel');
   
   var expenses = getUserExpenses();
   var invoicesIssued = getUserInvoicesIssued();
   var invoicesReceived = getUserInvoicesReceived();
   
-  console.log('Expenses:', expenses.length, 'itens');
-  console.log('Invoices Issued:', invoicesIssued.length, 'itens');
-  console.log('Invoices Received:', invoicesReceived.length, 'itens');
+  console.log('Expenses no localStorage:', expenses.length, 'itens');
+  console.log('Invoices Issued no localStorage:', invoicesIssued.length, 'itens');
+  console.log('Invoices Received no localStorage:', invoicesReceived.length, 'itens');
+  
+  // Debug info removed - keeping the console logs for debugging purposes only
   
   var now = new Date();
   var y = now.getFullYear();
@@ -669,34 +673,74 @@ function checkAuthAndInit() {
   
   var auth = window.AuthService || window.Auth;
   
+  // Primeiro verificar Firebase Auth diretamente
+  var firebaseUser = null;
+  if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+    firebaseUser = window.firebaseAuth.currentUser;
+    console.log('Firebase Auth user found:', firebaseUser.email);
+  }
+  
+  // Também verificar sessão no localStorage
+  var hasLocalSession = false;
+  try {
+    var session = localStorage.getItem('upsen_current_user');
+    if (session) {
+      var data = JSON.parse(session);
+      if (data && data.user) {
+        hasLocalSession = true;
+        console.log('Local session found:', data.user.email);
+      }
+    }
+  } catch (e) {}
+  
+  // Se temos utilizador do Firebase ou sessão local, inicializar
+  if (firebaseUser || hasLocalSession) {
+    console.log('Auth ready, initializing dashboard');
+    initDashboard();
+    return;
+  }
+  
+  // Se não temos AuthService ainda, esperar mais
   if (!auth || typeof auth.isLoggedIn !== 'function') {
     if (authCheckCount < maxAuthChecks) {
-      console.log('Esperando Auth...');
+      console.log('Waiting for Auth... (attempt ' + authCheckCount + ')');
       setTimeout(checkAuthAndInit, 100);
     } else {
-      console.error('Auth no encontrado');
+      console.error('Auth not found');
       window.location.href = '../login.html';
     }
     return;
   }
   
+  // Tentar com AuthService
   var user = auth.getCurrentUser();
   
   if (user) {
-    console.log('Auth listo, usuario:', user.email || user.name);
+    console.log('AuthService user found:', user.email);
     initDashboard();
     return;
   }
   
   if (authCheckCount < maxAuthChecks) {
-    console.log('Esperando Auth... (tentativa ' + authCheckCount + ')');
+    console.log('Waiting for Auth... (attempt ' + authCheckCount + ')');
     setTimeout(checkAuthAndInit, 100);
   } else {
-    console.log('Timeout esperando Auth, redirigiendo a login...');
+    console.log('Timeout waiting for Auth, redirecting to login...');
     window.location.href = '../login.html';
   }
 }
 
-// Iniciar
-checkAuthAndInit();
+// Iniciar com um pequeno atraso para garantir que todos os scripts estão carregados
+// Usar o novo sistema waitForAuth do auth-system.js
+setTimeout(function() {
+  window.waitForAuth(function() {
+    console.log('Auth ready via waitForAuth, initializing dashboard...');
+    checkAuthAndInit();
+  });
+  
+  // Também iniciar checkAuthAndInit como fallback após um tempo
+  setTimeout(function() {
+    checkAuthAndInit();
+  }, 3000);
+}, 500);
 console.log('frontPageDashboard.js carregado');

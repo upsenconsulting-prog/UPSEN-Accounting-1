@@ -30,7 +30,7 @@
     .form-label { font-weight: 500; color: #495057; margin-bottom: 8px; }
     .form-control, .form-select { border-radius: 10px; padding: 12px 15px; border: 2px solid #e9ecef; transition: all 0.3s; font-size: 0.95em; }
     .form-control:focus, .form-select:focus { border-color: #2a4d9c; box-shadow: 0 0 0 3px rgba(42, 77, 156, 0.1); }
-    .btn { border-radius: 10px; padding: 12px 25px; font-weight: 500; transition: all 0.3s; border: none; cursor: pointer; }
+    .btn { border-radius: 8px; padding: 8px 16px; font-weight: 500; transition: all 0.3s; border: none; font-size: 0.9rem; }
     .btn-primary { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); color: white; }
     .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(42, 77, 156, 0.4); color: white; }
     .btn-success { background: linear-gradient(135deg, #1abc9c, #16a085); color: white; }
@@ -168,11 +168,19 @@ function showAlert(message, type) {
   }
 }
 function getUser() {
+  // First check AuthService
   var auth = window.AuthService || window.Auth;
-  if (auth && auth.getCurrentUser) {
+  if (auth && typeof auth.getCurrentUser === 'function') {
     var user = auth.getCurrentUser();
     if (user) return user;
   }
+  
+  // Then check Firebase Auth directly
+  if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+    return window.firebaseAuth.currentUser;
+  }
+  
+  // Finally check localStorage
   try {
     var session = localStorage.getItem('upsen_current_user');
     if (session) {
@@ -180,6 +188,7 @@ function getUser() {
       if (data && data.user) return data.user;
     }
   } catch (e) {}
+  
   return null;
 }
 function getUserId() {
@@ -189,9 +198,12 @@ function getUserId() {
 function loadSettings() {
   var user = getUser();
   if (!user) {
-    showAlert('Inicia sesion primero.', 'error');
+    console.log('loadSettings: Utilizador não encontrado');
+    showAlert('Inicia sesión primero.', 'error');
     return;
   }
+  
+  console.log('loadSettings: Utilizador encontrado:', user.email);
   currentUser = user;
   var nameEl = getEl('userNameSidebar');
   var emailEl = getEl('userEmailSidebar');
@@ -340,7 +352,59 @@ function doLogout() {
   }
 }
 document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(function() { loadSettings(); }, 300);
+  // Wait for auth to be ready with proper timing
+  var checkAuth = function() {
+    var auth = window.AuthService || window.Auth;
+    
+    // Check if Firebase is configured and ready
+    if (window.firebaseAuth) {
+      // Use a small delay to ensure Firebase is fully initialized
+      setTimeout(function() {
+        // Check if there's a current user in Firebase
+        var firebaseUser = window.firebaseAuth.currentUser;
+        if (firebaseUser) {
+          console.log('Firebase Auth user detected:', firebaseUser.email);
+          // Also check if session is saved in localStorage
+          var session = localStorage.getItem('upsen_current_user');
+          if (session) {
+            try {
+              var data = JSON.parse(session);
+              if (data && data.user) {
+                console.log('User from localStorage:', data.user.email);
+                loadSettings();
+                return;
+              }
+            } catch (e) {}
+          }
+          // If no localStorage but Firebase user exists, load settings anyway
+          loadSettings();
+        } else {
+          // No Firebase user, check localStorage
+          var session = localStorage.getItem('upsen_current_user');
+          if (session) {
+            try {
+              var data = JSON.parse(session);
+              if (data && data.user) {
+                console.log('User from localStorage:', data.user.email);
+                loadSettings();
+                return;
+              }
+            } catch (e) {}
+          }
+          // Still no user - show alert
+          console.log('No user found');
+          loadSettings(); // This will show the alert
+        }
+      }, 500); // Wait 500ms for Firebase to initialize
+    } else if (auth && typeof auth.getCurrentUser === 'function') {
+      setTimeout(function() { loadSettings(); }, 500);
+    } else {
+      setTimeout(checkAuth, 100);
+    }
+  };
+  
+  // Start checking after a short delay to allow scripts to load
+  setTimeout(checkAuth, 500);
 });
 </script>
 </body>

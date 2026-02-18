@@ -36,7 +36,7 @@
     .info-value { font-weight: 600; color: #2c3e50; font-size: 1em; }
     .form-control, .form-select { border-radius: 10px; padding: 12px 15px; border: 2px solid #e9ecef; transition: all 0.3s; }
     .form-control:focus, .form-select:focus { border-color: #2a4d9c; box-shadow: 0 0 0 4px rgba(42, 77, 156, 0.1); }
-    .btn { border-radius: 10px; padding: 12px 25px; font-weight: 500; transition: all 0.3s; border: none; }
+    .btn { border-radius: 8px; padding: 8px 16px; font-weight: 500; transition: all 0.3s; border: none; font-size: 0.9rem; }
     .btn-primary { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); color: white; }
     .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(42, 77, 156, 0.4); color: white; }
     .btn-success { background: linear-gradient(135deg, #1abc9c, #16a085); color: white; }
@@ -246,15 +246,58 @@ function formatDate(ds) { if (!ds) return '-'; var d = new Date(ds); return d.to
 document.addEventListener('DOMContentLoaded', function() {
   editModal = new bootstrap.Modal(document.getElementById('editProfileModal'));
   passwordModal = new bootstrap.Modal(document.getElementById('passwordModal'));
+  
   function checkAuth() {
-    if (window.AuthSystem && window.AuthSystem.isLoggedIn && window.AuthSystem.isLoggedIn()) { loadProfile(); hideLoading(); }
-    else {
+    // Check Firebase Auth directly first
+    var firebaseUser = null;
+    if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+      firebaseUser = window.firebaseAuth.currentUser;
+      console.log('Firebase Auth user found:', firebaseUser.email);
+    }
+    
+    // Check localStorage session
+    var hasLocalSession = false;
+    try {
       var s = localStorage.getItem('upsen_current_user');
-      if (s) { try { var d = JSON.parse(s); if (d && d.user) { loadProfileFromLocal(d.user); hideLoading(); return; } } catch (e) {} }
+      if (s) {
+        var d = JSON.parse(s);
+        if (d && d.user) {
+          hasLocalSession = true;
+          console.log('Local session found:', d.user.email);
+        }
+      }
+    } catch (e) {}
+    
+    // If we have Firebase user or local session, load profile
+    if (firebaseUser || hasLocalSession) {
+      if (window.AuthSystem && window.AuthSystem.isLoggedIn && window.AuthSystem.isLoggedIn()) {
+        loadProfile();
+      } else if (hasLocalSession) {
+        var s = localStorage.getItem('upsen_current_user');
+        if (s) {
+          try {
+            var d = JSON.parse(s);
+            if (d && d.user) {
+              loadProfileFromLocal(d.user);
+            }
+          } catch (e) {}
+        }
+      }
+      hideLoading();
+      return;
+    }
+    
+    // Wait for Auth
+    if (window.AuthSystem && window.AuthSystem.isLoggedIn && window.AuthSystem.isLoggedIn()) { 
+      loadProfile(); 
+      hideLoading(); 
+    }
+    else {
       setTimeout(checkAuth, 100);
     }
   }
-  setTimeout(checkAuth, 200);
+  
+  setTimeout(checkAuth, 500);
 });
 function loadProfileFromLocal(user) {
   var initials = (user.name || user.email || 'U').substring(0,2).toUpperCase();
@@ -365,7 +408,17 @@ function exportDataPDF() {
   doc.save('upsen_perfil.pdf');
   showAlert('alertMessage', 'PDF exportado!', 'success');
 }
-function deleteAccount() { if (confirm('Eliminar cuenta? Esta accion no se puede deshacer.')) { AuthSystem.deleteAccount(); window.location.href = '../login.html'; } }
+function deleteAccount() { 
+  if (confirm('Eliminar cuenta? Esta accion no se puede deshacer.')) { 
+    AuthSystem.deleteAccount().then(function(result) {
+      if (result && result.success) {
+        window.location.href = '../login.html';
+      } else {
+        showAlert('alertMessage', result.message || 'Error al eliminar cuenta', 'error');
+      }
+    });
+  } 
+}
 function logout() { if (confirm('Cerrar sesion?')) { AuthSystem.logout(); window.location.href = '../login.html'; } }
 </script>
 </body>

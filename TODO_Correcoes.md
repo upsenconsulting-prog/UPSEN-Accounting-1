@@ -1,62 +1,42 @@
-# TODO - Correções de Bugs UPSEN Accounting
+# Plano de Correções - UPSEN Accounting
 
-## ✅ CORREÇÕES CONCLUÍDAS
+## Problemas Identificados e Correções Aplicadas:
 
-### 1. Modal de Gastos (PRIORIDADE ALTA)
-- ✅ expense.html - Bootstrap JS adicionado
-- ✅ expense.html - Modal inicializado corretamente com `new bootstrap.Modal()`
-- ✅ expense.html - Botão de logout na sidebar com confirmação
-- ✅ expense.js - Adicionada função viewExpense() e botão "Ver"
-- ✅ expense.html - Adicionado modal "Ver Gasto"
+### 1. ✅ auth-system.js - Problema com Role
+- **Problema:** O role estava sempre a ser definido como 'user' hardcoded, sem preservar o role do Firestore
+- **Correção:** Modificado loadUserData para carregar e preservar o role do Firestore
+- **Ficheiro:** public/shared/auth-system.js
 
-### 2. Facturas Emitidas
-- ✅ invoice-issued.html - Botão logout na sidebar
-- ✅ invoice-issued.html - Modal Ver Factura adicionado
-- ✅ invoice-issued.js - Função viewInvoice() adicionada
-- ✅ invoice-issued.js - Botões: Ver, Pagar, Eliminar
+### 2. ✅ invoice-issued.js - Problema com monthlyCount
+- **Problema:** O elemento monthlyCount usa `<span>0</span>` mas o JS tentava fazer `.textContent` no elemento pai
+- **Correção:** Corrigida a função renderSummaryCards para verificar se existe o span
+- **Ficheiro:** public/Invoice-issued/invoice-issued.js
 
-### 3. Facturas Recibidas
-- ✅ Invoice_recieved.html - Botão logout na sidebar
-- ✅ Invoice_recieved.html - Modal Ver Factura adicionado
-- ✅ Invoice_recieved.js - Função viewInvoice() adicionada
-- ✅ Invoice_recieved.js - Botões: Ver, Pagar, Eliminar
+### 3. ✅ invoice-issued.html - viewInvoiceModal não exposto
+- **Problema:** O modal não estava disponível globalmente para a função viewInvoice()
+- **Correção:** Adicionado window.viewInvoiceModal = viewInvoiceModal
+- **Ficheiro:** public/Invoice-issued/invoice-issued.html
 
-### 4. Todas as páginas com Logout fixo na Sidebar
-- ✅ expense.html
-- ✅ invoice-issued.html
-- ✅ invoice-recieved.html
-- ✅ frontPage.html
-- ✅ budget.html
-- ✅ profile.html
-- ✅ settings.html
+### 4. ✅ Invoice_recieved.html - viewInvoiceModal não exposto
+- **Problema:** O modal não estava disponível globalmente
+- **Correção:** Adicionado script para expor ao window
+- **Ficheiro:** public/Invoice_recieved/Invoice_recieved.html
 
-### 5. Funcionalidades adicionadas
-- ✅ Botão "Ver" em todas as tabelas (Gastos, Facturas Emitidas, Facturas Recibidas)
-- ✅ Confirmação ao fazer logout: `confirm('¿Cerrar sesión?')`
-- ✅ Modais de visualização de detalhes
+### 5. ✅ expense.html - viewExpenseModal não exposto
+- **Problema:** O modal não estava disponível globalmente para a função viewExpense()
+- **Correção:** Adicionado window.viewExpenseModal = viewExpenseModal
+- **Ficheiro:** public/expense/expense.html
 
-## Ficheiros Modificados:
-1. `public/expense/expense.html` - Modal fixo, logout, modal Ver
-2. `public/expense/expense.js` - Função viewExpense()
-3. `public/Invoice-issued/invoice-issued.html` - Logout, modal Ver
-4. `public/Invoice-issued/invoice-issued.js` - viewInvoice()
-5. `public/Invoice_recieved/Invoice_recieved.html` - Logout, modal Ver
-6. `public/Invoice_recieved/Invoice_recieved.js` - viewInvoice()
-7. `public/frontPage/frontPage.html` - Logout na sidebar
-8. `public/budgetPage/budget.html` - Logout na sidebar
-9. `public/profile/profile.html` - Confirmação logout
-10. `public/profile/settings.html` - Confirmação logout
+### 6. ✅ Firebase Collections - Script de Inicialização
+- **Problema:** As coleções não estavam a ser criadas automaticamente
+- **Correção:** Criado script init-firebase-collections.js
+- **Ficheiro:** public/shared/init-firebase-collections.js (NOVO)
 
-## Problemas Resolvidos:
-1. ✅ Modal de gastos AGORA ABRE e guarda dados
-2. ✅ Botão "cerrar sesión" aparece FIXO na barra lateral em todas as páginas
-3. ✅ Confirmação ao fazer logout
-4. ✅ Botão "Ver" para visualizar detalhes em gastos e facturas
+## Ficheiros Editados:
+1. public/shared/auth-system.js
+2. public/Invoice-issued/invoice-issued.js
+3. public/Invoice-issued/invoice-issued.html
+4. public/Invoice_recieved/Invoice_recieved.html
+5. public/expense/expense.html
+6. public/shared/init-firebase-collections.js (NOVO)
 
-## Para Testar:
-1. Abrir `public/expense/expense.html`
-2. Clicar em "Nuevo gasto" - O modal deve abrir
-3. Preencher os campos e clicar "Guardar" - O gasto deve ser salvo
-4. Clicar em "Ver" para ver os detalhes
-5. Verificar que "Cerrar sesión" aparece na sidebar
-6. Testar as outras páginas (facturas emitidas/recibidas)

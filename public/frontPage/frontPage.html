@@ -106,7 +106,7 @@
     .kpi-stat.pending { color: #f39c12; }
     .kpi-stat.overdue { color: #e74c3c; }
     
-    .btn { border-radius: 10px; padding: 12px 25px; font-weight: 500; transition: all 0.3s; border: none; }
+    .btn { border-radius: 8px; padding: 8px 16px; font-weight: 500; transition: all 0.3s; border: none; font-size: 0.9rem; }
     .btn-primary { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); color: white; }
     .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(42, 77, 156, 0.4); color: white; }
     .btn-secondary { background: #e9ecef; border: none; color: #495057; }
@@ -203,6 +203,11 @@
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="../shared/firebase-config.js"></script>
   <script src="../shared/auth-system.js"></script>
 </head>
 <body>
@@ -242,6 +247,8 @@
         <i class="fas fa-info-circle"></i>
         <span>Haz clic en los enlaces del menú lateral para navegar.</span>
       </div>
+
+      <div id="debugInfo" class="alert alert-info mb-3" style="display:none;"></div>
 
       <div class="row mb-4">
         <div class="col-md-6 mb-3">

@@ -89,6 +89,7 @@
     .summary-icon.green { background: linear-gradient(135deg, rgba(26, 188, 156, 0.15), rgba(22, 160, 133, 0.15)); color: #1abc9c; }
     .summary-icon.orange { background: linear-gradient(135deg, rgba(243, 156, 18, 0.15), rgba(230, 126, 34, 0.15)); color: #f39c12; }
     .summary-icon.purple { background: linear-gradient(135deg, rgba(155, 89, 182, 0.15), rgba(142, 68, 173, 0.15)); color: #9b59b6; }
+    .summary-icon.red { background: linear-gradient(135deg, rgba(231, 76, 60, 0.15), rgba(192, 57, 43, 0.15)); color: #e74c3c; }
     
     .summary-card h3 { font-size: 0.9em; color: #6c757d; margin-bottom: 10px; font-weight: 500; }
     .summary-card p { font-size: 1.8em; font-weight: 700; color: #2c3e50; margin: 0; }
@@ -104,7 +105,7 @@
     }
     .section-title i { color: #1abc9c; }
     
-    .btn { border-radius: 10px; padding: 12px 25px; font-weight: 500; transition: all 0.3s; border: none; }
+    .btn { border-radius: 8px; padding: 8px 16px; font-weight: 500; transition: all 0.3s; border: none; font-size: 0.9rem; }
     .btn-primary { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); color: white; }
     .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(42, 77, 156, 0.4); color: white; }
     .btn-success { background: linear-gradient(135deg, #1abc9c, #16a085); color: white; }
@@ -113,6 +114,12 @@
     .btn-secondary:hover { background: #dee2e6; transform: translateY(-2px); }
     .btn-danger { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
     .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4); color: white; }
+    .btn-warning { background: #f39c12; border: none; color: white; }
+    .btn-warning:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(243, 156, 18, 0.4); color: white; }
+    .btn-info { background: #17a2b8; border: none; color: white; }
+    .btn-info:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(23, 162, 184, 0.4); color: white; }
+    
+    .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
     
     .form-control, .form-select {
       border-radius: 10px;
@@ -149,6 +156,14 @@
     .modal-footer { padding: 20px 25px; border-top: 1px solid #e9ecef; background: #f6f8fc; }
     
     .chart-container { position: relative; height: 300px; }
+    
+    .iva-badge {
+      background: #e74c3c;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.85em;
+    }
     
     @media (max-width: 992px) {
       .sidebar { position: relative; width: 100%; min-height: auto; }
@@ -188,7 +203,10 @@
           <button class="btn btn-primary" id="newExpenseBtn">
             <i class="fas fa-plus me-2"></i>Nuevo gasto
           </button>
-          <button class="btn btn-success" id="btnExport">
+          <button class="btn btn-success" id="btnImport">
+            <i class="fas fa-file-import me-2"></i>Importar
+          </button>
+          <button class="btn btn-info" id="btnExport">
             <i class="fas fa-file-export me-2"></i>Exportar
           </button>
           <button class="btn btn-secondary" id="refreshBtn">
@@ -198,21 +216,28 @@
       </div>
 
       <div class="row mb-4">
-        <div class="col-md-4 mb-3">
+        <div class="col-md-3 mb-3">
           <div class="summary-card">
             <div class="summary-icon blue"><i class="fas fa-calendar-month"></i></div>
             <h3>Gastos mensuales</h3>
             <p id="monthlyTotal">€0,00</p>
           </div>
         </div>
-        <div class="col-md-4 mb-3">
+        <div class="col-md-3 mb-3">
+          <div class="summary-card">
+            <div class="summary-icon red"><i class="fas fa-percent"></i></div>
+            <h3>IVA soportado</h3>
+            <p id="monthlyIVA">€0,00</p>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3">
           <div class="summary-card">
             <div class="summary-icon green"><i class="fas fa-tag"></i></div>
             <h3>Categoria principal</h3>
             <p id="topCategory"><span>Sin datos</span></p>
           </div>
         </div>
-        <div class="col-md-4 mb-3">
+        <div class="col-md-3 mb-3">
           <div class="summary-card">
             <div class="summary-icon orange"><i class="fas fa-receipt"></i></div>
             <h3>Ultimo gasto</h3>
@@ -229,14 +254,17 @@
               <tr>
                 <th><i class="fas fa-calendar me-2"></i>Fecha</th>
                 <th><i class="fas fa-tag me-2"></i>Categoria</th>
-                <th><i class="fas fa-euro-sign me-2"></i>Importe</th>
+                <th><i class="fas fa-euro-sign me-2"></i>Base</th>
+                <th><i class="fas fa-percent me-2"></i>IVA</th>
+                <th><i class="fas fa-euro-sign me-2"></i>IVA €</th>
+                <th><i class="fas fa-euro-sign me-2"></i>Total</th>
                 <th><i class="fas fa-sticky-note me-2"></i>Notas</th>
                 <th><i class="fas fa-cog me-2"></i>Acciones</th>
               </tr>
             </thead>
             <tbody id="expenseTBody">
               <tr>
-                <td colspan="5" class="text-center text-muted">Cargando datos...</td>
+                <td colspan="8" class="text-center text-muted">Cargando datos...</td>
               </tr>
             </tbody>
           </table>
@@ -244,7 +272,7 @@
       </div>
 
       <div class="modern-card">
-        <h5 class="section-title"><i class="fas fa-chart-pie"></i> Distribucion por categoria</h5>
+        <h5 class="section-title"><i class="fas fa-chart-pie"></i> Distribución por categoria</h5>
         <div class="chart-container">
           <canvas id="expenseChartCanvas"></canvas>
         </div>
@@ -254,7 +282,7 @@
 </div>
 
 <div class="modal fade" id="modalNewExpense">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>Nuevo gasto</h5>
@@ -262,31 +290,56 @@
       </div>
       <div class="modal-body">
         <form id="formNewExpense">
-          <div class="mb-3">
-            <label class="form-label"><i class="fas fa-calendar me-2"></i>Fecha</label>
-            <input type="date" name="date" class="form-control" required />
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label"><i class="fas fa-calendar me-2"></i>Fecha *</label>
+              <input type="date" name="date" class="form-control" required />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label"><i class="fas fa-tag me-2"></i>Categoria *</label>
+              <input type="text" name="category" class="form-control" placeholder="Ej: Material de oficina" required list="categoryList" />
+              <datalist id="categoryList">
+                <option value="Material de oficina">
+                <option value="Software">
+                <option value="Hardware">
+                <option value="Servicios">
+                <option value="Viajes">
+                <option value="Transporte">
+                <option value="Marketing">
+                <option value="Suministros">
+                <option value="Alquiler">
+                <option value="Otros">
+              </datalist>
+            </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label"><i class="fas fa-tag me-2"></i>Categoria</label>
-            <input type="text" name="category" class="form-control" placeholder="Ej: Material de oficina" required list="categoryList" />
-            <datalist id="categoryList">
-              <option value="Material de oficina">
-              <option value="Software">
-              <option value="Hardware">
-              <option value="Servicios">
-              <option value="Viajes">
-              <option value="Transporte">
-              <option value="Marketing">
-              <option value="Otros">
-            </datalist>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label"><i class="fas fa-euro-sign me-2"></i>Base Imponible (EUR) *</label>
+              <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label"><i class="fas fa-percent me-2"></i>Tipo IVA (%)</label>
+              <select name="ivaRate" class="form-select">
+                <option value="0">0% (Exento)</option>
+                <option value="4">4% (Superreducido)</option>
+                <option value="10">10% (Reducido)</option>
+                <option value="21" selected>21% (General)</option>
+              </select>
+            </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label"><i class="fas fa-euro-sign me-2"></i>Importe (EUR)</label>
-            <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required />
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label"><i class="fas fa-building me-2"></i>Proveedor</label>
+              <input type="text" name="supplierName" class="form-control" placeholder="Nombre del proveedor" />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label"><i class="fas fa-id-card me-2"></i>NIF Proveedor</label>
+              <input type="text" name="supplierNif" class="form-control" placeholder="NIF/CIF" />
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label"><i class="fas fa-sticky-note me-2"></i>Notas</label>
-            <input type="text" name="notes" class="form-control" placeholder="Descripcion opcional" />
+            <input type="text" name="notes" class="form-control" placeholder="Descripción opcional" />
           </div>
         </form>
       </div>
@@ -315,6 +368,37 @@
   </div>
 </div>
 
+<!-- Modal Importar -->
+<div class="modal fade" id="modalImport" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-file-import me-2"></i>Importar Gastos</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Seleccionar archivo CSV</label>
+          <input type="file" id="importExpensesFile" class="form-control" accept=".csv" />
+        </div>
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>
+          <strong>Formato requerido:</strong> El CSV debe tener las columnas: Fecha, Categoria, Base Imponible, IVA Rate, Notas, Proveedor, NIF
+        </div>
+        <button type="button" class="btn btn-info" onclick="downloadExpenseTemplate()">
+          <i class="fas fa-download me-2"></i>Descargar plantilla
+        </button>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" id="confirmImportBtn">
+          <i class="fas fa-file-import me-2"></i>Importar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Exportar Gastos -->
 <div class="modal fade" id="modalExport" tabindex="-1">
   <div class="modal-dialog">
@@ -328,7 +412,7 @@
           <label class="form-label">Formato</label>
           <select id="exportFormat" class="form-select">
             <option value="pdf">PDF</option>
-            <option value="csv">CSV</option>
+            <option value="csv">CSV (para Excel)</option>
             <option value="excel">Excel</option>
           </select>
         </div>
@@ -344,6 +428,11 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+<script src="../shared/firebase-config.js"></script>
 <script src="../shared/auth-system.js"></script>
 <script src="./expense.js"></script>
 
@@ -351,9 +440,9 @@
 // Modal instances
 var modalExpense = null;
 var viewExpenseModal = null;
+var modalImport = null;
 var modalExport = null;
 
-// Load user info
 function loadUserInfo() {
   try {
     var session = localStorage.getItem('upsen_current_user');
@@ -367,7 +456,6 @@ function loadUserInfo() {
   } catch (e) {}
 }
 
-// Confirm logout
 function confirmLogout() {
   if (confirm('¿Cerrar sesión?')) {
     var auth = window.AuthService || window.Auth;
@@ -381,8 +469,8 @@ function confirmLogout() {
   }
 }
 
-// Initialize
 document.addEventListener('DOMContentLoaded', function() {
+  // Initialize modals
   var modalEl = document.getElementById('modalNewExpense');
   if (modalEl) {
     modalExpense = new bootstrap.Modal(modalEl);
@@ -391,6 +479,13 @@ document.addEventListener('DOMContentLoaded', function() {
   var viewModalEl = document.getElementById('viewExpenseModal');
   if (viewModalEl) {
     viewExpenseModal = new bootstrap.Modal(viewModalEl);
+    // Expose to window for the viewExpense function
+    window.viewExpenseModal = viewExpenseModal;
+  }
+  
+  var importModalEl = document.getElementById('modalImport');
+  if (importModalEl) {
+    modalImport = new bootstrap.Modal(importModalEl);
   }
   
   var exportModalEl = document.getElementById('modalExport');
@@ -400,6 +495,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   loadUserInfo();
   
+  // New Expense Button
   document.getElementById('newExpenseBtn').addEventListener('click', function() {
     var dateInput = document.querySelector('#formNewExpense input[name="date"]');
     if (dateInput && !dateInput.value) {
@@ -410,9 +506,47 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
+  // Save Expense Button
   document.getElementById('saveExpenseBtn').addEventListener('click', function() {
     if (typeof saveExpense === 'function') {
       saveExpense();
+    }
+  });
+  
+  // Import Button
+  document.getElementById('btnImport').addEventListener('click', function() {
+    if (modalImport) {
+      modalImport.show();
+    }
+  });
+  
+  // Confirm Import Button
+  document.getElementById('confirmImportBtn').addEventListener('click', function() {
+    var fileInput = document.getElementById('importExpensesFile');
+    if (fileInput && fileInput.files.length > 0) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var content = e.target.result;
+        var count = 0;
+        if (typeof importExpensesFromCSV === 'function') {
+          count = importExpensesFromCSV(content);
+        }
+        
+        if (count > 0) {
+          alert(count + ' despesas importadas com sucesso!');
+          renderExpenses();
+          renderChart();
+          renderSummaryCards();
+          if (modalImport) modalImport.hide();
+        } else {
+          alert('Nenhuma despesa importada. Verifique o formato do CSV.');
+        }
+        
+        fileInput.value = '';
+      };
+      reader.readAsText(fileInput.files[0]);
+    } else {
+      alert('Por favor, selecione um arquivo CSV.');
     }
   });
   
@@ -429,7 +563,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (typeof exportExpenses === 'function') {
       exportExpenses(format);
-    } else {
+    } else if (typeof exportExpensesFallback === 'function') {
       exportExpensesFallback(format);
     }
     
@@ -438,10 +572,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
+  // Refresh Button
   document.getElementById('refreshBtn').addEventListener('click', function() {
     location.reload();
   });
   
+  // Sidebar links
   document.querySelectorAll('.sidebar-link').forEach(function(link) {
     link.addEventListener('click', function(e) {
       var href = this.getAttribute('href');
