@@ -234,6 +234,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
 <script src="../shared/firebase-config.js"></script>
+<script src="../shared/firebase-integration.js"></script>
+<script src="../shared/firebase-sync.js"></script>
+<script src="../shared/store.js"></script>
 <script src="../shared/auth-system.js"></script>
 <script>
 var editModal = null;
@@ -242,7 +245,16 @@ function hideLoading() { var o = document.getElementById('loadingOverlay'); if (
 function getUserId() { try { var s = localStorage.getItem('upsen_current_user'); if (s) { var d = JSON.parse(s); if (d && d.user) return d.user.uid || d.user.id || 'demo'; } } catch (e) {} return 'demo'; }
 function getUserData(k) { try { var d = localStorage.getItem(k); if (d) return JSON.parse(d); } catch (e) {} return []; }
 function setText(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; }
-function formatDate(ds) { if (!ds) return '-'; var d = new Date(ds); return d.toLocaleDateString('es-ES', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+function formatDate(ds) { 
+  if (!ds) return '-'; 
+  // Handle Firestore timestamp
+  if (ds && ds.toDate && typeof ds.toDate === 'function') {
+    ds = ds.toDate();
+  }
+  var d = new Date(ds); 
+  if (isNaN(d.getTime())) return '-';
+  return d.toLocaleDateString('es-ES', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); 
+}
 document.addEventListener('DOMContentLoaded', function() {
   editModal = new bootstrap.Modal(document.getElementById('editProfileModal'));
   passwordModal = new bootstrap.Modal(document.getElementById('passwordModal'));
@@ -321,15 +333,30 @@ function loadProfileFromLocal(user) {
   loadStats();
 }
 function loadStats() {
-  var uid = getUserId();
-  var inv = getUserData('upsen_invoices_received_' + uid);
-  var iss = getUserData('upsen_invoices_issued_' + uid);
-  var exp = getUserData('upsen_expenses_' + uid);
-  var bud = getUserData('upsen_budgets_' + uid);
-  setText('statInvoices', inv.length);
-  setText('statIssued', iss.length);
-  setText('statExpenses', exp.length);
-  setText('statBudgets', bud.length);
+  // Usar store.js para obter estatísticas
+  // Versão síncrona para renderização imediata
+  var inv = [];
+  var iss = [];
+  var exp = [];
+  var bud = [];
+  
+  if (window.getInvoicesReceivedSync) {
+    inv = window.getInvoicesReceivedSync();
+  }
+  if (window.getInvoicesIssuedSync) {
+    iss = window.getInvoicesIssuedSync();
+  }
+  if (window.getExpensesSync) {
+    exp = window.getExpensesSync();
+  }
+  if (window.getBudgetsSync) {
+    bud = window.getBudgetsSync();
+  }
+  
+  setText('statInvoices', inv.length || 0);
+  setText('statIssued', iss.length || 0);
+  setText('statExpenses', exp.length || 0);
+  setText('statBudgets', bud.length || 0);
 }
 function loadProfile() { var user = AuthSystem.getCurrentUser(); if (!user) return; loadProfileFromLocal(user); }
 function showAlert(id, msg, type) { var el = document.getElementById(id); if (el) { el.textContent = msg; el.className = 'alert alert-' + (type || 'info'); el.classList.remove('hidden'); setTimeout(function() { el.classList.add('hidden'); }, 5000); } }

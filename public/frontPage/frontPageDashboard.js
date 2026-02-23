@@ -29,6 +29,12 @@ function markActivePage() {
 
 // ========== OBTENER USER ID ==========
 function getUserId() {
+  // First check Firebase Auth directly (this always works)
+  if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+    return window.firebaseAuth.currentUser.uid;
+  }
+  
+  // Also check AuthService
   var auth = window.AuthService || window.Auth;
   if (auth && auth.getCurrentUser) {
     var user = auth.getCurrentUser();
@@ -56,45 +62,54 @@ function getDataKey(type) {
   return 'upsen_' + type + '_' + userId;
 }
 
-// ========== DATOS LOCALES ==========
+// ========== DATOS LOCALES - Agora usa store.js ==========
 function getUserExpenses() {
-  var auth = window.AuthService || window.Auth;
-  var user = auth ? auth.getCurrentUser() : null;
-  var userId = user?.uid || user?.id || 'unknown';
-  var key = 'upsen_expenses_' + userId;
+  // Primeiro tentar store.js (versão síncrona)
+  if (window.getExpensesSync) {
+    var data = window.getExpensesSync();
+    if (data && data.length > 0) {
+      return data;
+    }
+  }
   
-  try {
-    var data = localStorage.getItem(key);
-    if (data) return JSON.parse(data);
-  } catch (e) {}
+  // Fallback: tentar dados globais do dashboard
+  if (window._dashboardExpenses && window._dashboardExpenses.length > 0) {
+    return window._dashboardExpenses;
+  }
   
   return [];
 }
 
 function getUserInvoicesIssued() {
-  var auth = window.AuthService || window.Auth;
-  var user = auth ? auth.getCurrentUser() : null;
-  var userId = user?.uid || user?.id || 'unknown';
-  var key = 'upsen_invoices_issued_' + userId;
+  // Primeiro tentar store.js (versão síncrona)
+  if (window.getInvoicesIssuedSync) {
+    var data = window.getInvoicesIssuedSync();
+    if (data && data.length > 0) {
+      return data;
+    }
+  }
   
-  try {
-    var data = localStorage.getItem(key);
-    if (data) return JSON.parse(data);
-  } catch (e) {}
+  // Fallback: tentar dados globais do dashboard
+  if (window._dashboardInvoicesIssued && window._dashboardInvoicesIssued.length > 0) {
+    return window._dashboardInvoicesIssued;
+  }
   
   return [];
 }
 
 function getUserInvoicesReceived() {
-  var auth = window.AuthService || window.Auth;
-  var user = auth ? auth.getCurrentUser() : null;
-  var userId = user?.uid || user?.id || 'unknown';
-  var key = 'upsen_invoices_received_' + userId;
+  // Primeiro tentar store.js (versão síncrona)
+  if (window.getInvoicesReceivedSync) {
+    var data = window.getInvoicesReceivedSync();
+    if (data && data.length > 0) {
+      return data;
+    }
+  }
   
-  try {
-    var data = localStorage.getItem(key);
-    if (data) return JSON.parse(data);
-  } catch (e) {}
+  // Fallback: tentar dados globais do dashboard
+  if (window._dashboardInvoicesReceived && window._dashboardInvoicesReceived.length > 0) {
+    return window._dashboardInvoicesReceived;
+  }
   
   return [];
 }
@@ -606,19 +621,79 @@ function initDashboard() {
   
   var auth = window.AuthService || window.Auth;
   var user = auth ? auth.getCurrentUser() : null;
+  
+  // Also check Firebase Auth directly
+  if (!user && window.firebaseAuth && window.firebaseAuth.currentUser) {
+    user = window.firebaseAuth.currentUser;
+  }
+  
+  // Check localStorage as last resort
+  if (!user) {
+    try {
+      var session = localStorage.getItem('upsen_current_user');
+      if (session) {
+        var data = JSON.parse(session);
+        if (data && data.user) {
+          user = data.user;
+          console.log('Usuario obtido do localStorage:', user.email);
+        }
+      }
+    } catch (e) {}
+  }
+  
   console.log('Usuario atual:', user ? (user.email || user.name) : 'null');
   console.log('Firebase Auth:', window.firebaseAuth ? 'disponivel' : 'nao disponivel');
   console.log('Firebase DB:', window.firebaseDb ? 'disponivel' : 'nao disponivel');
   
-  var expenses = getUserExpenses();
-  var invoicesIssued = getUserInvoicesIssued();
-  var invoicesReceived = getUserInvoicesReceived();
+  // Get user ID for localStorage - use Firebase UID or localStorage user
+  var userId = 'unknown';
+  if (user && user.uid) {
+    userId = user.uid;
+  } else if (user && user.id) {
+    userId = user.id;
+  } else {
+    // Try to get from localStorage directly
+    try {
+      var session = localStorage.getItem('upsen_current_user');
+      if (session) {
+        var data = JSON.parse(session);
+        if (data && data.user) {
+          userId = data.user.uid || data.user.id || 'unknown';
+        }
+      }
+    } catch (e) {}
+  }
   
+  // Try to load data from localStorage using the userId
+  var expenses = [];
+  var invoicesIssued = [];
+  var invoicesReceived = [];
+
+  // Use ONLY user-specific keys - no fallback to other users
+  if (userId && userId !== 'unknown') {
+    try {
+      var expensesData = localStorage.getItem('upsen_expenses_' + userId);
+      if (expensesData) expenses = JSON.parse(expensesData);
+
+      var invoicesIssuedData = localStorage.getItem('upsen_invoices_issued_' + userId);
+      if (invoicesIssuedData) invoicesIssued = JSON.parse(invoicesIssuedData);
+
+      var invoicesReceivedData = localStorage.getItem('upsen_invoices_received_' + userId);
+      if (invoicesReceivedData) invoicesReceived = JSON.parse(invoicesReceivedData);
+    } catch (e) {}
+  }
+
+  // REMOVED: Fallback that was loading data from other users
+  // This was causing new users to see data from other accounts
+
   console.log('Expenses no localStorage:', expenses.length, 'itens');
   console.log('Invoices Issued no localStorage:', invoicesIssued.length, 'itens');
   console.log('Invoices Received no localStorage:', invoicesReceived.length, 'itens');
   
-  // Debug info removed - keeping the console logs for debugging purposes only
+  // Make data available globally for the dashboard
+  window._dashboardExpenses = expenses;
+  window._dashboardInvoicesIssued = invoicesIssued;
+  window._dashboardInvoicesReceived = invoicesReceived;
   
   var now = new Date();
   var y = now.getFullYear();
@@ -733,14 +808,17 @@ function checkAuthAndInit() {
 // Iniciar com um pequeno atraso para garantir que todos os scripts estão carregados
 // Usar o novo sistema waitForAuth do auth-system.js
 setTimeout(function() {
-  window.waitForAuth(function() {
-    console.log('Auth ready via waitForAuth, initializing dashboard...');
-    checkAuthAndInit();
-  });
+  // Primeiro verificar se store.js está disponível
+  function checkAndInit() {
+    if (window.getExpensesSync && window.getInvoicesIssuedSync && window.getInvoicesReceivedSync) {
+      console.log('Store.js disponível, inicializando dashboard...');
+      checkAuthAndInit();
+    } else {
+      console.log('Aguardando store.js...');
+      setTimeout(checkAndInit, 500);
+    }
+  }
   
-  // Também iniciar checkAuthAndInit como fallback após um tempo
-  setTimeout(function() {
-    checkAuthAndInit();
-  }, 3000);
-}, 500);
+  checkAndInit();
+}, 1000);
 console.log('frontPageDashboard.js carregado');

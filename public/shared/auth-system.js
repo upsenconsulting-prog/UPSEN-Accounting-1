@@ -172,7 +172,7 @@
         phone: '+351 123 456 789',
         role: 'admin',
         createdAt: new Date().toISOString(),
-        settings: { currency: 'EUR', language: 'pt', theme: 'light' }
+        settings: { currency: 'EUR', language: 'es', country: 'ES', theme: 'light' }
       }
     ];
     
@@ -264,7 +264,7 @@ loadUserData: function(firebaseUser) {
         role: 'user', // Default role - will be updated from Firestore
         emailVerified: firebaseUser.emailVerified || true,
         createdAt: new Date().toISOString(),
-        settings: { currency: 'EUR', language: 'pt', theme: 'light' }
+        settings: { currency: 'EUR', language: 'es', country: 'ES', theme: 'light' }
       };
       
       // Load from users collection
@@ -517,7 +517,7 @@ login: function(email, password) {
                 role: 'user',
                 emailVerified: false,
                 createdAt: new Date().toISOString(),
-                settings: { currency: 'EUR', language: 'pt', theme: 'light' }
+                settings: { currency: 'EUR', language: 'es', country: 'ES', theme: 'light' }
               };
               
               // Create in users collection
@@ -578,7 +578,7 @@ login: function(email, password) {
           phone: userData.phone || '',
           role: 'user',
           createdAt: new Date().toISOString(),
-          settings: { currency: 'EUR', language: 'pt', theme: 'light' }
+          settings: { currency: 'EUR', language: 'es', country: 'ES', theme: 'light' }
         };
         
         users.push(newUser);
@@ -620,7 +620,7 @@ loginWithGoogle: function() {
               role: 'user',
               emailVerified: true,
               createdAt: new Date().toISOString(),
-              settings: { currency: 'EUR', language: 'pt', theme: 'light' }
+              settings: { currency: 'EUR', language: 'es', country: 'ES', theme: 'light' }
             };
             
             // Create user document in Firestore
@@ -945,8 +945,17 @@ loginWithGoogle: function() {
     }
   };
   
-  // ========== THEME ==========
+// ========== THEME ==========
   function applyTheme(theme) {
+    // Check if DOM is ready
+    if (!document.body) {
+      console.log('DOM not ready, deferring theme application');
+      document.addEventListener('DOMContentLoaded', function() {
+        applyTheme(theme);
+      });
+      return;
+    }
+    
     localStorage.setItem(THEME_KEY, theme);
     
     if (theme === 'dark') {

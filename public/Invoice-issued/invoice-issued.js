@@ -28,28 +28,35 @@ function markActivePage() {
 var issuedChart = null;
 
 // ========== USER ID - CORRIGIDO ==========
+// AGORA USA store.js COMO FONTE PRIMÁRIA
 function getUserId() {
-  // Try to get from AuthService/Firebase
+  // First check Firebase Auth directly (this always works)
+  if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+    return window.firebaseAuth.currentUser.uid;
+  }
+  
+  // Also check AuthService
   try {
     var auth = window.AuthService || window.Auth;
     if (auth && auth.getCurrentUser) {
       var user = auth.getCurrentUser();
-      if (user && user.uid) return user.uid;
+      if (user) {
+        return user.uid || user.id;
+      }
     }
   } catch (e) {}
   
-  // Try session storage
+  // Fallback to localStorage
   try {
     var session = localStorage.getItem('upsen_current_user');
     if (session) {
       var data = JSON.parse(session);
       if (data && data.user) {
-        return data.user.uid || data.user.id || 'demo';
+        return data.user.uid || data.user.id || 'unknown';
       }
     }
   } catch (e) {}
-  
-  return 'demo';
+  return 'unknown';
 }
 
 function isLoggedIn() {
@@ -57,16 +64,13 @@ function isLoggedIn() {
   return userId && userId !== 'demo' && userId !== 'unknown';
 }
 
-function getDataKey() {
-  return 'upsen_invoices_issued_' + getUserId();
-}
-
+// Usar store.js
 function getUserInvoicesIssued() {
-  var key = getDataKey();
-  try {
-    var data = localStorage.getItem(key);
-    if (data) return JSON.parse(data);
-  } catch (e) {}
+  // Usar store.js - versão síncrona para renderização imediata
+  if (window.getInvoicesIssuedSync) {
+    return window.getInvoicesIssuedSync();
+  }
+  // Fallback se store.js não estiver disponível
   return [];
 }
 
@@ -83,8 +87,6 @@ function getAllInvoicesIssued() {
 }
 
 function addInvoiceIssued(invoice) {
-  var invoices = getUserInvoicesIssued();
-  
   // Calcular IVA
   var baseImponible = Number(invoice.amount || 0);
   var ivaRate = Number(invoice.ivaRate || 0);
@@ -106,11 +108,21 @@ function addInvoiceIssued(invoice) {
     description: invoice.description || '',
     createdAt: new Date().toISOString()
   };
-  invoices.push(newInvoice);
-  saveUserInvoicesIssued(invoices);
   
-  // Também salvar no Firebase
-  saveInvoiceIssuedToFirebase(newInvoice);
+  // Usar store.js - função assíncrona que salva no Firebase E localStorage
+  if (window.addInvoiceIssued) {
+    window.addInvoiceIssued(newInvoice).then(function() {
+      renderInvoices();
+      renderChart();
+      renderSummaryCards();
+    });
+  } else {
+    // Fallback: salvar localmente
+    var invoices = getUserInvoicesIssued();
+    invoices.push(newInvoice);
+    localStorage.setItem('upsen_invoices_issued', JSON.stringify(invoices));
+    console.error('store.js não disponível, salvando localmente');
+  }
   
   return newInvoice;
 }
@@ -510,8 +522,20 @@ function openNewInvoiceModal() {
 document.addEventListener('DOMContentLoaded', async function() {
   markActivePage();
   
-  // Wait for auth to be ready before loading data
-  window.waitForAuth(function() {
+  function checkAndInit() {
+    if (window.getInvoicesIssuedSync) {
+      console.log('store.js disponível, inicializando invoice issued page...');
+      initPage();
+    } else {
+      console.log('Aguardando store.js...');
+      setTimeout(checkAndInit, 500);
+    }
+  }
+  
+  // Iniciar verificação
+  setTimeout(checkAndInit, 500);
+  
+  function initPage() {
     console.log('Auth ready, initializing invoice issued page...');
     
     // New Invoice Button
@@ -541,7 +565,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     renderInvoices();
     renderChart();
     renderSummaryCards();
-  });
+  }
 });
 
 // ========== EXPORTAR FACTURAS ==========

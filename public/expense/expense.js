@@ -1,4 +1,5 @@
 // expense.js - Com dados isolados por usuário + IVA + Importação em massa
+// AGORA USA store.js COMO FONTE PRIMÁRIA (Firebase + localStorage backup)
 
 function $(id) {
   return document.getElementById(id);
@@ -25,39 +26,34 @@ function markActivePage() {
 // Chart instance
 var expenseChart = null;
 
-// ========== DADOS DO USUÁRIO LOGADO ==========
-function getUserId() {
-  try {
-    var session = localStorage.getItem('upsen_current_user');
-    if (session) {
-      var data = JSON.parse(session);
-      if (data && data.user) {
-        return data.user.uid || data.user.id || 'demo';
-      }
-    }
-  } catch (e) {}
-  return 'demo';
-}
-
+// ========== USAR STORE.JS (Firebase + localStorage) ==========
 function getUserExpenses() {
-  var key = 'upsen_expenses_' + getUserId();
-  try {
-    var data = localStorage.getItem(key);
-    if (data) return JSON.parse(data);
-  } catch (e) {}
+  // Usar store.js - versão síncrona para renderização imediata
+  if (window.getExpensesSync) {
+    return window.getExpensesSync();
+  }
+  // Fallback se store.js não estiver disponível
   return [];
 }
 
+function loadExpensesFromFirebase(userId) {
+  console.log('[expense.js] Use store.js para carregar dados do Firebase');
+  if (window.FirebaseSync && window.FirebaseSync.syncAllToLocalStorage) {
+    window.FirebaseSync.syncAllToLocalStorage().then(function() {
+      renderExpenses();
+      renderChart();
+      renderSummaryCards();
+    });
+  }
+}
+
 function saveUserExpense(expense) {
-  var key = 'upsen_expenses_' + getUserId();
-  var list = getUserExpenses();
-  
   // Calcular IVA
   var baseImponible = Number(expense.amount || 0);
   var ivaRate = Number(expense.ivaRate || 0);
   var ivaAmount = baseImponible * (ivaRate / 100);
   var totalAmount = baseImponible + ivaAmount;
-  
+
   var newExpense = {
     id: 'exp-' + Date.now() + '-' + Math.random().toString(16).slice(2),
     date: expense.date || '',
@@ -72,72 +68,27 @@ function saveUserExpense(expense) {
     supplierName: expense.supplierName || '',
     createdAt: new Date().toISOString()
   };
-  list.push(newExpense);
-  localStorage.setItem(key, JSON.stringify(list));
   
-  // Também salvar no Firebase
-  saveExpenseToFirebase(newExpense);
-}
-
-function saveExpenseToFirebase(expense) {
-  var userId = getUserId();
-  console.log('=== SAVE EXPENSE TO FIREBASE ===');
-  console.log('userId:', userId);
-  
-  if (!userId || userId === 'unknown' || userId === 'demo') return;
-  if (!window.firebaseDb) return;
-  
-  window.firebaseDb.collection('users').doc(userId).collection('documents').doc('expenses').collection('items').add({
-    id: expense.id,
-    date: expense.date,
-    category: expense.category,
-    amount: expense.amount,
-    ivaRate: expense.ivaRate,
-    ivaAmount: expense.ivaAmount,
-    totalAmount: expense.totalAmount,
-    notes: expense.notes,
-    paymentMethod: expense.paymentMethod,
-    supplierNif: expense.supplierNif,
-    supplierName: expense.supplierName,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(function() {
-    console.log('Despesa salva no Firebase');
-  }).catch(function(error) {
-    console.warn('Erro ao salvar no Firebase:', error.message);
-  });
+  // Usar store.js - função assíncrona que salva no Firebase E localStorage
+  if (window.addExpense) {
+    window.addExpense(newExpense).then(function() {
+      renderExpenses();
+      renderChart();
+      renderSummaryCards();
+    });
+  } else {
+    console.error('store.js não disponível');
+  }
 }
 
 function deleteUserExpense(id) {
-  var key = 'upsen_expenses_' + getUserId();
-  var list = getUserExpenses();
-  var filtered = [];
-  for (var i = 0; i < list.length; i++) {
-    if (list[i].id !== id) {
-      filtered.push(list[i]);
-    }
-  }
-  localStorage.setItem(key, JSON.stringify(filtered));
-  
-  // Também eliminar do Firebase
-  deleteExpenseFromFirebase(id);
-}
-
-function deleteExpenseFromFirebase(id) {
-  var userId = getUserId();
-  if (!userId || userId === 'unknown' || userId === 'demo') return;
-  if (!window.firebaseDb) return;
-  
-  window.firebaseDb.collection('users').doc(userId).collection('documents').doc('expenses').collection('items')
-    .where('id', '==', id)
-    .get()
-    .then(function(snapshot) {
-      snapshot.forEach(function(doc) {
-        doc.ref.delete();
-      });
-    })
-    .catch(function(error) {
-      console.warn('Erro ao eliminar do Firebase:', error.message);
+  if (window.deleteExpense) {
+    window.deleteExpense(id).then(function() {
+      renderExpenses();
+      renderChart();
+      renderSummaryCards();
     });
+  }
 }
 
 // ========== IMPORTAR DADOS EM MASSA ==========
@@ -155,7 +106,6 @@ function importExpensesFromCSV(csvContent) {
     var line = lines[i].trim();
     if (!line) continue;
     
-    // Parse CSV line (handling quoted values)
     var values = [];
     var current = '';
     var inQuotes = false;
@@ -172,7 +122,6 @@ function importExpensesFromCSV(csvContent) {
     }
     values.push(current.trim());
     
-    // Map values to fields
     var expense = {};
     for (var k = 0; k < headers.length && k < values.length; k++) {
       var header = headers[k].replace(/"/g, '');
@@ -216,14 +165,15 @@ function handleFileImport(event) {
     
     if (count > 0) {
       alert(count + ' despesas importadas com sucesso!');
-      renderExpenses();
-      renderChart();
-      renderSummaryCards();
+      setTimeout(function() {
+        renderExpenses();
+        renderChart();
+        renderSummaryCards();
+      }, 500);
     } else {
       alert('Nenhuma despesa importada. Verifique o formato do CSV.');
     }
     
-    // Reset file input
     event.target.value = '';
   };
   reader.readAsText(file);
@@ -244,7 +194,6 @@ function renderSummaryCards() {
   for (var i = 0; i < list.length; i++) {
     var exp = list[i];
     
-    // Monthly total (com IVA)
     if (exp.date) {
       var parts = exp.date.split('-');
       if (parts.length >= 2) {
@@ -257,11 +206,9 @@ function renderSummaryCards() {
       }
     }
     
-    // Category totals
     var cat = exp.category || "Sin categoría";
     categoryTotals[cat] = (categoryTotals[cat] || 0) + Number(exp.amount || 0);
     
-    // Last expense by date
     if (!lastExpense || (exp.date && exp.date > lastExpense.date)) {
       lastExpense = exp;
     }
@@ -272,7 +219,6 @@ function renderSummaryCards() {
     monthlyTotalEl.textContent = moneyEUR(monthlyTotal);
   }
   
-  // Also update IVA if element exists
   var monthlyIVAEl = $("monthlyIVA");
   if (monthlyIVAEl) {
     monthlyIVAEl.textContent = moneyEUR(monthlyIVA);
@@ -290,7 +236,6 @@ function renderSummaryCards() {
           topVal = categoryTotals[keys[k]];
         }
       }
-      // Check if there's a span inside
       var topCatSpan = topCategoryEl.querySelector('span');
       if (topCatSpan) {
         topCatSpan.textContent = topCat;
@@ -298,7 +243,6 @@ function renderSummaryCards() {
         topCategoryEl.textContent = topCat;
       }
     } else {
-      // Check if there's a span inside
       var topCatSpan = topCategoryEl.querySelector('span');
       if (topCatSpan) {
         topCatSpan.textContent = "Sin datos";
@@ -311,7 +255,6 @@ function renderSummaryCards() {
   var lastExpenseEl = $("lastExpense");
   if (lastExpenseEl) {
     if (lastExpense) {
-      // Check if there's a span inside
       var lastExpenseSpan = lastExpenseEl.querySelector('span');
       if (lastExpenseSpan) {
         lastExpenseSpan.innerHTML = lastExpense.date + ' - ' + lastExpense.category;
@@ -319,7 +262,6 @@ function renderSummaryCards() {
         lastExpenseEl.innerHTML = lastExpense.date + ' - ' + lastExpense.category;
       }
     } else {
-      // Check if there's a span inside
       var lastExpenseSpan = lastExpenseEl.querySelector('span');
       if (lastExpenseSpan) {
         lastExpenseSpan.textContent = "Sin gastos";
@@ -420,9 +362,6 @@ function renderExpenses() {
       var id = this.getAttribute("data-del");
       if (confirm('Eliminar este gasto?')) {
         deleteUserExpense(id);
-        renderExpenses();
-        renderChart();
-        renderSummaryCards();
       }
     });
   }
@@ -491,7 +430,6 @@ function saveExpense() {
   if (ivaRateInput) ivaRate = ivaRateInput.value;
   if (notesInput) notes = notesInput.value;
 
-  // Get supplier fields if they exist
   var supplierNameInput = form.querySelector('input[name="supplierName"]');
   var supplierNifInput = form.querySelector('input[name="supplierNif"]');
   if (supplierNameInput) supplierName = supplierNameInput.value;
@@ -525,9 +463,12 @@ function saveExpense() {
   }
 
   form.reset();
-  renderExpenses();
-  renderChart();
-  renderSummaryCards();
+  
+  setTimeout(function() {
+    renderExpenses();
+    renderChart();
+    renderSummaryCards();
+  }, 300);
 }
 
 function openNewExpenseModal() {
@@ -550,9 +491,21 @@ function openNewExpenseModal() {
 document.addEventListener("DOMContentLoaded", function() {
   markActivePage();
   
-  // Wait for auth to be ready before loading data
-  window.waitForAuth(function() {
-    console.log('Auth ready, initializing expense page...');
+  function checkAndInit() {
+    if (window.getExpensesSync) {
+      console.log('store.js disponível, inicializando expense page...');
+      initPage();
+    } else {
+      console.log('Aguardando store.js...');
+      setTimeout(checkAndInit, 500);
+    }
+  }
+  
+  // Iniciar verificação
+  setTimeout(checkAndInit, 500);
+  
+  function initPage() {
+    console.log('Inicializando expense page...');
     
     var newExpenseBtn = document.getElementById('newExpenseBtn');
     if (newExpenseBtn) {
@@ -575,7 +528,6 @@ document.addEventListener("DOMContentLoaded", function() {
       });
     }
     
-    // Setup import button
     var importBtn = document.getElementById('importExpensesBtn');
     if (importBtn) {
       var fileInput = document.getElementById('importExpensesFile');
@@ -590,7 +542,7 @@ document.addEventListener("DOMContentLoaded", function() {
     renderExpenses();
     renderChart();
     renderSummaryCards();
-  });
+  }
 });
 
 // ========== EXPORTAR GASTOS ==========
@@ -697,7 +649,7 @@ function exportExpensesToCSV(list) {
   link.href = URL.createObjectURL(blob);
   link.download = 'gastos.csv';
   link.click();
-  alert('CSV descargado correctamente! (Formateado para importación)');
+  alert('CSV descargado correctamente!');
 }
 
 function exportExpensesToExcel(list) {
@@ -731,7 +683,6 @@ function exportExpensesToExcel(list) {
   alert('Excel descargado correctamente!');
 }
 
-// ========== GERAR TEMPLATE CSV ==========
 function downloadExpenseTemplate() {
   var template = 'Fecha,Categoria,Base Imponible,IVA Rate,IVA Amount,Notas,Proveedor,NIF\n';
   template += '2024-01-15,Suministros,150.00,21,31.50,Luz enero,Endesa,12345678A\n';

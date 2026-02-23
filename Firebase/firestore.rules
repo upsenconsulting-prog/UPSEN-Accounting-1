@@ -5,6 +5,21 @@ service cloud.firestore {
     // Users collection - allow authenticated users to manage their own data
     match /users/{userId} {
       allow read, create, update, delete: if request.auth != null && request.auth.uid == userId;
+      
+      // Documents subcollection (expenses, invoices, budgets, etc.)
+      match /documents/{documentType} {
+        allow read, create, update, delete: if request.auth != null && request.auth.uid == userId;
+        
+        // Items subcollection (individual expense/invoice/budget items)
+        match /items/{itemId} {
+          allow read, create, update, delete: if request.auth != null && request.auth.uid == userId;
+        }
+        
+        // Handle specific document types that don't use 'items' subcollection
+        match /{document=**} {
+          allow read, create, update, delete: if request.auth != null && request.auth.uid == userId;
+        }
+      }
     }
     
     // Companies collection - for Firebase Auth compatibility

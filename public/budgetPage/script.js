@@ -10,8 +10,18 @@ function moneyEUR(n) {
 
 // ========== ID DO USUÁRIO ==========
 function getUserId() {
+  // First check Firebase Auth directly (this always works)
+  if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+    return window.firebaseAuth.currentUser.uid;
+  }
+  
+  // Also check AuthService
   const user = window.AuthSystem?.getCurrentUser?.() || window.Auth?.getCurrentUser?.();
-  return user?.uid || user?.id || 'unknown';
+  if (user) {
+    return user.uid || user.id || 'unknown';
+  }
+  
+  return 'unknown';
 }
 
 function getDataKey() {

@@ -30,25 +30,34 @@ var receivedChart = null;
 
 // ========== USER ID - CORRIGIDO ==========
 function getUserId() {
+  // First check Firebase Auth directly (this always works)
+  if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+    return window.firebaseAuth.currentUser.uid;
+  }
+  
+  // Also check AuthService
   try {
     var auth = window.AuthService || window.Auth;
     if (auth && auth.getCurrentUser) {
       var user = auth.getCurrentUser();
-      if (user && user.uid) return user.uid;
+      if (user) {
+        return user.uid || user.id;
+      }
     }
   } catch (e) {}
   
+  // Fallback to localStorage
   try {
     var session = localStorage.getItem('upsen_current_user');
     if (session) {
       var data = JSON.parse(session);
       if (data && data.user) {
-        return data.user.uid || data.user.id || 'demo';
+        return data.user.uid || data.user.id || 'unknown';
       }
     }
   } catch (e) {}
   
-  return 'demo';
+  return 'unknown';
 }
 
 function isLoggedIn() {
@@ -61,11 +70,36 @@ function getDataKey() {
 }
 
 function getUserInvoicesReceived() {
-  var key = getDataKey();
-  try {
-    var data = localStorage.getItem(key);
-    if (data) return JSON.parse(data);
-  } catch (e) {}
+  // First check Firebase Auth directly
+  var userId = null;
+  if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+    userId = window.firebaseAuth.currentUser.uid;
+  }
+  
+  // Try AuthService
+  if (!userId) {
+    try {
+      var auth = window.AuthService || window.Auth;
+      if (auth && auth.getCurrentUser) {
+        var user = auth.getCurrentUser();
+        if (user) {
+          userId = user.uid || user.id;
+        }
+      }
+    } catch (e) {}
+  }
+
+  // Use ONLY user-specific keys - no fallback to other users
+  if (userId) {
+    try {
+      var data = localStorage.getItem('upsen_invoices_received_' + userId);
+      if (data) return JSON.parse(data);
+    } catch (e) {}
+  }
+
+  // REMOVED: Fallback that was loading data from other users
+  // Each user now has isolated data
+
   return [];
 }
 
