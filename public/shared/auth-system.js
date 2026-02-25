@@ -1,8 +1,8 @@
 
 /**
  * UPSEN Accounting - Auth System
- * COM SUPORTE FIREBASE COMPLETO
- * Estrutura: users/{userId}/documents/{type}/items/{docId}
+ * ESTRUTURA FIREBASE: companies/{userId}/{collection}
+ * Dados guardados em: companies/{uid}/expenses, companies/{uid}/invoicesIssued, etc.
  */
 
 (function() {
@@ -28,12 +28,13 @@
         
         var promises = [];
         
-        // Sync expenses
-        var expensesPromise = window.firebaseDb.collection('users').doc(userId).collection('documents').doc('expenses').collection('items').get()
+        // Sync expenses - usando estrutura companies/{uid}/expenses
+        var expensesPromise = window.firebaseDb.collection('companies').doc(userId).collection('expenses').get()
           .then(function(snapshot) {
             var expenses = [];
             console.log('Sync: Expenses snapshot size:', snapshot.size);
             snapshot.forEach(function(doc) {
+              if (doc.id === '_init') return; // Skip init document
               var data = doc.data();
               expenses.push({
                 id: doc.id,
@@ -55,11 +56,12 @@
           }).catch(function(err) { console.log('Erro sync expenses:', err); });
         promises.push(expensesPromise);
         
-        // Sync invoices issued
-        var invoicesIssuedPromise = window.firebaseDb.collection('users').doc(userId).collection('documents').doc('invoicesIssued').collection('items').get()
+        // Sync invoices issued - usando estrutura companies/{uid}/invoicesIssued
+        var invoicesIssuedPromise = window.firebaseDb.collection('companies').doc(userId).collection('invoicesIssued').get()
           .then(function(snapshot) {
             var invoicesIssued = [];
             snapshot.forEach(function(doc) {
+              if (doc.id === '_init') return;
               var data = doc.data();
               invoicesIssued.push({
                 id: doc.id,
@@ -82,11 +84,12 @@
           }).catch(function(err) { console.log('Erro sync invoices issued:', err); });
         promises.push(invoicesIssuedPromise);
         
-        // Sync invoices received
-        var invoicesReceivedPromise = window.firebaseDb.collection('users').doc(userId).collection('documents').doc('invoicesReceived').collection('items').get()
+        // Sync invoices received - usando estrutura companies/{uid}/invoicesReceived
+        var invoicesReceivedPromise = window.firebaseDb.collection('companies').doc(userId).collection('invoicesReceived').get()
           .then(function(snapshot) {
             var invoicesReceived = [];
             snapshot.forEach(function(doc) {
+              if (doc.id === '_init') return;
               var data = doc.data();
               invoicesReceived.push({
                 id: doc.id,
@@ -107,6 +110,29 @@
             console.log('Invoices Received sincronizados:', invoicesReceived.length);
           }).catch(function(err) { console.log('Erro sync invoices received:', err); });
         promises.push(invoicesReceivedPromise);
+        
+        // Sync budgets - usando estrutura companies/{uid}/budgets
+        var budgetsPromise = window.firebaseDb.collection('companies').doc(userId).collection('budgets').get()
+          .then(function(snapshot) {
+            var budgets = [];
+            snapshot.forEach(function(doc) {
+              if (doc.id === '_init') return;
+              var data = doc.data();
+              budgets.push({
+                id: doc.id,
+                number: data.number || '',
+                series: data.series || '',
+                date: data.date || '',
+                customer: data.customer || '',
+                total: parseFloat(data.total) || 0,
+                status: data.status || 'pending',
+                createdAt: data.createdAt ? new Date(data.createdAt.seconds * 1000).toISOString() : new Date().toISOString()
+              });
+            });
+            localStorage.setItem('upsen_budgets_' + userId, JSON.stringify(budgets));
+            console.log('Budgets sincronizados:', budgets.length);
+          }).catch(function(err) { console.log('Erro sync budgets:', err); });
+        promises.push(budgetsPromise);
         
         Promise.all(promises).then(function() {
           console.log('Sincronizacao completa!');
@@ -164,15 +190,15 @@
     
     var demoUsers = [
       {
-        id: 'demo_admin',
-        email: 'admin@demo.com',
-        password: hashPassword('demo123'),
-        name: 'Administrador',
-        company: 'UPSEN Demo',
+        id: 'upsen_admin',
+        email: 'upsenconsulting@gmail.com',
+        password: hashPassword('Upsen2024!'),
+        name: 'Administrador UPSEN',
+        company: 'UPSEN Consulting',
         phone: '+351 123 456 789',
         role: 'admin',
         createdAt: new Date().toISOString(),
-        settings: { currency: 'EUR', language: 'es', country: 'ES', theme: 'light' }
+        settings: { currency: 'EUR', language: 'pt', country: 'PT', theme: 'light' }
       }
     ];
     
@@ -267,9 +293,10 @@ loadUserData: function(firebaseUser) {
         settings: { currency: 'EUR', language: 'es', country: 'ES', theme: 'light' }
       };
       
-      // Load from users collection
+      // Load from companies collection (PRIMARY - this is where firebase-integration.js saves)
       if (window.firebaseDb) {
-        window.firebaseDb.collection('users').doc(firebaseUser.uid).get()
+        // Try companies collection first
+        window.firebaseDb.collection('companies').doc(firebaseUser.uid).get()
           .then(function(doc) {
             if (doc.exists) {
               var data = doc.data();
@@ -282,7 +309,7 @@ loadUserData: function(firebaseUser) {
                 userData.role = existingRole;
               }
               
-              console.log('Dados carregados do Firestore:', userData.email, userData.company, 'Role:', userData.role);
+              console.log('Dados carregados do Firestore (companies):', userData.email, userData.company, 'Role:', userData.role);
               
               // Apply user theme preference
               if (userData.settings && userData.settings.theme) {
@@ -337,20 +364,21 @@ loadUserData: function(firebaseUser) {
     createUserDocument: function(uid, userData) {
       if (!window.firebaseDb) return;
       
-      window.firebaseDb.collection('users').doc(uid).set(userData, { merge: true })
+      // Use companies collection
+      window.firebaseDb.collection('companies').doc(uid).set(userData, { merge: true })
         .then(function() {
-          console.log('Documento criado:', uid);
-          // Initialize documents subcollection
-          return window.firebaseDb.collection('users').doc(uid).collection('documents').doc('expenses').set({ initialized: true });
+          console.log('Documento criado na companies collection:', uid);
+          // Initialize subcollections with init documents
+          return window.firebaseDb.collection('companies').doc(uid).collection('expenses').doc('_init').set({ initialized: true });
         })
         .then(function() {
-          return window.firebaseDb.collection('users').doc(uid).collection('documents').doc('invoicesIssued').set({ initialized: true });
+          return window.firebaseDb.collection('companies').doc(uid).collection('invoicesIssued').doc('_init').set({ initialized: true });
         })
         .then(function() {
-          return window.firebaseDb.collection('users').doc(uid).collection('documents').doc('invoicesReceived').set({ initialized: true });
+          return window.firebaseDb.collection('companies').doc(uid).collection('invoicesReceived').doc('_init').set({ initialized: true });
         })
         .then(function() {
-          return window.firebaseDb.collection('users').doc(uid).collection('documents').doc('budgets').set({ initialized: true });
+          return window.firebaseDb.collection('companies').doc(uid).collection('budgets').doc('_init').set({ initialized: true });
         })
         .catch(function(error) {
           console.warn('Erro ao criar documento:', error.message);
@@ -520,9 +548,9 @@ login: function(email, password) {
                 settings: { currency: 'EUR', language: 'es', country: 'ES', theme: 'light' }
               };
               
-              // Create in users collection
+              // Create in companies collection
               if (window.firebaseDb) {
-                window.firebaseDb.collection('users').doc(user.uid).set(docData)
+                window.firebaseDb.collection('companies').doc(user.uid).set(docData)
                   .then(function() {
                     console.log('Documento criado no Firestore:', user.uid);
                   })
@@ -681,12 +709,12 @@ loginWithGoogle: function() {
         }
         
         if (window.firebaseDb && uid) {
-          window.firebaseDb.collection('users').doc(uid).update(updates)
+          window.firebaseDb.collection('companies').doc(uid).update(updates)
             .then(function() {
               resolve({ success: true, message: 'Perfil atualizado!' });
             })
             .catch(function(error) {
-              window.firebaseDb.collection('users').doc(uid).set(updates, { merge: true })
+              window.firebaseDb.collection('companies').doc(uid).set(updates, { merge: true })
                 .then(function() {
                   resolve({ success: true, message: 'Perfil atualizado!' });
                 })
@@ -781,7 +809,7 @@ loginWithGoogle: function() {
         }
         
         if (window.firebaseDb && userId) {
-          window.firebaseDb.collection('users').doc(userId).delete()
+          window.firebaseDb.collection('companies').doc(userId).delete()
             .catch(function(error) {
               console.warn('Erro ao eliminar documento:', error.message);
             });
@@ -860,9 +888,9 @@ loginWithGoogle: function() {
           localStorage.setItem(key, JSON.stringify(currentData));
         } catch (e) {}
         
-        // Save to Firebase - users/{uid}/documents/{type}/items/{docId}
+        // Save to Firebase - companies/{uid}/{collection}
         if (window.firebaseDb && userId !== 'unknown') {
-          window.firebaseDb.collection('users').doc(userId).collection('documents').doc(collectionName).collection('items')
+          window.firebaseDb.collection('companies').doc(userId).collection(collectionName)
             .add({
               ...data,
               createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -907,7 +935,7 @@ loginWithGoogle: function() {
         } catch (e) {}
         
         if (window.firebaseDb && userId !== 'unknown') {
-          window.firebaseDb.collection('users').doc(userId).collection('documents').doc(collectionName).collection('items').doc(id)
+          window.firebaseDb.collection('companies').doc(userId).collection(collectionName).doc(id)
             .update(Object.assign({}, data, { updatedAt: firebase.firestore.FieldValue.serverTimestamp() }))
             .catch(function() {});
         }
@@ -935,7 +963,7 @@ loginWithGoogle: function() {
         } catch (e) {}
         
         if (window.firebaseDb && userId !== 'unknown') {
-          window.firebaseDb.collection('users').doc(userId).collection('documents').doc(collectionName).collection('items').doc(id)
+          window.firebaseDb.collection('companies').doc(userId).collection(collectionName).doc(id)
             .delete()
             .catch(function() {});
         }
@@ -1005,6 +1033,11 @@ loginWithGoogle: function() {
   }
   
   function triggerAuthReady() {
+    // Evitar múltiplas chamadas - já está pronto
+    if (window.isAuthReady) {
+      console.log('Auth already ready, skipping triggerAuthReady');
+      return;
+    }
     window.isAuthReady = true;
     console.log('Auth is now ready!');
     

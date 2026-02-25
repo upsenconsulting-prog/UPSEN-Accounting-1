@@ -53,6 +53,7 @@
 
       const data = [];
       snapshot.forEach(doc => {
+        if (doc.id === '_init') return; // Skip init document
         const docData = doc.data();
         // Converter timestamp do Firebase para ISO string
         if (docData.createdAt && docData.createdAt.toDate) {
@@ -68,7 +69,6 @@
 
       // Salvar no localStorage com chave única por utilizador
       const baseKey = 'upsen_' + collectionName.toLowerCase();
-      const userId = getUserId();
       const userKey = userId ? baseKey + '_' + userId : baseKey;
       localStorage.setItem(userKey, JSON.stringify(data));
 
@@ -99,8 +99,11 @@
   // ========== SYNC: LOCALSTORAGE → FIREBASE ==========
   /**
    * Salva um documento no Firebase E no localStorage
+   * @param {string} collectionName - Nome da coleção
+   * @param {object} data - Dados a salvar
+   * @param {boolean} skipLocalStorageUpdate - Se true, não atualiza o localStorage (já foi atualizado pelo caller)
    */
-  async function saveToFirebaseAndLocalStorage(collectionName, data) {
+  async function saveToFirebaseAndLocalStorage(collectionName, data, skipLocalStorageUpdate) {
     if (!isFirebaseReady()) {
       console.warn(`[Sync] Firebase não pronto, salvando apenas localmente`);
       return saveToLocalStorageOnly(collectionName, data);
@@ -129,10 +132,16 @@
       // Atualizar o documento com o ID do Firebase
       await docRef.update({ id: docRef.id });
 
-      // Atualizar localStorage
-      const localData = getFromLocalStorage(collectionName);
-      localData.push({ id: docRef.id, ...data });
-      saveToLocalStorageOnly(collectionName, localData);
+      // Apenas atualizar localStorage se não foi feito pelo caller (store.js)
+      if (!skipLocalStorageUpdate) {
+        const localData = getFromLocalStorage(collectionName);
+        // Verificar se o item já existe para evitar duplicação
+        const exists = localData.some(item => item.id === data.id || item.id === docRef.id);
+        if (!exists) {
+          localData.push({ id: docRef.id, ...data });
+          saveToLocalStorageOnly(collectionName, localData);
+        }
+      }
 
       return { success: true, id: docRef.id };
     } catch (error) {

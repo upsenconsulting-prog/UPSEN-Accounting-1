@@ -268,16 +268,29 @@ async function addExpense(expense) {
     category: expense.category ?? "",
     description: expense.description ?? "",
     amount: Number(expense.amount ?? 0),
+    // Guardar campos adicionais do expense
+    ivaRate: Number(expense.ivaRate ?? 0),
+    ivaAmount: Number(expense.ivaAmount ?? 0),
+    totalAmount: Number(expense.totalAmount ?? 0),
+    notes: expense.notes ?? "",
+    paymentMethod: expense.paymentMethod ?? "",
+    supplierNif: expense.supplierNif ?? "",
+    supplierName: expense.supplierName ?? "",
     createdAt: new Date().toISOString(),
   };
   
+  // Adicionar à lista apenas uma vez
   list.push(item);
-  write(KEYS.expenses, list);
   
-  // Salvar no Firebase se disponível
+  // Salvar APENAS no localStorage aqui - NÃO duplicar
+  write(KEYS.expenses, list);
+  console.log('[Store] Despesa adicionada ao localStorage:', item.id);
+  
+  // Salvar no Firebase se disponível (apenas para backup, não para localStorage)
   if (isFirebaseReady()) {
     try {
-      await window.FirebaseSync.saveToFirebaseAndLocalStorage('expenses', item);
+      // Passar true para indicar que o localStorage já foi atualizado pelo store.js
+      await window.FirebaseSync.saveToFirebaseAndLocalStorage('expenses', item, true);
     } catch (e) {
       console.warn('[Store] Erro ao salvar expense no Firebase:', e);
     }

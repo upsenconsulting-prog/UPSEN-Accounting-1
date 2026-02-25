@@ -293,11 +293,11 @@
           <div class="row">
             <div class="col-md-6 mb-3">
               <label class="form-label"><i class="fas fa-calendar me-2"></i>Fecha *</label>
-              <input type="date" name="date" class="form-control" required />
+              <input type="date" id="expenseDate" name="date" class="form-control" required />
             </div>
             <div class="col-md-6 mb-3">
               <label class="form-label"><i class="fas fa-tag me-2"></i>Categoria *</label>
-              <input type="text" name="category" class="form-control" placeholder="Ej: Material de oficina" required list="categoryList" />
+              <input type="text" id="expenseCategory" name="category" class="form-control" placeholder="Ej: Material de oficina" required list="categoryList" />
               <datalist id="categoryList">
                 <option value="Material de oficina">
                 <option value="Software">
@@ -315,11 +315,11 @@
           <div class="row">
             <div class="col-md-6 mb-3">
               <label class="form-label"><i class="fas fa-euro-sign me-2"></i>Base Imponible (EUR) *</label>
-              <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required />
+              <input type="number" id="expenseAmount" step="0.01" name="amount" class="form-control" placeholder="0.00" required />
             </div>
             <div class="col-md-6 mb-3">
               <label class="form-label"><i class="fas fa-percent me-2"></i>Tipo IVA (%)</label>
-              <select name="ivaRate" class="form-select">
+              <select id="expenseIvaRate" name="ivaRate" class="form-select">
                 <option value="0">0% (Exento)</option>
                 <option value="4">4% (Superreducido)</option>
                 <option value="10">10% (Reducido)</option>
@@ -330,16 +330,16 @@
           <div class="row">
             <div class="col-md-6 mb-3">
               <label class="form-label"><i class="fas fa-building me-2"></i>Proveedor</label>
-              <input type="text" name="supplierName" class="form-control" placeholder="Nombre del proveedor" />
+              <input type="text" id="expenseSupplierName" name="supplierName" class="form-control" placeholder="Nombre del proveedor" />
             </div>
             <div class="col-md-6 mb-3">
               <label class="form-label"><i class="fas fa-id-card me-2"></i>NIF Proveedor</label>
-              <input type="text" name="supplierNif" class="form-control" placeholder="NIF/CIF" />
+              <input type="text" id="expenseSupplierNif" name="supplierNif" class="form-control" placeholder="NIF/CIF" />
             </div>
           </div>
           <div class="mb-3">
             <label class="form-label"><i class="fas fa-sticky-note me-2"></i>Notas</label>
-            <input type="text" name="notes" class="form-control" placeholder="Descripción opcional" />
+            <input type="text" id="expenseNotes" name="notes" class="form-control" placeholder="Descripción opcional" />
           </div>
         </form>
       </div>
@@ -432,11 +432,15 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+<!-- Config -->
 <script src="../shared/firebase-config.js"></script>
-<script src="../shared/firebase-integration.js"></script>
-<script src="../shared/firebase-sync.js"></script>
-<script src="../shared/store.js"></script>
+<!-- Auth FIRST - initializes Firebase -->
 <script src="../shared/auth-system.js"></script>
+<!-- Sync service -->
+<script src="../shared/firebase-sync.js"></script>
+<!-- Store (uses sync service) -->
+<script src="../shared/store.js"></script>
+<!-- Page specific -->
 <script src="./expense.js"></script>
 
 <script>

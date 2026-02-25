@@ -1,6 +1,7 @@
-ss/**
+/**
  * Firebase Collections Initialization
  * UPSEN Accounting - Garante que as coleções existem no Firebase
+ * ESTRUTURA: companies/{uid}/{collection}
  * 
  * Este script deve ser chamado após a autenticação para criar
  * as subcollections necessárias para cada utilizador.
@@ -27,21 +28,14 @@ ss/**
       ];
       
       var promises = collections.map(function(collection) {
-        // Criar documento de inicialização na subcollection
-        return window.firebaseDb.collection('users').doc(userId).collection('documents').doc(collection.name).set({
+        // Criar documento de inicialização na subcollection (companies/{uid}/{collection})
+        return window.firebaseDb.collection('companies').doc(userId).collection(collection.name).doc('_init').set({
           initialized: true,
           initializedAt: firebase.firestore.FieldValue.serverTimestamp(),
           displayName: collection.displayName
         }, { merge: true })
         .then(function() {
           console.log('Coleção initialized:', collection.name);
-          
-          // Também criar a subcollection 'items' com um documento placeholder
-          // Isto garante que a estrutura está completa
-          return window.firebaseDb.collection('users').doc(userId).collection('documents').doc(collection.name).collection('items').doc('_init').set({
-            _init: true,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          }, { merge: true });
         })
         .catch(function(error) {
           console.warn('Erro ao inicializar coleção', collection.name + ':', error.message);
@@ -64,12 +58,12 @@ ss/**
       
       console.log('Verificando coleções para:', userId);
       
-      // Verificar se o documento do utilizador existe
-      return window.firebaseDb.collection('users').doc(userId).get()
+      // Verificar se o documento do utilizador existe na collection companies
+      return window.firebaseDb.collection('companies').doc(userId).get()
         .then(function(doc) {
           if (!doc.exists) {
             console.log('Documento do utilizador não existe, criando...');
-            return window.firebaseDb.collection('users').doc(userId).set({
+            return window.firebaseDb.collection('companies').doc(userId).set({
               createdAt: firebase.firestore.FieldValue.serverTimestamp(),
               initialized: true
             });
@@ -98,8 +92,8 @@ ss/**
         
         var promises = [];
         
-        // Sync expenses
-        var expensesPromise = window.firebaseDb.collection('users').doc(userId).collection('documents').doc('expenses').collection('items').get()
+        // Sync expenses - usando estrutura companies/{uid}/expenses
+        var expensesPromise = window.firebaseDb.collection('companies').doc(userId).collection('expenses').get()
           .then(function(snapshot) {
             var expenses = [];
             snapshot.forEach(function(doc) {
@@ -125,8 +119,8 @@ ss/**
           }).catch(function(err) { console.log('Erro sync expenses:', err); });
         promises.push(expensesPromise);
         
-        // Sync invoices issued
-        var invoicesIssuedPromise = window.firebaseDb.collection('users').doc(userId).collection('documents').doc('invoicesIssued').collection('items').get()
+        // Sync invoices issued - usando estrutura companies/{uid}/invoicesIssued
+        var invoicesIssuedPromise = window.firebaseDb.collection('companies').doc(userId).collection('invoicesIssued').get()
           .then(function(snapshot) {
             var invoicesIssued = [];
             snapshot.forEach(function(doc) {
@@ -153,8 +147,8 @@ ss/**
           }).catch(function(err) { console.log('Erro sync invoices issued:', err); });
         promises.push(invoicesIssuedPromise);
         
-        // Sync invoices received
-        var invoicesReceivedPromise = window.firebaseDb.collection('users').doc(userId).collection('documents').doc('invoicesReceived').collection('items').get()
+        // Sync invoices received - usando estrutura companies/{uid}/invoicesReceived
+        var invoicesReceivedPromise = window.firebaseDb.collection('companies').doc(userId).collection('invoicesReceived').get()
           .then(function(snapshot) {
             var invoicesReceived = [];
             snapshot.forEach(function(doc) {
@@ -179,6 +173,29 @@ ss/**
             console.log('Invoices Received sincronizados:', invoicesReceived.length);
           }).catch(function(err) { console.log('Erro sync invoices received:', err); });
         promises.push(invoicesReceivedPromise);
+        
+        // Sync budgets - usando estrutura companies/{uid}/budgets
+        var budgetsPromise = window.firebaseDb.collection('companies').doc(userId).collection('budgets').get()
+          .then(function(snapshot) {
+            var budgets = [];
+            snapshot.forEach(function(doc) {
+              if (doc.id === '_init') return;
+              var data = doc.data();
+              budgets.push({
+                id: doc.id,
+                number: data.number || '',
+                series: data.series || '',
+                date: data.date || '',
+                customer: data.customer || '',
+                total: parseFloat(data.total) || 0,
+                status: data.status || 'pending',
+                createdAt: data.createdAt ? new Date(data.createdAt.seconds * 1000).toISOString() : new Date().toISOString()
+              });
+            });
+            localStorage.setItem('upsen_budgets_' + userId, JSON.stringify(budgets));
+            console.log('Budgets sincronizados:', budgets.length);
+          }).catch(function(err) { console.log('Erro sync budgets:', err); });
+        promises.push(budgetsPromise);
         
         Promise.all(promises).then(function() {
           console.log('Sincronizacao completa!');

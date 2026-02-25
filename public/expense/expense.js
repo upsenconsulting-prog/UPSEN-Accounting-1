@@ -48,33 +48,29 @@ function loadExpensesFromFirebase(userId) {
 }
 
 function saveUserExpense(expense) {
-  // Calcular IVA
-  var baseImponible = Number(expense.amount || 0);
-  var ivaRate = Number(expense.ivaRate || 0);
-  var ivaAmount = baseImponible * (ivaRate / 100);
-  var totalAmount = baseImponible + ivaAmount;
-
-  var newExpense = {
-    id: 'exp-' + Date.now() + '-' + Math.random().toString(16).slice(2),
+  // NÃO criar ID aqui - deixar store.js criar o ID
+  // Passar os dados diretamente para store.js
+  var expenseData = {
     date: expense.date || '',
     category: expense.category || '',
-    amount: baseImponible,
-    ivaRate: ivaRate,
-    ivaAmount: ivaAmount,
-    totalAmount: totalAmount,
+    amount: Number(expense.amount || 0),
+    ivaRate: Number(expense.ivaRate || 0),
+    ivaAmount: Number(expense.ivaAmount || 0),
+    totalAmount: Number(expense.totalAmount || 0),
     notes: expense.notes || '',
     paymentMethod: expense.paymentMethod || '',
     supplierNif: expense.supplierNif || '',
-    supplierName: expense.supplierName || '',
-    createdAt: new Date().toISOString()
+    supplierName: expense.supplierName || ''
   };
   
   // Usar store.js - função assíncrona que salva no Firebase E localStorage
   if (window.addExpense) {
-    window.addExpense(newExpense).then(function() {
+    window.addExpense(expenseData).then(function() {
       renderExpenses();
       renderChart();
       renderSummaryCards();
+    }).catch(function(err) {
+      console.error('Erro ao salvar despesa:', err);
     });
   } else {
     console.error('store.js não disponível');
@@ -407,56 +403,63 @@ window.viewExpense = function(id) {
 
 function saveExpense() {
   var form = $("formNewExpense");
-  if (!form) return;
+  if (!form) {
+    console.error('Form not found');
+    return;
+  }
 
-  var date = "";
-  var category = "";
-  var amount = "";
-  var ivaRate = "";
-  var notes = "";
-  var paymentMethod = "";
-  var supplierNif = "";
-  var supplierName = "";
-  
-  var dateInput = form.querySelector('input[name="date"]');
-  var categoryInput = form.querySelector('input[name="category"]');
-  var amountInput = form.querySelector('input[name="amount"]');
-  var ivaRateInput = form.querySelector('input[name="ivaRate"]');
-  var notesInput = form.querySelector('input[name="notes"]');
-  
-  if (dateInput) date = dateInput.value;
-  if (categoryInput) category = categoryInput.value;
-  if (amountInput) amount = amountInput.value;
-  if (ivaRateInput) ivaRate = ivaRateInput.value;
-  if (notesInput) notes = notesInput.value;
+  // Get values using direct ID access for reliability
+  var dateInput = document.getElementById('expenseDate') || form.querySelector('input[name="date"]');
+  var categoryInput = document.getElementById('expenseCategory') || form.querySelector('input[name="category"]');
+  var amountInput = document.getElementById('expenseAmount') || form.querySelector('input[name="amount"]');
+  var ivaRateInput = document.getElementById('expenseIvaRate') || form.querySelector('select[name="ivaRate"]') || form.querySelector('input[name="ivaRate"]');
+  var notesInput = document.getElementById('expenseNotes') || form.querySelector('input[name="notes"]');
+  var supplierNameInput = document.getElementById('expenseSupplierName') || form.querySelector('input[name="supplierName"]');
+  var supplierNifInput = document.getElementById('expenseSupplierNif') || form.querySelector('input[name="supplierNif"]');
 
-  var supplierNameInput = form.querySelector('input[name="supplierName"]');
-  var supplierNifInput = form.querySelector('input[name="supplierNif"]');
-  if (supplierNameInput) supplierName = supplierNameInput.value;
-  if (supplierNifInput) supplierNif = supplierNifInput.value;
+  var date = dateInput ? dateInput.value : '';
+  var category = categoryInput ? categoryInput.value : '';
+  var amount = amountInput ? amountInput.value : '';
+  var ivaRate = ivaRateInput ? ivaRateInput.value : '21';
+  var notes = notesInput ? notesInput.value : '';
+  var supplierName = supplierNameInput ? supplierNameInput.value : '';
+  var supplierNif = supplierNifInput ? supplierNifInput.value : '';
+
+  console.log('Saving expense - date:', date, 'category:', category, 'amount:', amount);
 
   if (!date || !category || !amount) {
     alert("Completa: fecha, categoría e importe.");
+    console.log('Validation failed - date:', date, 'category:', category, 'amount:', amount);
     return;
   }
+
+  // Calcular IVA aqui para passar os valores corretos
+  var baseImponible = Number(amount || 0);
+  var ivaRateNum = Number(ivaRate || 21);
+  var ivaAmount = baseImponible * (ivaRateNum / 100);
+  var totalAmount = baseImponible + ivaAmount;
 
   saveUserExpense({ 
     date: date, 
     category: category, 
-    amount: amount, 
-    ivaRate: ivaRate || 0, 
+    amount: baseImponible, 
+    ivaRate: ivaRateNum, 
+    ivaAmount: ivaAmount,
+    totalAmount: totalAmount,
     notes: notes, 
-    paymentMethod: paymentMethod,
+    paymentMethod: '',
     supplierName: supplierName,
     supplierNif: supplierNif
   });
 
+  // Hide modal - usar a instância do modal se disponível
   var modalEl = document.getElementById('modalNewExpense');
   if (modalEl) {
     var modal = bootstrap.Modal.getInstance(modalEl);
     if (modal) {
       modal.hide();
     } else {
+      // Se não há instância, criar e esconder
       var bsModal = new bootstrap.Modal(modalEl);
       bsModal.hide();
     }
@@ -464,11 +467,8 @@ function saveExpense() {
 
   form.reset();
   
-  setTimeout(function() {
-    renderExpenses();
-    renderChart();
-    renderSummaryCards();
-  }, 300);
+  // NÃO fazer re-render aqui - o saveUserExpense já faz isso
+  // Isso evita duplicação quando o modal esconde e o utilizador clica em outro lugar
 }
 
 function openNewExpenseModal() {
@@ -492,9 +492,22 @@ document.addEventListener("DOMContentLoaded", function() {
   markActivePage();
   
   function checkAndInit() {
-    if (window.getExpensesSync) {
+    if (window.getExpensesSync && window.FirebaseSync) {
       console.log('store.js disponível, inicializando expense page...');
-      initPage();
+      
+      // Primeiro sincronizar dados do Firebase
+      if (window.FirebaseSync.syncAllToLocalStorage) {
+        console.log('Sincronizando dados do Firebase...');
+        window.FirebaseSync.syncAllToLocalStorage().then(function() {
+          console.log('Sincronização concluída!');
+          initPage();
+        }).catch(function(err) {
+          console.warn('Erro na sincronização:', err);
+          initPage();
+        });
+      } else {
+        initPage();
+      }
     } else {
       console.log('Aguardando store.js...');
       setTimeout(checkAndInit, 500);
@@ -504,41 +517,17 @@ document.addEventListener("DOMContentLoaded", function() {
   // Iniciar verificação
   setTimeout(checkAndInit, 500);
   
-  function initPage() {
+function initPage() {
     console.log('Inicializando expense page...');
     
-    var newExpenseBtn = document.getElementById('newExpenseBtn');
-    if (newExpenseBtn) {
-      newExpenseBtn.addEventListener('click', function() {
-        openNewExpenseModal();
-      });
-    }
+    // Os listeners dos botões estão no expense.html para evitar duplicação
+    // - newExpenseBtn
+    // - saveExpenseBtn
+    // - refreshBtn
+    // - btnImport / confirmImportBtn
+    // - btnExport / confirmExportBtn
     
-    var saveBtn = document.getElementById('saveExpenseBtn');
-    if (saveBtn) {
-      saveBtn.addEventListener('click', function() {
-        saveExpense();
-      });
-    }
-    
-    var refreshBtn = document.getElementById('refreshBtn');
-    if (refreshBtn) {
-      refreshBtn.addEventListener('click', function() {
-        location.reload();
-      });
-    }
-    
-    var importBtn = document.getElementById('importExpensesBtn');
-    if (importBtn) {
-      var fileInput = document.getElementById('importExpensesFile');
-      if (fileInput) {
-        importBtn.addEventListener('click', function() {
-          fileInput.click();
-        });
-        fileInput.addEventListener('change', handleFileImport);
-      }
-    }
-    
+    // Apenas renderizar os dados iniciais
     renderExpenses();
     renderChart();
     renderSummaryCards();
