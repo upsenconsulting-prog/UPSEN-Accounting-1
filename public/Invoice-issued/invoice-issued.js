@@ -1,4 +1,5 @@
 // invoice-issued.js - Sistema de facturas emitidas com IVA e Importação em massa
+// VERSÃO CORRIGIDA - Evita recursão infinita
 
 function $(id) {
   return document.getElementById(id);
@@ -27,33 +28,23 @@ function markActivePage() {
 
 var issuedChart = null;
 
-// ========== USER ID - CORRIGIDO ==========
-// AGORA USA store.js COMO FONTE PRIMÁRIA
+// ========== USER ID ==========
 function getUserId() {
-  // First check Firebase Auth directly (this always works)
   if (window.firebaseAuth && window.firebaseAuth.currentUser) {
     return window.firebaseAuth.currentUser.uid;
   }
-  
-  // Also check AuthService
   try {
     var auth = window.AuthService || window.Auth;
     if (auth && auth.getCurrentUser) {
       var user = auth.getCurrentUser();
-      if (user) {
-        return user.uid || user.id;
-      }
+      if (user) return user.uid || user.id;
     }
   } catch (e) {}
-  
-  // Fallback to localStorage
   try {
     var session = localStorage.getItem('upsen_current_user');
     if (session) {
       var data = JSON.parse(session);
-      if (data && data.user) {
-        return data.user.uid || data.user.id || 'unknown';
-      }
+      if (data && data.user) return data.user.uid || data.user.id || 'unknown';
     }
   } catch (e) {}
   return 'unknown';
@@ -64,18 +55,27 @@ function isLoggedIn() {
   return userId && userId !== 'demo' && userId !== 'unknown';
 }
 
+// ========== ACESSO AO STORE.JS (SEM RECURSÃO) ==========
+// Vamos guardar a referência original do store.js antes de definir a nossa função
+var _storeAddInvoiceIssued = null;
+var _storeDeleteInvoiceIssued = null;
+
+// Detectar se store.js está disponível e guardar referências
+function initStoreReferences() {
+  if (typeof window.addInvoiceIssued === 'function') {
+    _storeAddInvoiceIssued = window.addInvoiceIssued;
+  }
+  if (typeof window.deleteInvoiceIssued === 'function') {
+    _storeDeleteInvoiceIssued = window.deleteInvoiceIssued;
+  }
+}
+
 // Usar store.js
 function getUserInvoicesIssued() {
-  // Usar store.js - versão síncrona para renderização imediata
   if (window.getInvoicesIssuedSync) {
     return window.getInvoicesIssuedSync();
   }
-  // Fallback se store.js não estiver disponível
   return [];
-}
-
-function saveUserInvoicesIssued(invoices) {
-  localStorage.setItem(getDataKey(), JSON.stringify(invoices));
 }
 
 function generateId() {
@@ -86,7 +86,10 @@ function getAllInvoicesIssued() {
   return getUserInvoicesIssued();
 }
 
+// ========== GUARDAR FACTURA - Versão corrigida ==========
 function addInvoiceIssued(invoice) {
+  console.log('addInvoiceIssued chamado:', invoice);
+  
   // Calcular IVA
   var baseImponible = Number(invoice.amount || 0);
   var ivaRate = Number(invoice.ivaRate || 0);
@@ -94,7 +97,7 @@ function addInvoiceIssued(invoice) {
   var totalAmount = baseImponible + ivaAmount;
   
   var newInvoice = {
-    id: generateId(),
+    id: invoice.id || generateId(),
     invoiceNumber: invoice.invoiceNumber || '',
     customer: invoice.customer || '',
     customerNif: invoice.customerNif || '',
@@ -106,95 +109,52 @@ function addInvoiceIssued(invoice) {
     totalAmount: totalAmount,
     state: invoice.state || 'Pendiente',
     description: invoice.description || '',
-    createdAt: new Date().toISOString()
+    createdAt: invoice.createdAt || new Date().toISOString()
   };
   
-  // Usar store.js - função assíncrona que salva no Firebase E localStorage
-  if (window.addInvoiceIssued) {
-    window.addInvoiceIssued(newInvoice).then(function() {
-      renderInvoices();
-      renderChart();
-      renderSummaryCards();
+  // Salvar localmente primeiro (sempre funciona)
+  var invoices = getUserInvoicesIssued();
+  invoices.push(newInvoice);
+  var key = 'upsen_invoices_issued_' + getUserId();
+  localStorage.setItem(key, JSON.stringify(invoices));
+  
+  console.log('Fatura salva localmente:', newInvoice.invoiceNumber);
+  
+  // Tentar salvar no Firebase através do store.js (se disponível e diferente desta função)
+  if (_storeAddInvoiceIssued && _storeAddInvoiceIssued !== addInvoiceIssued) {
+    console.log('Salvando no Firebase via store.js...');
+    _storeAddInvoiceIssued(newInvoice).catch(function(err) {
+      console.warn('Erro ao salvar no Firebase:', err);
     });
-  } else {
-    // Fallback: salvar localmente
-    var invoices = getUserInvoicesIssued();
-    invoices.push(newInvoice);
-    localStorage.setItem('upsen_invoices_issued', JSON.stringify(invoices));
-    console.error('store.js não disponível, salvando localmente');
   }
+  
+  // Renderizar
+  if (typeof renderInvoices === 'function') renderInvoices();
+  if (typeof renderChart === 'function') renderChart();
+  if (typeof renderSummaryCards === 'function') renderSummaryCards();
+  
+  // Disipar evento para outras páginas
+  window.dispatchEvent(new CustomEvent('dataUpdated-invoicesIssued', { detail: newInvoice }));
   
   return newInvoice;
 }
 
-function saveInvoiceIssuedToFirebase(invoice) {
-  var userId = getUserId();
-  console.log('=== SAVE INVOICE ISSUED TO FIREBASE ===');
-  console.log('userId:', userId);
-  
-  // Sempre salvar no Firebase se não for demo
-  if (!userId || userId === 'unknown' || userId === 'demo') {
-    console.log('Utilizador não está logado, salvando apenas localmente');
-    return;
-  }
-  
-  if (!window.firebaseDb) {
-    console.log('Firebase não disponível, salvando apenas localmente');
-    return;
-  }
-  
-  window.firebaseDb.collection('users').doc(userId).collection('documents').doc('invoicesIssued').collection('items').add({
-    id: invoice.id,
-    invoiceNumber: invoice.invoiceNumber,
-    customer: invoice.customer,
-    customerNif: invoice.customerNif || '',
-    invoiceDate: invoice.invoiceDate,
-    dueDate: invoice.dueDate,
-    amount: invoice.amount,
-    ivaRate: invoice.ivaRate || 0,
-    ivaAmount: invoice.ivaAmount || 0,
-    totalAmount: invoice.totalAmount || invoice.amount,
-    state: invoice.state,
-    description: invoice.description || '',
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(function() {
-    console.log('✅ Fatura emitida salva no Firebase');
-  }).catch(function(error) {
-    console.warn('Erro ao salvar no Firebase:', error.message);
-  });
-}
-
 function deleteInvoiceIssued(id) {
   var invoices = getUserInvoicesIssued();
-  var filtered = [];
-  for (var i = 0; i < invoices.length; i++) {
-    if (invoices[i].id !== id) {
-      filtered.push(invoices[i]);
-    }
-  }
-  saveUserInvoicesIssued(filtered);
+  var filtered = invoices.filter(function(inv) { return inv.id !== id; });
+  var key = 'upsen_invoices_issued_' + getUserId();
+  localStorage.setItem(key, JSON.stringify(filtered));
   
-  // Também eliminar do Firebase
-  deleteInvoiceIssuedFromFirebase(id);
-}
-
-function deleteInvoiceIssuedFromFirebase(id) {
-  var userId = getUserId();
-  if (!userId || userId === 'unknown') return;
-  if (!window.firebaseDb) return;
-  
-  window.firebaseDb.collection('users').doc(userId).collection('documents').doc('invoicesIssued').collection('items')
-    .where('id', '==', id)
-    .get()
-    .then(function(snapshot) {
-      snapshot.forEach(function(doc) {
-        doc.ref.delete();
-      });
-      console.log('✅ Fatura emitida eliminada do Firebase');
-    })
-    .catch(function(error) {
-      console.warn('Erro ao eliminar do Firebase:', error.message);
+  // Tentar eliminar do Firebase
+  if (_storeDeleteInvoiceIssued && _storeDeleteInvoiceIssued !== deleteInvoiceIssued) {
+    _storeDeleteInvoiceIssued(id).catch(function(err) {
+      console.warn('Erro ao eliminar do Firebase:', err);
     });
+  }
+  
+  renderInvoices();
+  renderChart();
+  renderSummaryCards();
 }
 
 function updateInvoiceIssued(id, updates) {
@@ -202,10 +162,13 @@ function updateInvoiceIssued(id, updates) {
   for (var i = 0; i < invoices.length; i++) {
     if (invoices[i].id === id) {
       invoices[i] = Object.assign({}, invoices[i], updates);
-      saveUserInvoicesIssued(invoices);
+      var key = 'upsen_invoices_issued_' + getUserId();
+      localStorage.setItem(key, JSON.stringify(invoices));
       break;
     }
   }
+  renderInvoices();
+  renderSummaryCards();
 }
 
 async function renderSummaryCards() {
@@ -371,9 +334,6 @@ async function renderInvoices() {
       var id = this.getAttribute('data-del');
       if (confirm('Eliminar factura?')) {
         deleteInvoiceIssued(id);
-        renderInvoices();
-        renderChart();
-        renderSummaryCards();
       }
     });
   }
@@ -383,8 +343,6 @@ async function renderInvoices() {
     paidBtns[k].addEventListener('click', function() {
       var id = this.getAttribute('data-paid');
       updateInvoiceIssued(id, { state: 'Pagada' });
-      renderInvoices();
-      renderSummaryCards();
     });
   }
 
@@ -431,7 +389,7 @@ window.viewInvoice = function(id) {
   }
 };
 
-// ========== GUARDAR FACTURA ==========
+// ========== GUARDAR FACTURA DO FORM ==========
 function saveInvoiceIssued() {
   var form = $('formNewInvoiceIssued');
   if (!form) return false;
@@ -484,21 +442,16 @@ function saveInvoiceIssued() {
   }
 
   form.reset();
-  renderInvoices();
-  renderChart();
-  renderSummaryCards();
   return true;
 }
 
 // ========== ABRIR MODAL ==========
 function openNewInvoiceModal() {
-  // Generate invoice number
   var date = new Date();
   var num = 'INV-' + date.getFullYear() + '-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
   var numberInput = document.querySelector('#formNewInvoiceIssued input[name="invoiceNumber"]');
   if (numberInput) numberInput.value = num;
   
-  // Set default dates
   var invoiceDate = document.querySelector('#formNewInvoiceIssued input[name="invoiceDate"]');
   var dueDate = document.querySelector('#formNewInvoiceIssued input[name="dueDate"]');
   if (invoiceDate) invoiceDate.value = new Date().toISOString().split('T')[0];
@@ -522,6 +475,9 @@ function openNewInvoiceModal() {
 document.addEventListener('DOMContentLoaded', async function() {
   markActivePage();
   
+  // Inicializar referências do store.js
+  initStoreReferences();
+  
   function checkAndInit() {
     if (window.getInvoicesIssuedSync) {
       console.log('store.js disponível, inicializando invoice issued page...');
@@ -532,13 +488,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   }
   
-  // Iniciar verificação
   setTimeout(checkAndInit, 500);
   
   function initPage() {
-    console.log('Auth ready, initializing invoice issued page...');
+    console.log('Inicializando página de facturas emitidas...');
     
-    // New Invoice Button
     var newInvoiceBtn = document.getElementById('newInvoiceBtn');
     if (newInvoiceBtn) {
       newInvoiceBtn.addEventListener('click', function() {
@@ -546,7 +500,6 @@ document.addEventListener('DOMContentLoaded', async function() {
       });
     }
     
-    // Save Button
     var saveBtn = document.getElementById('saveInvoiceIssuedBtn');
     if (saveBtn) {
       saveBtn.addEventListener('click', function() {
@@ -554,7 +507,6 @@ document.addEventListener('DOMContentLoaded', async function() {
       });
     }
     
-    // Refresh button
     var refreshBtn = document.getElementById('refreshBtn');
     if (refreshBtn) {
       refreshBtn.addEventListener('click', function() {
@@ -565,6 +517,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     renderInvoices();
     renderChart();
     renderSummaryCards();
+    
+    // Sincronização em tempo real
+    window.addEventListener('dataUpdated-invoicesIssued', function() {
+      console.log('Dados atualizados, recarregando...');
+      renderInvoices();
+      renderChart();
+      renderSummaryCards();
+    });
   }
 });
 
@@ -576,7 +536,6 @@ function exportInvoices(format, period) {
     return;
   }
   
-  // Filtrar por período
   var now = new Date();
   var filtered = list;
   
@@ -606,10 +565,6 @@ function exportInvoices(format, period) {
   }
 }
 
-function exportInvoicesFallback(format, period) {
-  exportInvoices(format, period);
-}
-
 function exportToPDF(list) {
   if (typeof window.jspdf === 'undefined') {
     alert('Biblioteca PDF no disponible.');
@@ -618,7 +573,6 @@ function exportToPDF(list) {
   
   var doc = new window.jspdf.jsPDF();
   
-  // Header
   doc.setFillColor(42, 77, 156);
   doc.rect(0, 0, 210, 35, 'F');
   doc.setTextColor(255, 255, 255);
@@ -627,7 +581,6 @@ function exportToPDF(list) {
   doc.setFontSize(12);
   doc.text('Facturas Emitidas', 105, 28, {align: 'center'});
   
-  // Data
   doc.setTextColor(100);
   doc.setFontSize(10);
   doc.text('Generado: ' + new Date().toLocaleDateString('es-ES'), 195, 45, {align: 'right'});
@@ -656,7 +609,6 @@ function exportToPDF(list) {
     y += 8;
   }
   
-  // Total
   var total = 0;
   for (var j = 0; j < list.length; j++) {
     total += Number(list[j].amount || 0);
@@ -694,7 +646,6 @@ function exportToCSV(list) {
 }
 
 function exportToExcel(list) {
-  // Criar tabela HTML
   var html = '<table border="1">';
   html += '<tr><th>Numero</th><th>Cliente</th><th>Fecha</th><th>Vence</th><th>Importe</th><th>Estado</th></tr>';
   
@@ -711,7 +662,6 @@ function exportToExcel(list) {
   }
   html += '</table>';
   
-  // Converter para Excel
   var excelHtml = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
   excelHtml += '<head><meta charset="UTF-8"></head><body>' + html + '</body></html>';
   
@@ -723,7 +673,6 @@ function exportToExcel(list) {
   alert('Excel descargado correctamente!');
 }
 
-// ========== TEMPLATE CSV ==========
 function downloadIssuedInvoiceTemplate() {
   var template = 'Numero,Cliente,NIF,Fecha,Vence,Base Imponible,IVA Rate,Estado\n';
   template += 'INV-2025-001,Cliente SL,12345678A,2025-01-15,2025-02-15,1000.00,21,Pendiente\n';
@@ -734,10 +683,9 @@ function downloadIssuedInvoiceTemplate() {
   link.href = URL.createObjectURL(blob);
   link.download = 'template_facturas_emitidas.csv';
   link.click();
-  alert('Template descargado! Use este formato para importar facturas.');
+  alert('Template descargado!');
 }
 
-// ========== IMPORTAR FACTURAS EMITIDAS ==========
 function importInvoicesFromCSV(csvContent) {
   var lines = csvContent.split('\n');
   if (lines.length < 2) {
@@ -752,7 +700,6 @@ function importInvoicesFromCSV(csvContent) {
     var line = lines[i].trim();
     if (!line) continue;
     
-    // Parse CSV line (handling quoted values)
     var values = [];
     var current = '';
     var inQuotes = false;
@@ -769,7 +716,6 @@ function importInvoicesFromCSV(csvContent) {
     }
     values.push(current.trim());
     
-    // Map values to fields
     var invoice = {};
     for (var k = 0; k < headers.length && k < values.length; k++) {
       var header = headers[k].replace(/"/g, '');
@@ -792,37 +738,5 @@ function importInvoicesFromCSV(csvContent) {
   }
   
   return importedCount;
-}
-
-function handleFileImportIssued(event) {
-  var file = event.target.files[0];
-  if (!file) return;
-  
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    var content = e.target.result;
-    var count = 0;
-    
-    if (file.name.endsWith('.csv')) {
-      count = importInvoicesFromCSV(content);
-    } else if (file.name.endsWith('.xls') || file.name.endsWith('.xlsx')) {
-      alert('Para Excel, por favor convierte a CSV primero.');
-    } else {
-      alert('Formato no soportado. Usa CSV.');
-    }
-    
-    if (count > 0) {
-      alert(count + ' facturas importadas con éxito!');
-      renderInvoices();
-      renderChart();
-      renderSummaryCards();
-    } else {
-      alert('Ninguna factura importada. Verifica el formato del CSV.');
-    }
-    
-    // Reset file input
-    event.target.value = '';
-  };
-  reader.readAsText(file);
 }
 

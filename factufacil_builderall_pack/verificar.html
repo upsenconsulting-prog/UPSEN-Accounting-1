@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FactuFácil · Verificar factura</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="brand.css">
+<script src="config.js"></script>
+</head>
+<body>
+<div class="container">
+  <div class="brandbar">
+    <div class="brandlogo"></div>
+    <div class="brandname">Verificación · FactuFácil</div>
+  </div>
+  <div class="card">
+    <h1 class="h1">Verificar factura</h1>
+    <div class="row" style="grid-template-columns:1fr auto">
+      <input class="input" id="invoiceId" placeholder="ID de factura (o usa ?invoiceId=...)">
+      <button class="btn" id="btnChk">Consultar</button>
+    </div>
+    <div id="info" class="note" style="margin-top:8px"></div>
+    <table class="table" id="ledgerTbl" style="display:none;margin-top:12px">
+      <thead><tr><th>Fecha</th><th>Evento</th><th>prevHash</th><th>currHash</th></tr></thead>
+      <tbody id="ledgerBody"></tbody>
+    </table>
+  </div>
+  <footer>© 2025 Upsen Consulting · FactuFácil</footer>
+</div>
+
+<script>
+const API_BASE = (window.FACTUFACIL_CONFIG && window.FACTUFACIL_CONFIG.API_BASE) || "";
+
+const q = new URLSearchParams(location.search);
+const initialId = q.get('invoiceId');
+if(initialId) document.getElementById('invoiceId').value = initialId;
+
+async function fetchLedger(id){
+  const r = await fetch(API_BASE+'/verifactu/ledger/'+encodeURIComponent(id));
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+function toDateStr(s){ try{ return new Date(s).toLocaleString('es-ES'); }catch(_){ return s; } }
+
+async function run(){
+  const id = document.getElementById('invoiceId').value.trim();
+  const info = document.getElementById('info');
+  const tbl = document.getElementById('ledgerTbl');
+  const body = document.getElementById('ledgerBody');
+  info.textContent = 'Consultando…';
+  tbl.style.display = 'none'; body.innerHTML='';
+  try{
+    const rows = await fetchLedger(id);
+    if(!rows || !rows.length){ info.textContent = 'No hay registros Veri*Factu para este ID.'; return; }
+    rows.forEach(r=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td>'+toDateStr(r.timestamp||'')+'</td>' +
+                     '<td>'+ (r.eventType||'') +'</td>' +
+                     '<td style="font-family:monospace;color:#a8ffdf">'+ ((r.prevHash||'').slice(0,12)) +'…</td>' +
+                     '<td style="font-family:monospace;color:#a8ffdf">'+ ((r.currHash||'').slice(0,12)) +'…</td>';
+      body.appendChild(tr);
+    });
+    info.innerHTML = 'Última huella: <span style="font-family:monospace;color:#a8ffdf">'+ rows[rows.length-1].currHash +'</span>';
+    tbl.style.display = '';
+  }catch(e){
+    info.textContent = 'Error: '+e.message;
+  }
+}
+
+document.getElementById('btnChk').addEventListener('click', run);
+if(initialId) run();
+</script>
+</body>
+</html>

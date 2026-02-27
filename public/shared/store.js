@@ -597,3 +597,37 @@ window.resetAll = resetAll;
 // Funções auxiliares
 window.isFirebaseReady = isFirebaseReady;
 window.getFirebaseUserId = getFirebaseUserId;
+
+// ========== REALTIME SYNC LISTENERS ==========
+// Escuta eventos do Firebase Sync e recarrega os dados automaticamente
+function setupRealtimeListeners() {
+  var collections = ['expenses', 'invoicesIssued', 'invoicesReceived', 'budgets'];
+  
+  collections.forEach(function(collection) {
+    var eventName = 'dataSync-' + collection;
+    
+    window.addEventListener(eventName, function(e) {
+      console.log('[Store] Evento de sync recebido para ' + collection + ':', e.detail);
+      
+      // Atualizar o localStorage com os novos dados
+      var userId = getCurrentUserId();
+      var baseKey = 'upsen_' + collection.toLowerCase();
+      var userKey = userId ? baseKey + '_' + userId : baseKey;
+      localStorage.setItem(userKey, JSON.stringify(e.detail.data));
+      
+      // Disparar evento específico para a página renderizar novamente
+      window.dispatchEvent(new CustomEvent('dataUpdated-' + collection));
+    });
+  });
+  
+  console.log('[Store] Realtime listeners configurados');
+}
+
+// Iniciar listeners quando o store carregar
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', setupRealtimeListeners);
+} else {
+  setupRealtimeListeners();
+}
+
+console.log('✅ Store carregado com Realtime Sync listeners!');

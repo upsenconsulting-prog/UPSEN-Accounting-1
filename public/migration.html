@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firebase Data Migration - UPSEN Accounting</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #2a4d9c 0%, #3a6cd6 100%); min-height: 100vh; padding: 20px; }
+    .container { max-width: 800px; }
+    .card { border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+    .card-header { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); color: white; border-radius: 16px 16px 0 0 !important; padding: 20px; }
+    .btn-primary { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); border: none; }
+    .btn-primary:hover { background: linear-gradient(135deg, #1a3a7c, #2a4d9c); }
+    .status-badge { padding: 5px 10px; border-radius: 5px; font-size: 0.85em; }
+    .status-ok { background: #d4edda; color: #155724; }
+    .status-error { background: #f8d7da; color: #721c24; }
+    .status-warning { background: #fff3cd; color: #856404; }
+    pre { background: #f8f9fa; padding: 15px; border-radius: 8px; max-height: 300px; overflow-y: auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="card-header">
+        <h4 class="mb-0"><i class="fas fa-database me-2"></i>Firebase Data Migration</h4>
+        <p class="mb-0 mt-2 opacity-75">UPSEN Accounting - Verificar e migrar dados</p>
+      </div>
+      <div class="card-body">
+        <div id="loginStatus" class="alert alert-info">
+          <i class="fas fa-spinner fa-spin me-2"></i>Verificando autenticação...
+        </div>
+        
+        <div id="userInfo" class="alert alert-success" style="display: none;">
+          <i class="fas fa-user me-2"></i>
+          <span id="userEmail"></span>
+        </div>
+        
+        <hr>
+        
+        <h5 class="mb-3"><i class="fas fa-server me-2"></i>Dados no Firebase</h5>
+        <div id="firebaseData" class="mb-4">
+          <div class="text-center text-muted">
+            <i class="fas fa-spinner fa-spin me-2"></i>Carregando dados do Firebase...
+          </div>
+        </div>
+        
+        <hr>
+        
+        <h5 class="mb-3"><i class="fas fa-hdd me-2"></i>Dados no LocalStorage</h5>
+        <div id="localStorageData" class="mb-4">
+          <div class="text-center text-muted">
+            <i class="fas fa-spinner fa-spin me-2"></i>Carregando dados do LocalStorage...
+          </div>
+        </div>
+        
+        <hr>
+        
+        <div class="d-grid gap-2">
+          <button class="btn btn-primary btn-lg" id="migrateBtn" disabled>
+            <i class="fas fa-upload me-2"></i>Migrar Dados para Firebase
+          </button>
+          <button class="btn btn-secondary" id="refreshBtn">
+            <i class="fas fa-sync-alt me-2"></i>Actualizar
+          </button>
+        </div>
+        
+        <div id="migrationResult" class="mt-4" style="display: none;">
+          <h5>Resultado da Migração:</h5>
+          <pre id="migrationOutput"></pre>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card mt-4">
+      <div class="card-header bg-secondary">
+        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Instruções</h5>
+      </div>
+      <div class="card-body">
+        <ol>
+          <li>Faça login na aplicação principal primeiro</li>
+          <li>Depois de loginado, abra esta página</li>
+          <li>Os dados do localStorage serão mostrados abaixo</li>
+          <li>Clique em "Migrar Dados para Firebase" para transferir os dados</li>
+          <li>Após a migração, os dados estarão disponíveis no Firebase</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="shared/firebase-config.js"></script>
+  <script src="shared/auth-system.js"></script>
+  <script src="shared/firebase-migration.js"></script>
+
+  <script>
+    // Initialize Firebase
+    if (typeof firebase !== 'undefined' && window.FIREBASE_CONFIG) {
+      firebase.initializeApp(window.FIREBASE_CONFIG);
+      var firebaseDb = firebase.firestore();
+      var firebaseAuth = firebase.auth();
+      window.firebaseDb = firebaseDb;
+      window.firebaseAuth = firebaseAuth;
+    }
+    
+    var isLoggedIn = false;
+    var currentUser = null;
+    
+    // Check auth state
+    firebaseAuth.onAuthStateChanged(function(user) {
+      if (user) {
+        isLoggedIn = true;
+        currentUser = user;
+        document.getElementById('loginStatus').className = 'alert alert-success';
+        document.getElementById('loginStatus').innerHTML = '<i class="fas fa-check-circle me-2"></i>Utilizador logado';
+        document.getElementById('userInfo').style.display = 'block';
+        document.getElementById('userEmail').textContent = user.email + ' (UID: ' + user.uid.substring(0, 8) + '...)';
+        document.getElementById('migrateBtn').disabled = false;
+        loadData();
+      } else {
+        isLoggedIn = false;
+        currentUser = null;
+        document.getElementById('loginStatus').className = 'alert alert-warning';
+        document.getElementById('loginStatus').innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Faça login na aplicação principal primeiro e volte aqui';
+        document.getElementById('userInfo').style.display = 'none';
+        document.getElementById('migrateBtn').disabled = true;
+      }
+    });
+    
+    function getLocalStorageKeys() {
+      var keys = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var key = localStorage.key(i);
+        if (key && key.startsWith('upsen_')) {
+          keys.push(key);
+        }
+      }
+      return keys;
+    }
+    
+    function getDataFromLocalStorage(key) {
+      try {
+        var data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+    
+    async function loadData() {
+      if (!isLoggedIn) return;
+      
+      // Load Firebase data
+      var firebaseDiv = document.getElementById('firebaseData');
+      firebaseDiv.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin me-2"></i>Carregando...</div>';
+      
+      try {
+        var collections = ['expenses', 'invoicesIssued', 'invoicesReceived', 'budgets'];
+        var firebaseHtml = '<div class="row">';
+        
+        for (var i = 0; i < collections.length; i++) {
+          var collection = collections[i];
+          var snapshot = await firebaseDb.collection('companies').doc(currentUser.uid).collection(collection).get();
+          
+          firebaseHtml += '<div class="col-md-6 mb-3">';
+          firebaseHtml += '<div class="card">';
+          firebaseHtml += '<div class="card-body">';
+          firebaseHtml += '<h6>' + collection + '</h6>';
+          if (snapshot.size > 0) {
+            firebaseHtml += '<span class="badge bg-success">' + snapshot.size + ' documentos</span>';
+            snapshot.forEach(function(doc) {
+              var data = doc.data();
+              firebaseHtml += '<pre class="mt-2" style="font-size: 0.75rem;">' + JSON.stringify(data, null, 2) + '</pre>';
+            });
+          } else {
+            firebaseHtml += '<span class="badge bg-warning">Sem dados</span>';
+          }
+          firebaseHtml += '</div></div></div>';
+        }
+        
+        firebaseHtml += '</div>';
+        firebaseDiv.innerHTML = firebaseHtml;
+      } catch (e) {
+        firebaseDiv.innerHTML = '<div class="alert alert-danger">Erro ao carregar dados do Firebase: ' + e.message + '</div>';
+      }
+      
+      // Load LocalStorage data
+      var localDiv = document.getElementById('localStorageData');
+      var keys = getLocalStorageKeys();
+      
+      if (keys.length === 0) {
+        localDiv.innerHTML = '<div class="alert alert-warning">Nenhum dado encontrado no localStorage</div>';
+      } else {
+        var localHtml = '<div class="row">';
+        
+        keys.forEach(function(key) {
+          var data = getDataFromLocalStorage(key);
+          localHtml += '<div class="col-md-6 mb-3">';
+          localHtml += '<div class="card">';
+          localHtml += '<div class="card-body">';
+          localHtml += '<h6>' + key + '</h6>';
+          if (data.length > 0) {
+            localHtml += '<span class="badge bg-primary">' + data.length + ' itens</span>';
+            localHtml += '<pre class="mt-2" style="font-size: 0.75rem;">' + JSON.stringify(data.slice(0, 3), null, 2) + '</pre>';
+            if (data.length > 3) {
+              localHtml += '<small class="text-muted">... e mais ' + (data.length - 3) + ' itens</small>';
+            }
+          } else {
+            localHtml += '<span class="badge bg-secondary">Vazio</span>';
+          }
+          localHtml += '</div></div></div>';
+        });
+        
+        localHtml += '</div>';
+        localDiv.innerHTML = localHtml;
+      }
+    }
+    
+    // Migrate button
+    document.getElementById('migrateBtn').addEventListener('click', async function() {
+      if (!isLoggedIn) {
+        alert('Faça login primeiro!');
+        return;
+      }
+      
+      var btn = this;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>A migrar...';
+      
+      var resultDiv = document.getElementById('migrationResult');
+      var resultOutput = document.getElementById('migrationOutput');
+      resultDiv.style.display = 'block';
+      resultOutput.textContent = 'A migrar dados...\n';
+      
+      try {
+        var keys = getLocalStorageKeys();
+        var results = {};
+        
+        for (var i = 0; i < keys.length; i++) {
+          var key = keys[i];
+          var data = getDataFromLocalStorage(key);
+          
+          if (data.length === 0) continue;
+          
+          // Map key to collection name
+          var collection = null;
+          if (key.includes('expenses')) collection = 'expenses';
+          else if (key.includes('invoices_issued')) collection = 'invoicesIssued';
+          else if (key.includes('invoices_received')) collection = 'invoicesReceived';
+          else if (key.includes('budgets')) collection = 'budgets';
+          
+          if (!collection) continue;
+          
+          resultOutput.textContent += '\nA migrar ' + data.length + ' itens para ' + collection + '...';
+          
+          var migrated = 0;
+          for (var j = 0; j < data.length; j++) {
+            try {
+              await firebaseDb.collection('companies').doc(currentUser.uid).collection(collection).add({
+                ...data[j],
+                migratedAt: firebase.firestore.FieldValue.serverTimestamp()
+              });
+              migrated++;
+            } catch (e) {
+              resultOutput.textContent += '\nErro: ' + e.message;
+            }
+          }
+          
+          results[collection] = { total: data.length, migrated: migrated };
+          resultOutput.textContent += ' -> ' + migrated + ' migrados';
+        }
+        
+        resultOutput.textContent += '\n\n✅ Migração concluída!';
+        resultOutput.textContent += '\n' + JSON.stringify(results, null, 2);
+        
+        // Reload data
+        loadData();
+        
+      } catch (e) {
+        resultOutput.textContent += '\n❌ Erro: ' + e.message;
+      }
+      
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-upload me-2"></i>Migrar Dados para Firebase';
+    });
+    
+    // Refresh button
+    document.getElementById('refreshBtn').addEventListener('click', loadData);
+    
+    // Initial load after a delay to ensure Firebase is ready
+    setTimeout(function() {
+      if (isLoggedIn) {
+        loadData();
+      }
+    }, 2000);
+  </script>
+</body>
+</html>
+

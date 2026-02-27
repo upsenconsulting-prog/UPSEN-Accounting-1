@@ -531,6 +531,14 @@ function initPage() {
     renderExpenses();
     renderChart();
     renderSummaryCards();
+    
+    // ========== REALTIME SYNC - Recarregar quando houver alterações ==========
+    window.addEventListener('dataUpdated-expenses', function() {
+      console.log('📥 Dados de gastos atualizados do Firebase, recarregando...');
+      renderExpenses();
+      renderChart();
+      renderSummaryCards();
+    });
   }
 });
 

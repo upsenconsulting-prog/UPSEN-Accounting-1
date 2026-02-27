@@ -1086,6 +1086,15 @@ loginWithGoogle: function() {
     window.isAuthReady = true;
     console.log('Auth is now ready!');
     
+    // Ativar sync em tempo real para todas as coleções
+    if (window.FirebaseSync && window.FirebaseSync.enableRealtimeSync) {
+      console.log('🚀 Ativando sync em tempo real...');
+      window.FirebaseSync.enableRealtimeSync('expenses');
+      window.FirebaseSync.enableRealtimeSync('invoicesIssued');
+      window.FirebaseSync.enableRealtimeSync('invoicesReceived');
+      window.FirebaseSync.enableRealtimeSync('budgets');
+    }
+    
     // Execute all queued callbacks
     window.authReadyCallbacks.forEach(function(callback) {
       try {

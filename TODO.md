@@ -1,57 +1,87 @@
-# UPSEN Accounting - Correções Realizadas
+# UPSEN Accounting - Estado do Projeto
 
-## ✅ Correções Implementadas
+## ✅ Funcionalidades Implementadas
 
-### 1. Firebase Authentication - onAuthStateChanged
-O código agora usa corretamente o `onAuthStateChanged` do Firebase para detectar o estado de autenticação:
+### Autenticação
+- Firebase Authentication (Email/Password, Google)
+- Sistema de sessões com localStorage
+- Registo e login de utilizadores
 
-```javascript
-// Observar estado de autenticacao
-AuthService.onAuthChange(({ user, userData, isLoggedIn }) => {
-  if (isLoggedIn && userData) {
-    loadProfileData(userData);
-  } else if (!isLoggedIn) {
-    window.location.href = '../login.html';
-  }
-});
-```
+### Gestão de Dados
+- Gastos (expenses) com IVA
+- Faturas Emitidas com IVA
+- Faturas Recebidas
+- Orçamentos (budgets)
+- Sincronização Firebase ↔ localStorage
+- Estrutura de dados: `companies/{uid}/{collection}`
 
-### 2. Loading Infinito Corrigido
-- Removido o loading overlay que estava a bloquear a página
-- A página agora carrega diretamente
+### Interface
+- Dashboard com KPIs
+- Temas (claro/escuro)
+- Design responsivo Bootstrap 5
+- Sidebar de navegação
 
-### 3. Profile.html Otimizado
-- Usa `onAuthStateChanged` para carregar dados
-- Exportação PDF funcional com jsPDF
-- Código limpo e sem duplicações
-
-### 4. Firebase Integration Melhorado
-- Adicionado cache de utilizador (`currentUser`, `currentUserData`)
-- `isLoggedIn()` agora funciona corretamente
-- Suporte para `onAuthStateChanged` em todas as páginas
+### Import/Export
+- Importação de CSV
+- Exportação PDF/CSV/Excel
+- Templates para importação
 
 ---
 
-## 📁 Ficheiros Modificados
+## 📋 Implementações Recentes (Migração Firebase)
 
-1. `public/shared/firebase-integration.js` - AuthService melhorado
-2. `public/profile/profile.html` - Carregamento correto + PDF export
-3. `public/frontPage/frontPage.html` - Login/logout com Firebase
+### 1. Estrutura de Dados Unificada
+- **Antes**: `users/{uid}/{uid}/documents/{collection}/items` (legado)
+- **Depois**: `companies/{uid}/{collection}` (organizado)
+- Migração automática ao fazer login
+
+### 2. Ficheiros Modificados/Criados
+1. `public/shared/firebase-sync.js` - Sincronização com migração automática
+2. `public/shared/data-migration.js` - Utilitário de migração manual
+3. Todas as páginas HTML atualizadas para incluir o script de migração
+
+### 3. Páginas com Suporte à Migração
+- frontPage/frontPage.html
+- expense/expense.html
+- Invoice-issued/invoice-issued.html
+- Invoice_recieved/Invoice_recieved.html
+- budgetPage/budget.html
+- profile/profile.html
+- profile/settings.html
 
 ---
 
-## 🔐 Como Usar
+## 🎯 O Que Falta para Veri*Factu e Facturae
 
-### Configurar Firebase (se ainda não estiver)
-1. Criar projeto no Firebase Console
-2. Ativar Authentication (Email/Password)
-3. Criar base de dados Firestore
-4. Copiar configuração para `firebase-config.js`
+### Requisitos Legais Spanish (Veri*Factu)
+- [ ] Registo de faturação com hash SHA-256
+- [ ] Encadeamento de registos (cadeia de hash)
+- [ ] Sellado temporal (TSA)
+- [ ] Envio automático à AEAT
+- [ ] QR Code / Legenda de controlo em PDFs
+- [ ] Livros de registo (IVA)
+- [ ] IRPF (retenções 7%/15%)
 
-### Testar
-1. Aceder a `public/login.html`
-2. Fazer login ou registar
-3. Aceder a `public/profile/profile.html`
-4. Verificar dados carregados corretamente
-5. Testar exportação PDF
+### Facturae (e-Fatura)
+- [ ] Geração de XML Facturae 3.2.2
+- [ ] Assinatura XAdES-EPES
+- [ ] Validação contra XSD
+
+### Funcionalidades Adicionais
+- [ ] Faturas retificativas
+- [ ] Faturas simplificadas
+- [ ] Notas de crédito/abono
+- [ ] SII (Suministro Inmediato de Información)
+- [ ] Integração Holded API
+- [ ] Integração Contasimple (CSV)
+
+---
+
+## 🚀 Próximos Passos Recomendados
+
+1. **Testar a migração** - Fazer login e verificar se os dados aparecem
+2. **Implementar Veri*Factu** - Registo com hash e sellado temporal
+3. **Gerar PDF com QR** - Código de verificação em cada fatura
+4. **Facturae** - Exportar faturas em formato XML assinado
+5. **Domínio** - Comprar domínio e configurar HTTPS
 

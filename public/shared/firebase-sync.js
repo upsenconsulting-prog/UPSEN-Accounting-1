@@ -30,6 +30,11 @@
   // ========== SYNC: FIREBASE → LOCALSTORAGE ==========
   /**
    * Carrega todos os dados de uma coleção do Firebase para o localStorage
+   * Suporta múltiplas estruturas de dados:
+   * - companies/{uid}/{collection} (estrutura correta)
+   * - users/{uid}/{uid}/documents/{collection}/items (estrutura legado)
+   * 
+   * Se encontrar dados na estrutura legacy, copia automaticamente para a nova estrutura
    */
   async function syncCollectionToLocalStorage(collectionName) {
     if (!isFirebaseReady()) {
@@ -43,19 +48,22 @@
       return null;
     }
 
+    let data = [];
+    let sourceFound = '';
+    let needsMigration = false;
+
     try {
-      // Usar a estrutura correta: companies/{uid}/{collection}
-      const snapshot = await window.firebaseDb
+      // Tentar primeira estrutura: companies/{uid}/{collection}
+      console.log(`[Sync] A tentar companies/{uid}/${collectionName}...`);
+      const snapshot1 = await window.firebaseDb
         .collection('companies')
         .doc(userId)
         .collection(collectionName)
         .get();
 
-      const data = [];
-      snapshot.forEach(doc => {
-        if (doc.id === '_init') return; // Skip init document
+      snapshot1.forEach(doc => {
+        if (doc.id === '_init') return;
         const docData = doc.data();
-        // Converter timestamp do Firebase para ISO string
         if (docData.createdAt && docData.createdAt.toDate) {
           docData.createdAt = docData.createdAt.toDate().toISOString();
         }
@@ -63,20 +71,116 @@
           docData.updatedAt = docData.updatedAt.toDate().toISOString();
         }
         data.push({ id: doc.id, ...docData });
+        console.log(`[Sync] Documento encontrado em companies:`, doc.id);
       });
 
-      console.log(`[Sync] ${collectionName}: ${data.length} documentos carregados do Firebase`);
+      if (data.length > 0) {
+        sourceFound = 'companies';
+      }
+    } catch (error) {
+      console.warn(`[Sync] Erro ao ler companies:`, error.message);
+    }
 
-      // Salvar no localStorage com chave única por utilizador
+    // Se não encontrou dados, tentar estrutura legacy: users/{uid}/{uid}/documents/{collection}/items
+    if (data.length === 0) {
+      console.log(`[Sync] A tentar users/${userId}/${userId}/documents/${collectionName}/items...`);
+      try {
+        const snapshot2 = await window.firebaseDb
+          .collection('users')
+          .doc(userId)
+          .collection(userId)
+          .doc('documents')
+          .collection(collectionName)
+          .collection('items')
+          .get();
+
+        snapshot2.forEach(doc => {
+          const docData = doc.data();
+          if (docData.createdAt && docData.createdAt.toDate) {
+            docData.createdAt = docData.createdAt.toDate().toISOString();
+          }
+          if (docData.updatedAt && docData.updatedAt.toDate) {
+            docData.updatedAt = docData.updatedAt.toDate().toISOString();
+          }
+          data.push({ id: doc.id, ...docData });
+          console.log(`[Sync] Documento encontrado em users (legacy):`, doc.id);
+        });
+
+        if (data.length > 0) {
+          sourceFound = 'users (legacy)';
+          needsMigration = true;
+        }
+      } catch (error) {
+        console.warn(`[Sync] Erro ao ler users (legacy):`, error.message);
+      }
+    }
+
+    // Se ainda não encontrou, tentar outra estrutura: users/{uid}/documents/{collection}
+    if (data.length === 0) {
+      console.log(`[Sync] A tentar users/${userId}/documents/${collectionName}...`);
+      try {
+        const snapshot3 = await window.firebaseDb
+          .collection('users')
+          .doc(userId)
+          .collection('documents')
+          .collection(collectionName)
+          .get();
+
+        snapshot3.forEach(doc => {
+          const docData = doc.data();
+          if (docData.createdAt && docData.createdAt.toDate) {
+            docData.createdAt = docData.createdAt.toDate().toISOString();
+          }
+          data.push({ id: doc.id, ...docData });
+          console.log(`[Sync] Documento encontrado em users/documents:`, doc.id);
+        });
+
+        if (data.length > 0) {
+          sourceFound = 'users/documents';
+          needsMigration = true;
+        }
+      } catch (error) {
+        console.warn(`[Sync] Erro ao ler users/documents:`, error.message);
+      }
+    }
+
+    // Se encontrou dados em estrutura legacy, migrar automaticamente para companies
+    if (needsMigration && data.length > 0) {
+      console.log(`[Sync] 🚀 Migrando ${data.length} documentos de users para companies...`);
+      try {
+        const batch = window.firebaseDb.batch();
+        
+        data.forEach(doc => {
+          const newDocRef = window.firebaseDb
+            .collection('companies')
+            .doc(userId)
+            .collection(collectionName)
+            .doc(doc.id);
+          
+          batch.set(newDocRef, {
+            ...doc,
+            migratedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            originalCreatedAt: doc.createdAt || new Date().toISOString()
+          });
+        });
+        
+        await batch.commit();
+        console.log(`[Sync] ✅ Migração concluída para ${collectionName}`);
+      } catch (error) {
+        console.warn(`[Sync] ❌ Erro na migração:`, error.message);
+      }
+    }
+
+    console.log(`[Sync] ${collectionName}: ${data.length} documentos encontrados em ${sourceFound || 'nenhum local'}`);
+
+    // Salvar no localStorage
+    if (data.length > 0) {
       const baseKey = 'upsen_' + collectionName.toLowerCase();
       const userKey = userId ? baseKey + '_' + userId : baseKey;
       localStorage.setItem(userKey, JSON.stringify(data));
-
-      return data;
-    } catch (error) {
-      console.warn(`[Sync] Erro ao carregar ${collectionName} do Firebase:`, error.message);
-      return null;
     }
+
+    return data.length > 0 ? data : null;
   }
 
   /**
@@ -298,6 +402,97 @@
   }
 
   // ========== EXPORTS ==========
+  // Variável para controlar listeners ativos
+  var activeListeners = {};
+
+  /**
+   * Ativa listeners em tempo real para uma coleção
+   * Quando houver alterações no Firebase, atualiza automaticamente o localStorage
+   */
+  function enableRealtimeSync(collectionName) {
+    if (!isFirebaseReady()) {
+      console.log(`[Realtime] Firebase não pronto para ${collectionName}`);
+      return;
+    }
+
+    const userId = getUserId();
+    if (!userId) {
+      console.log(`[Realtime] Utilizador não autenticado`);
+      return;
+    }
+
+    // Se já tem listener ativo, não criar outro
+    if (activeListeners[collectionName]) {
+      console.log(`[Realtime] Listener já ativo para ${collectionName}`);
+      return;
+    }
+
+    console.log(`[Realtime] A ativar listener para companies/${userId}/${collectionName}...`);
+
+    try {
+      const unsubscribe = window.firebaseDb
+        .collection('companies')
+        .doc(userId)
+        .collection(collectionName)
+        .onSnapshot((snapshot) => {
+          console.log(`[Realtime] Alteração detectada em ${collectionName}:`, snapshot.size, 'documentos');
+          
+          const data = [];
+          snapshot.forEach((doc) => {
+            if (doc.id === '_init') return;
+            const docData = doc.data();
+            if (docData.createdAt && docData.createdAt.toDate) {
+              docData.createdAt = docData.createdAt.toDate().toISOString();
+            }
+            if (docData.updatedAt && docData.updatedAt.toDate) {
+              docData.updatedAt = docData.updatedAt.toDate().toISOString();
+            }
+            data.push({ id: doc.id, ...docData });
+          });
+
+          // Atualizar localStorage com dados do Firebase
+          const baseKey = 'upsen_' + collectionName.toLowerCase();
+          const userKey = userId ? baseKey + '_' + userId : baseKey;
+          localStorage.setItem(userKey, JSON.stringify(data));
+
+          // Disparar evento para通知 outras partes da app
+          window.dispatchEvent(new CustomEvent('dataSync-' + collectionName, { 
+            detail: { data: data, source: 'firebase' } 
+          }));
+
+          console.log(`[Realtime] ${collectionName} atualizado no localStorage`);
+        }, (error) => {
+          console.warn(`[Realtime] Erro no listener de ${collectionName}:`, error.message);
+        });
+
+      activeListeners[collectionName] = unsubscribe;
+      console.log(`[Realtime] ✅ Listener ativo para ${collectionName}`);
+    } catch (error) {
+      console.warn(`[Realtime] Erro ao ativar listener:`, error.message);
+    }
+  }
+
+  /**
+   * Desativa listeners em tempo real
+   */
+  function disableRealtimeSync(collectionName) {
+    if (activeListeners[collectionName]) {
+      activeListeners[collectionName]();
+      delete activeListeners[collectionName];
+      console.log(`[Realtime] Listener desativado para ${collectionName}`);
+    }
+  }
+
+  /**
+   * Desativa todos os listeners
+   */
+  function disableAllRealtimeSync() {
+    Object.keys(activeListeners).forEach(function(col) {
+      disableRealtimeSync(col);
+    });
+  }
+
+  // ========== EXPORTS ==========
   window.FirebaseSync = {
     syncAllToLocalStorage,
     syncCollectionToLocalStorage,
@@ -308,9 +503,14 @@
     getFromLocalStorage,
     isFirebaseReady,
     getUserId,
-    COLLECTIONS
+    COLLECTIONS,
+    // Novas funções de sync em tempo real
+    enableRealtimeSync,
+    disableRealtimeSync,
+    disableAllRealtimeSync,
+    activeListeners
   };
 
-  console.log('✅ Firebase Sync Service carregado!');
+  console.log('✅ Firebase Sync Service carregado com Realtime Sync!');
 })();
 

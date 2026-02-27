@@ -653,6 +653,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     renderInvoices();
     renderChart();
     renderSummaryCards();
+    
+    // ========== REALTIME SYNC - Recarregar quando houver alterações ==========
+    window.addEventListener('dataUpdated-invoicesReceived', function() {
+      console.log('📥 Dados de faturas recebidas atualizados do Firebase, recarregando...');
+      renderInvoices();
+      renderChart();
+      renderSummaryCards();
+    });
   });
 });
 

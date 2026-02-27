@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FactuFácil · Emitir factura</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="brand.css">
+<script src="config.js"></script>
+</head>
+<body>
+<div class="container">
+  <div class="brandbar">
+    <div class="brandlogo"></div>
+    <div class="brandname">FactuFácil — Upsen</div>
+  </div>
+  <div class="card">
+    <h1 class="h1">Nueva factura</h1>
+    <div class="row">
+      <div>
+        <label class="badge">Empresa</label>
+        <input class="input" id="companyId" placeholder="ID de empresa">
+      </div>
+      <div>
+        <label class="badge">Serie</label>
+        <input class="input" id="seriesId" placeholder="ID de serie">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label class="badge">Cliente</label>
+        <input class="input" id="customerId" placeholder="ID de cliente">
+      </div>
+      <div>
+        <label class="badge">Fecha emisión</label>
+        <input type="date" class="input" id="issueDate">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label class="badge">IRPF (%)</label>
+        <input type="number" class="input" id="irpf" value="0" min="0" max="30" step="1">
+      </div>
+      <div>
+        <label class="badge">Moneda</label>
+        <input class="input" value="EUR" disabled>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0">
+      <span class="badge">Líneas de factura</span>
+      <button class="btn secondary" id="addLine">Añadir línea</button>
+    </div>
+    <table class="table" id="linesTable">
+      <thead><tr>
+        <th>Descripción</th><th>Cantidad</th><th>Precio</th><th>IVA %</th><th>Dto %</th><th>Subtotal</th><th></th>
+      </tr></thead>
+      <tbody id="linesBody"></tbody>
+    </table>
+    <div class="totals">
+      <div>Base imponible: <b id="tt-sub">0,00 €</b></div>
+      <div>IVA: <b id="tt-iva">0,00 €</b></div>
+      <div>IRPF: <b id="tt-irpf">0,00 €</b></div>
+      <div>Total: <b id="tt-total">0,00 €</b></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+      <button class="btn secondary" id="saveDraft">Guardar borrador</button>
+      <button class="btn" id="emitInvoice">Emitir factura</button>
+    </div>
+    <div class="note" id="statusNote" style="margin-top:8px"></div>
+  </div>
+  <footer>© 2025 Upsen Consulting · FactuFácil</footer>
+</div>
+
+<script>
+const API_BASE = (window.FACTUFACIL_CONFIG && window.FACTUFACIL_CONFIG.API_BASE) || "";
+const fmt = (n)=> (new Intl.NumberFormat('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n)) + ' €';
+const linesBody = document.getElementById('linesBody');
+const addBtn = document.getElementById('addLine');
+const totals = { sub:0, iva:0, irpf:0, total:0 };
+let currentInvoiceId = null;
+
+function lineRow(d){ d = Object.assign({description:'',quantity:1,unitPrice:0,vatRate:21,discount:0}, d||{});
+  const tr = document.createElement('tr');
+  tr.innerHTML = \`
+    <td><input class="input" value="\${d.description}" placeholder="Concepto"></td>
+    <td><input class="input" type="number" min="0" step="0.001" value="\${d.quantity}"></td>
+    <td><input class="input" type="number" min="0" step="0.01" value="\${d.unitPrice}"></td>
+    <td>
+      <select class="select">
+        <option \${d.vatRate==21?'selected':''} value="21">21</option>
+        <option \${d.vatRate==10?'selected':''} value="10">10</option>
+        <option \${d.vatRate==4?'selected':''} value="4">4</option>
+        <option \${d.vatRate==0?'selected':''} value="0">0</option>
+      </select>
+    </td>
+    <td><input class="input" type="number" min="0" max="100" step="0.01" value="\${d.discount||0}"></td>
+    <td class="subcell">0,00 €</td>
+    <td><button class="btn secondary rem">✕</button></td>\`;
+  tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', recalc));
+  tr.querySelector('.rem').addEventListener('click', ()=>{ tr.remove(); recalc(); });
+  return tr;
+}
+
+function recalc(){
+  let sub=0, iva=0;
+  linesBody.querySelectorAll('tr').forEach(tr=>{
+    const [descEl, qtyEl, upEl, vatEl, discEl] = tr.querySelectorAll('input,select');
+    const qty = parseFloat(qtyEl.value||0);
+    const up = parseFloat(upEl.value||0);
+    const vat = parseFloat(vatEl.value||0);
+    const disc = parseFloat(discEl.value||0);
+    const base = (qty*up)*(1-(disc/100));
+    sub += base; iva += base*(vat/100);
+    tr.querySelector('.subcell').textContent = fmt(base);
+  });
+  const irpfPct = parseFloat(document.getElementById('irpf').value||0);
+  const irpf = sub*(irpfPct/100);
+  const total = sub+iva-irpf;
+  totals.sub=sub; totals.iva=iva; totals.irpf=irpf; totals.total=total;
+  document.getElementById('tt-sub').textContent = fmt(sub);
+  document.getElementById('tt-iva').textContent = fmt(iva);
+  document.getElementById('tt-irpf').textContent = fmt(irpf);
+  document.getElementById('tt-total').textContent = fmt(total);
+}
+
+addBtn.addEventListener('click', ()=>{ linesBody.appendChild(lineRow()); recalc(); });
+linesBody.appendChild(lineRow()); recalc();
+
+async function api(path, opts){
+  const r = await fetch(API_BASE+path, Object.assign({headers:{'Content-Type':'application/json'}}, opts||{}));
+  if(!r.ok) throw new Error(await r.text());
+  try { return await r.json(); } catch { return {}; }
+}
+
+function payloadFactura(){
+  const lines = [];
+  linesBody.querySelectorAll('tr').forEach(tr=>{
+    const [descEl, qtyEl, upEl, vatEl, discEl] = tr.querySelectorAll('input,select');
+    lines.push({
+      description: descEl.value, quantity: +qtyEl.value, unitPrice: +upEl.value,
+      vatRate: +vatEl.value, discount: +(discEl.value||0)
+    });
+  });
+  return {
+    companyId: document.getElementById('companyId').value.trim(),
+    seriesId: document.getElementById('seriesId').value.trim(),
+    customerId: document.getElementById('customerId').value.trim(),
+    issueDate: document.getElementById('issueDate').value,
+    irpfPercent: +document.getElementById('irpf').value,
+    lines
+  };
+}
+
+document.getElementById('saveDraft').addEventListener('click', async ()=>{
+  const note = document.getElementById('statusNote');
+  try{
+    const res = await api('/invoices', {method:'POST', body: JSON.stringify(payloadFactura())});
+    currentInvoiceId = res.id || res.invoiceId || null;
+    note.innerHTML = '✅ Borrador guardado. ID: <b>'+(currentInvoiceId||'desconocido')+'</b>';
+  }catch(e){ note.innerHTML = '❌ Error guardando: <span class="warn">'+e.message+'</span>'; }
+});
+
+document.getElementById('emitInvoice').addEventListener('click', async ()=>{
+  const note = document.getElementById('statusNote');
+  try{
+    if(!currentInvoiceId){
+      const res = await api('/invoices', {method:'POST', body: JSON.stringify(payloadFactura())});
+      currentInvoiceId = res.id || res.invoiceId;
+    }
+    const res2 = await api('/invoices/'+encodeURIComponent(currentInvoiceId)+'/emit', {method:'POST'});
+    note.innerHTML = '🎉 Factura emitida. Nº: <b>'+(res2.number||'-')+'</b> • Total: <b>'+(res2.total||'-')+'</b><br><span class="ok">Veri*Factu: ISSUED registrado.</span>';
+  }catch(e){ note.innerHTML = '❌ Error emitiendo: <span class="warn">'+e.message+'</span>'; }
+});
+</script>
+</body>
+</html>
