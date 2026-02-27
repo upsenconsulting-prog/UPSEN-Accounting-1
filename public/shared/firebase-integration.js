@@ -160,9 +160,9 @@
           role: 'admin',
           emailVerified: false,
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          settings: {
+            settings: {
             currency: 'EUR',
-            language: 'pt',
+            language: 'es',
             theme: 'light'
           }
         });
@@ -253,11 +253,16 @@
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             settings: {
               currency: 'EUR',
-              language: 'pt',
+              language: 'es',
               theme: 'light'
             }
           });
         }
+        
+        // Atualizar último login também para Google login
+        await db.collection('companies').doc(user.uid).update({
+          lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+        });
         
         const userData = await this.getUserData(user.uid);
         
@@ -565,7 +570,7 @@
     firestore: FirestoreService,
     guard: AuthGuard,
     config: firebaseConfig
-  };
+  }; 
   
   // AuthService já definido acima
   // FirestoreService - não sobrescrever

@@ -19,6 +19,14 @@
 - Funções de sync falhavam silenciosamente
 - localStorage não estava a ser populado corretamente
 
+### 5. Orçamentos (Budgets) Não Appebiam
+- Sistema duplicado de saving (script.js E store.js)
+- Falta de sincronização automática ao abrir a página
+
+### 6. Data de Registro Não Aparece
+- Timestamp do Firestore não era convertido corretamente
+- createdAt e lastLogin não eram guardados corretamente
+
 ---
 
 ## Correções Aplicadas (Por Ordem)
@@ -29,10 +37,14 @@
 - Corrigido `createUserDocument` para usar collection `companies`
 - Corrigido `FirestoreService.add/update/remove` para usar `companies`
 - Corrigido `SyncService.syncFromFirebase` para usar `companies`
+- **NOVO**: Adicionado helper `convertFirestoreTimestamp` para converter timestamps
+- **NOVO**: Usado `serverTimestamp()` para createdAt e lastLogin no registro
+- **NOVO**: Corrigido login e loginWithGoogle para usar serverTimestamp()
 
 ### ✅ Passo 2: firebase-sync.js
 - Atualizado para usar estrutura `companies/{uid}/{collection}`
 - Adicionado skip para documentos `_init`
+- Já converte timestamps corretamente ao carregar
 
 ### ✅ Passo 3: init-firebase-collections.js
 - Atualizado para usar estrutura `companies/{uid}/{collection}`
@@ -43,13 +55,22 @@
 - frontPage.html - ordem corrigida  
 - invoice-issued.html - ordem corrigida
 - Invoice_recieved.html - ordem corrigida + scripts adicionados
-- budget.html - ordem corrigida + scripts adicionados
+- budget.html - ordem corrigida + scripts adicionados + **sync automático ao carregar**
 - profile.html - ordem corrigida
 - settings.html - ordem corrigida + scripts adicionados
 
 ### ✅ Passo 5: frontPageDashboard.js
 - Adicionado chamada para FirebaseSync.syncAllToLocalStorage ao iniciar
 - Dividido em funções: loadDashboardData e renderDashboardContent
+
+### ✅ Passo 6: budgetPage/script.js
+- **REESCRITO**: Agora usa store.js unificado em vez de duplicar lógica Firebase
+- Todas as operações passam por window.addBudget, window.getBudgets, etc.
+- Fallback para localStorage se store.js não disponível
+
+### ✅ Passo 7: budgetPage/budget.html
+- Adicionado sync de budgets do Firebase ao carregar a página
+- Espera 1 segundo para Firebase inicializar antes de sincronizar
 
 ---
 
@@ -60,7 +81,9 @@
 - [x] 3. Atualizar init-firebase-collections.js para usar companies/{uid}/{collection}
 - [x] 4. Corrigir script loading order em todos os HTMLs
 - [x] 5. Adicionar sincronização automática ao iniciar páginas
-- [ ] 6. Testar fluxo completo: login → criar dado → navegar → dados persistem
+- [x] 6. Unificar sistema de budgets (script.js → store.js)
+- [x] 7. Corrigir timestamp de registro (createdAt, lastLogin)
+- [ ] 8. Testar fluxo completo: login → criar orçamento → navegar → orçamento persiste
 
 ---
 

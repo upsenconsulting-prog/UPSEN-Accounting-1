@@ -198,7 +198,7 @@
         phone: '+351 123 456 789',
         role: 'admin',
         createdAt: new Date().toISOString(),
-        settings: { currency: 'EUR', language: 'pt', country: 'PT', theme: 'light' }
+        settings: { currency: 'EUR', language: 'es', country: 'ES', theme: 'light' }
       }
     ];
     
@@ -267,7 +267,7 @@ init: function() {
       }
     },
     
-loadUserData: function(firebaseUser) {
+    loadUserData: function(firebaseUser) {
       var self = this;
       
       // Prevent multiple simultaneous loads
@@ -280,6 +280,20 @@ loadUserData: function(firebaseUser) {
       this.currentUser = firebaseUser;
       console.log('loadUserData chamado para:', firebaseUser.email, 'uid:', firebaseUser.uid);
       
+      // Helper function to convert Firestore timestamp
+      function convertFirestoreTimestamp(ts) {
+        if (!ts) return null;
+        // Handle Firestore timestamp (has toDate method)
+        if (ts && ts.toDate && typeof ts.toDate === 'function') {
+          return ts.toDate().toISOString();
+        }
+        // Handle already converted string or Date
+        if (ts instanceof Date) {
+          return ts.toISOString();
+        }
+        return ts;
+      }
+      
       // Default user data - role will be loaded from Firestore
       var userData = {
         uid: firebaseUser.uid,
@@ -290,6 +304,7 @@ loadUserData: function(firebaseUser) {
         role: 'user', // Default role - will be updated from Firestore
         emailVerified: firebaseUser.emailVerified || true,
         createdAt: new Date().toISOString(),
+        lastLogin: new Date().toISOString(),
         settings: { currency: 'EUR', language: 'es', country: 'ES', theme: 'light' }
       };
       
@@ -302,6 +317,11 @@ loadUserData: function(firebaseUser) {
               var data = doc.data();
               // Preserve the role from Firestore, don't overwrite with default
               var existingRole = data.role;
+              
+              // Convert Firestore timestamps to ISO strings
+              data.createdAt = convertFirestoreTimestamp(data.createdAt);
+              data.lastLogin = convertFirestoreTimestamp(data.lastLogin);
+              
               userData = Object.assign({}, userData, data);
               
               // If role exists in Firestore, use it; otherwise keep default 'user'
@@ -364,8 +384,16 @@ loadUserData: function(firebaseUser) {
     createUserDocument: function(uid, userData) {
       if (!window.firebaseDb) return;
       
+      // Prepare data with server timestamp for createdAt
+      var docData = Object.assign({}, userData);
+      
+      // Use server timestamp for createdAt if Firebase is available
+      if (firebase && firebase.firestore && firebase.firestore.FieldValue) {
+        docData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      }
+      
       // Use companies collection
-      window.firebaseDb.collection('companies').doc(uid).set(userData, { merge: true })
+      window.firebaseDb.collection('companies').doc(uid).set(docData, { merge: true })
         .then(function() {
           console.log('Documento criado na companies collection:', uid);
           // Initialize subcollections with init documents
@@ -439,7 +467,7 @@ getCurrentUser: function() {
       return this.getCurrentUser() !== null;
     },
     
-login: function(email, password) {
+    login: function(email, password) {
       var self = this;
       
       return new Promise(function(resolve) {
@@ -450,6 +478,13 @@ login: function(email, password) {
                 resolve({ success: false, message: 'Verifica o teu email antes de fazer login.' });
                 result.user.sendEmailVerification().catch(function() {});
                 return;
+              }
+              
+              // Update lastLogin in Firestore using serverTimestamp
+              if (window.firebaseDb) {
+                window.firebaseDb.collection('companies').doc(result.user.uid).update({
+                  lastLogin: firebase.firestore.FieldValue ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString()
+                }).catch(function() {});
               }
               
               // loadUserData already handles sync, so we just resolve
@@ -544,13 +579,14 @@ login: function(email, password) {
                 phone: userData.phone || '',
                 role: 'user',
                 emailVerified: false,
-                createdAt: new Date().toISOString(),
+                createdAt: firebase.firestore.FieldValue ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString(),
+                lastLogin: firebase.firestore.FieldValue ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString(),
                 settings: { currency: 'EUR', language: 'es', country: 'ES', theme: 'light' }
               };
               
               // Create in companies collection
               if (window.firebaseDb) {
-                window.firebaseDb.collection('companies').doc(user.uid).set(docData)
+                window.firebaseDb.collection('companies').doc(user.uid).set(docData, { merge: true })
                   .then(function() {
                     console.log('Documento criado no Firestore:', user.uid);
                   })
@@ -639,6 +675,7 @@ loginWithGoogle: function() {
           .then(function(result) {
             self.googleLoginInProgress = false;
             var user = result.user;
+            
             var docData = {
               uid: user.uid,
               email: user.email,
@@ -647,12 +684,20 @@ loginWithGoogle: function() {
               phone: '',
               role: 'user',
               emailVerified: true,
-              createdAt: new Date().toISOString(),
+              createdAt: firebase.firestore.FieldValue ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString(),
+              lastLogin: firebase.firestore.FieldValue ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString(),
               settings: { currency: 'EUR', language: 'es', country: 'ES', theme: 'light' }
             };
             
             // Create user document in Firestore
             self.createUserDocument(user.uid, docData);
+            
+            // Also update lastLogin in Firestore
+            if (window.firebaseDb) {
+              window.firebaseDb.collection('companies').doc(user.uid).update({
+                lastLogin: firebase.firestore.FieldValue ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString()
+              }).catch(function() {});
+            }
             
             // Save session immediately with user data
             self.currentUserData = docData;

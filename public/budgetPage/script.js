@@ -1,4 +1,4 @@
-// budgetPage/script.js - Com sincronização Firestore + localStorage
+// budgetPage/script.js - Com sincronização através do store.js (unificado)
 
 function $(id) {
   return document.getElementById(id);
@@ -24,102 +24,18 @@ function getUserId() {
   return 'unknown';
 }
 
-function getDataKey() {
-  const userId = getUserId();
-  return 'upsen_budgets_' + userId;
-}
+// ========== Usa store.js unificado ==========
+// Todas as operações passam pelo store.js que maneja localStorage E Firebase
 
-// ========== FIRESTORE SYNC ==========
-async function loadBudgetsFromFirestore() {
-  if (!window.USE_FIREBASE || !window.firebaseDb) return [];
-  
-  const userId = getUserId();
-  if (userId === 'unknown') return [];
-  
-  try {
-    const snapshot = await window.firebaseDb
-      .collection('companies').doc(userId)
-      .collection('budgets')
-      .orderBy('createdAt', 'desc')
-      .get();
-    
-    if (!snapshot.empty) {
-      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      localStorage.setItem(getDataKey(), JSON.stringify(docs));
-      console.log('Carregados', docs.length, 'orçamentos do Firestore');
-      return docs;
-    }
-  } catch (error) {
-    console.warn('Erro ao carregar do Firestore:', error.message);
-  }
-  return [];
-}
-
-async function saveBudgetToFirestore(data) {
-  if (!window.USE_FIREBASE || !window.firebaseDb) return null;
-  
-  const userId = getUserId();
-  if (userId === 'unknown') return null;
-  
-  try {
-    const docRef = await window.firebaseDb
-      .collection('companies').doc(userId)
-      .collection('budgets')
-      .add(data);
-    return docRef.id;
-  } catch (error) {
-    console.warn('Erro ao guardar no Firestore:', error.message);
-    return null;
-  }
-}
-
-async function deleteBudgetFromFirestore(id) {
-  if (!window.USE_FIREBASE || !window.firebaseDb) return false;
-  
-  const userId = getUserId();
-  if (userId === 'unknown') return false;
-  
-  try {
-    await window.firebaseDb
-      .collection('companies').doc(userId)
-      .collection('budgets').doc(id)
-      .delete();
-    return true;
-  } catch (error) {
-    console.warn('Erro ao eliminar do Firestore:', error.message);
-    return false;
-  }
-}
-
-async function updateBudgetInFirestore(id, data) {
-  if (!window.USE_FIREBASE || !window.firebaseDb) return false;
-  
-  const userId = getUserId();
-  if (userId === 'unknown') return false;
-  
-  try {
-    await window.firebaseDb
-      .collection('companies').doc(userId)
-      .collection('budgets').doc(id)
-      .update({ ...data, updatedAt: new Date().toISOString() });
-    return true;
-  } catch (error) {
-    console.warn('Erro ao atualizar no Firestore:', error.message);
-    return false;
-  }
-}
-
-// ========== DADOS LOCAIS ==========
 async function getUserBudgets() {
-  if (window.USE_FIREBASE && window.firebaseDb) {
-    const fromFirestore = await loadBudgetsFromFirestore();
-    if (fromFirestore.length > 0) {
-      return fromFirestore;
-    }
+  // Usar store.js que já faz sync automático com Firebase
+  if (window.getBudgets) {
+    return await window.getBudgets();
   }
   
+  // Fallback se store.js não disponível
   try {
-    const data = localStorage.getItem(getDataKey());
+    const data = localStorage.getItem('upsen_budgets_' + getUserId());
     return data ? JSON.parse(data) : [];
   } catch (e) {
     return [];
@@ -127,8 +43,13 @@ async function getUserBudgets() {
 }
 
 async function saveUserBudget(budget) {
-  const budgets = await getUserBudgets();
+  // Usar store.js para adicionar (já faz Firebase + localStorage)
+  if (window.addBudget) {
+    return await window.addBudget(budget);
+  }
   
+  // Fallback
+  const budgets = await getUserBudgets();
   const newBudget = {
     id: generateId(),
     number: budget.number || '',
@@ -146,28 +67,34 @@ async function saveUserBudget(budget) {
   };
   
   budgets.push(newBudget);
-  localStorage.setItem(getDataKey(), JSON.stringify(budgets));
-  
-  await saveBudgetToFirestore(newBudget);
-  
+  localStorage.setItem('upsen_budgets_' + getUserId(), JSON.stringify(budgets));
   return newBudget;
 }
 
 async function deleteUserBudget(id) {
+  // Usar store.js para eliminar
+  if (window.deleteBudget) {
+    return await window.deleteBudget(id);
+  }
+  
+  // Fallback
   const budgets = await getUserBudgets();
   const filtered = budgets.filter(b => b.id !== id);
-  localStorage.setItem(getDataKey(), JSON.stringify(filtered));
-  
-  await deleteBudgetFromFirestore(id);
+  localStorage.setItem('upsen_budgets_' + getUserId(), JSON.stringify(filtered));
 }
 
 async function updateUserBudget(id, updates) {
+  // Usar store.js para atualizar
+  if (window.updateBudget) {
+    return await window.updateBudget(id, updates);
+  }
+  
+  // Fallback
   const budgets = await getUserBudgets();
   const index = budgets.findIndex(b => b.id === id);
   if (index !== -1) {
     budgets[index] = { ...budgets[index], ...updates };
-    localStorage.setItem(getDataKey(), JSON.stringify(budgets));
-    await updateBudgetInFirestore(id, updates);
+    localStorage.setItem('upsen_budgets_' + getUserId(), JSON.stringify(budgets));
   }
 }
 

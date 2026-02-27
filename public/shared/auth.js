@@ -1,4 +1,4 @@
-/**
+ /**
  * Sistema de Autenticação - UPSEN Accounting
  * Versão simples com localStorage - funciona instantaneamente!
  */
@@ -52,7 +52,7 @@ const AuthManager = {
       createdAt: new Date().toISOString(),
       settings: {
         currency: 'EUR',
-        language: 'pt',
+        language: 'es',
         theme: 'light'
       }
     };
@@ -198,7 +198,7 @@ const AuthManager = {
         createdAt: new Date().toISOString(),
         settings: {
           currency: 'EUR',
-          language: 'pt',
+          language: 'es',
           theme: 'light'
         }
       };
@@ -214,7 +214,7 @@ const AuthManager = {
         createdAt: new Date().toISOString(),
         settings: {
           currency: 'EUR',
-          language: 'pt',
+          language: 'es',
           theme: 'light'
         }
       };
