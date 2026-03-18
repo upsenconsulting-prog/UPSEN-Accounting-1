@@ -1085,4 +1085,73 @@ function importInvoicesFromCSV(csvContent) {
   
   return importedCount;
 }
+// ===== ADD CALCULATION FUNCTIONS =====
+function calculateLineSubtotal(line) {
+    if (!line) return 0;
+    var price = Number(line.price || line.precio || 0);
+    var quantity = Number(line.quantity || line.qty || line.cantidad || 0);
+    return price * quantity;
+}
 
+function calculateTaxableAmount(invoice) {
+    if (!invoice) return 0;
+    if (Array.isArray(invoice.lineas) && invoice.lineas.length > 0) {
+        var total = 0;
+        for (var i = 0; i < invoice.lineas.length; i++) {
+            total += calculateLineSubtotal(invoice.lineas[i]);
+        }
+        return total;
+    }
+    return Number(invoice.amount || 0);
+}
+
+function calculateVAT(invoice) {
+    if (!invoice) return 0;
+    var base = calculateTaxableAmount(invoice);
+    var vatRate = Number(invoice.ivaRate || 0);
+    return base * (vatRate / 100);
+}
+
+function calculateInvoiceTotal(invoice) {
+    if (!invoice) return 0;
+    var base = calculateTaxableAmount(invoice);
+    var vat = calculateVAT(invoice);
+    return base + vat;
+}
+// Define supported VAT rates
+const vatRates = [0, 0.10, 0.21]; // 0%, 10%, 21%
+
+// Calculate subtotal for a line (price * quantity)
+function calculateLineSubtotal(price, quantity) {
+    return price * quantity;
+}
+
+// Calculate the taxable amount for an invoice (sum of all line subtotals)
+function calculateTaxableAmount(invoiceLines) {
+    return invoiceLines.reduce((total, line) => {
+        return total + calculateLineSubtotal(line.price, line.quantity);
+    }, 0);
+}
+
+// Calculate VAT for a given taxable amount and VAT rate
+function calculateVAT(taxableAmount, vatRate) {
+    return taxableAmount * vatRate;
+}
+
+// Calculate total invoice (taxable amount + VAT)
+function calculateInvoiceTotal(invoiceLines, vatRate) {
+    const taxableAmount = calculateTaxableAmount(invoiceLines);
+    const vat = calculateVAT(taxableAmount, vatRate);
+    return taxableAmount + vat;
+}
+
+// Example usage
+const invoiceLines = [
+    { price: 100, quantity: 2 }, // line 1
+    { price: 50, quantity: 1 }   // line 2
+];
+
+vatRates.forEach(rate => {
+    const total = calculateInvoiceTotal(invoiceLines, rate);
+    console.log(`Total with VAT ${rate * 100}%: ${total}`);
+});
