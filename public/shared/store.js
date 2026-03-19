@@ -1,3 +1,4 @@
+scoate comentariile in romana te rog si mentine codul exact la fel ca si cel pe care til dau acum, modifica doar ce trebuie ca task 1 sa fie ok:
 // public/shared/store.js
 // Store com Firebase como fonte primária e localStorage como backup
 // Requer: firebase-sync.js deve ser carregado antes deste arquivo
@@ -17,7 +18,7 @@ function uid() {
   // crypto.randomUUID() é o ideal, mas nem todos os browsers antigos suportam
   if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
   return "id-" + Date.now() + "-" + Math.random().toString(16).slice(2);
-}
+}+
 
 // ===== Keys =====
 const KEYS = {
@@ -138,57 +139,39 @@ function getInvoicesReceivedSync() {
   return read(KEYS.invoicesReceived);
 }
 
-async function addInvoiceReceived(invoice) {
-  // Obter lista atual
+async function addItemToInvoice(invoiceId, newItem) {
   let list = await getInvoicesReceived();
-  if (!list || !Array.isArray(list)) {
-    list = [];
+  const index = list.findIndex(inv => inv.id === invoiceId);
+  if (index === -1) return null;
+
+  if (!Array.isArray(list[index].items)) {
+    list[index].items = [];
   }
 
-  // Campos Veri*Factu
-  const verifactuFields = {
-    series: invoice.series ?? "R",
-    supplierNif: invoice.supplierNif ?? "",
-    verifactuHash: invoice.verifactuHash ?? "",
-    previousHash: invoice.previousHash ?? "",
-    verifactuTimestamp: invoice.verifactuTimestamp ?? "",
-    verifactuRegistered: invoice.verifactuRegistered ?? false,
-    verifactuStatus: invoice.verifactuStatus ?? "draft"
-  };
+  list[index].items.push({
+    descripcion: newItem.descripcion ?? "",
+    cantidad: Number(newItem.cantidad ?? 0),
+    precioUnitario: Number(newItem.precioUnitario ?? 0),
+    tipoIVA: Number(newItem.tipoIVA ?? 0),
+    subtotalLinea: Number(newItem.subtotalLinea ?? 0)
+  });
 
-const item = {
-    id: uid(),
-    invoiceNumber: invoice.invoiceNumber ?? "",
-    invoiceDate: invoice.invoiceDate ?? "",
-    supplier: invoice.supplier ?? "",
-    supplierNif: invoice.supplierNif ?? "",
-    amount: Number(invoice.amount ?? 0),
-    ivaRate: Number(invoice.ivaRate ?? 0),
-    ivaAmount: Number(invoice.ivaAmount ?? 0),
-    totalAmount: Number(invoice.totalAmount ?? 0),
-    state: invoice.state ?? "Pendiente",
-    description: invoice.description ?? "",
-    paymentMethod: invoice.paymentMethod ?? null,  // efectivo|tarjeta|transferencia|recibo|cheque|paypal  
-    paymentDate: invoice.paymentDate ?? null,     // YYYY-MM-DD
-    createdAt: new Date().toISOString(),
-    ...verifactuFields
-  };
-  
-  list.push(item);
-  
-  // Salvar no localStorage
+  list[index].totalAmount = list[index].items.reduce((sum, i) => sum + (i.subtotalLinea ?? 0), 0);
+
   write(KEYS.invoicesReceived, list);
-  
-  // Salvar no Firebase se disponível
+
   if (isFirebaseReady()) {
     try {
-      await window.FirebaseSync.saveToFirebaseAndLocalStorage('invoicesReceived', item);
+      await window.FirebaseSync.updateInFirebaseAndLocalStorage('invoicesReceived', invoiceId, {
+        items: list[index].items,
+        totalAmount: list[index].totalAmount
+      });
     } catch (e) {
-      console.warn('[Store] Erro ao salvar invoice received no Firebase:', e);
+      console.warn('[Store] Erro ao atualizar invoice received no Firebase:', e);
     }
   }
-  
-  return item;
+
+  return list[index];
 }
 
 async function deleteInvoiceReceived(id) {
