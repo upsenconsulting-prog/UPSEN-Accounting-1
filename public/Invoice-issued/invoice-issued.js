@@ -1085,73 +1085,93 @@ function importInvoicesFromCSV(csvContent) {
   
   return importedCount;
 }
-// ===== ADD CALCULATION FUNCTIONS =====
+// ADD CALCULATION FUNCTIONS//
+
+// VAT Types (Spain-style)
+const VAT_TYPES = {
+    GENERAL: 0.21,       // 21%
+    REDUCED: 0.10,       // 10%
+    SUPER_REDUCED: 0.04, // 4%
+    EXEMPT: 0            // 0%
+};
+
+// Helper
+function round(value) {
+    return Math.round(value * 100) / 100;
+}
+
+// Normalize line: extract price and quantity
+function normalizeLine(line) {
+    const price = Number(line.price || line.precio || line.precioUnitario || 0);
+    const quantity = Number(line.quantity || line.qty || line.cantidad || 0);
+    return { price, quantity };
+}
+
+// Core calculationsfetch
 function calculateLineSubtotal(line) {
-    if (!line) return 0;
-    var price = Number(line.price || line.precio || 0);
-    var quantity = Number(line.quantity || line.qty || line.cantidad || 0);
-    return price * quantity;
+    const { price, quantity } = normalizeLine(line);
+    return round(price * quantity);
 }
 
 function calculateTaxableAmount(invoice) {
     if (!invoice) return 0;
     if (Array.isArray(invoice.lineas) && invoice.lineas.length > 0) {
-        var total = 0;
-        for (var i = 0; i < invoice.lineas.length; i++) {
-            total += calculateLineSubtotal(invoice.lineas[i]);
-        }
-        return total;
+        const total = invoice.lineas.reduce(
+            (sum, line) => sum + calculateLineSubtotal(line),
+            0
+        );
+        return round(total);
     }
-    return Number(invoice.amount || 0);
+    return round(Number(invoice.amount || 0));
 }
 
 function calculateVAT(invoice) {
     if (!invoice) return 0;
-    var base = calculateTaxableAmount(invoice);
-    var vatRate = Number(invoice.ivaRate || 0);
-    return base * (vatRate / 100);
+    const taxable = calculateTaxableAmount(invoice);
+    let vatRate = 0;
+
+    if (invoice.vatType && VAT_TYPES[invoice.vatType] != null) {
+        vatRate = VAT_TYPES[invoice.vatType];
+    } else if (!isNaN(Number(invoice.ivaRate))) {
+        vatRate = Number(invoice.ivaRate);
+    }
+
+    return round(taxable * vatRate);
 }
 
 function calculateInvoiceTotal(invoice) {
-    if (!invoice) return 0;
-    var base = calculateTaxableAmount(invoice);
-    var vat = calculateVAT(invoice);
-    return base + vat;
-}
-// Define supported VAT rates
-const vatRates = [0, 0.10, 0.21]; // 0%, 10%, 21%
-
-// Calculate subtotal for a line (price * quantity)
-function calculateLineSubtotal(price, quantity) {
-    return price * quantity;
+    const taxable = calculateTaxableAmount(invoice);
+    const vat = calculateVAT(invoice);
+    return round(taxable + vat);
 }
 
-// Calculate the taxable amount for an invoice (sum of all line subtotals)
-function calculateTaxableAmount(invoiceLines) {
-    return invoiceLines.reduce((total, line) => {
-        return total + calculateLineSubtotal(line.price, line.quantity);
-    }, 0);
+function calculateInvoice(invoice) {
+    const taxable = calculateTaxableAmount(invoice);
+    const vat = calculateVAT(invoice);
+    const total = round(taxable + vat);
+    return { taxable, vat, total };
 }
 
-// Calculate VAT for a given taxable amount and VAT rate
-function calculateVAT(taxableAmount, vatRate) {
-    return taxableAmount * vatRate;
-}
-
-// Calculate total invoice (taxable amount + VAT)
-function calculateInvoiceTotal(invoiceLines, vatRate) {
-    const taxableAmount = calculateTaxableAmount(invoiceLines);
-    const vat = calculateVAT(taxableAmount, vatRate);
-    return taxableAmount + vat;
-}
-
+// ===============================
 // Example usage
-const invoiceLines = [
-    { price: 100, quantity: 2 }, // line 1
-    { price: 50, quantity: 1 }   // line 2
-];
+const invoiceExample = {
+    lineas: [
+        { precioUnitario: 100, cantidad: 2 }, // 200
+        { price: 50, quantity: 1 }             // 50
+    ],
+    vatType: "GENERAL" // 21%
+};
 
+console.log("Subtotal (taxable amount):", calculateTaxableAmount(invoiceExample)); // 250
+console.log("VAT:", calculateVAT(invoiceExample));                                 // 52.5
+console.log("Final total:", calculateInvoiceTotal(invoiceExample));                // 302.5
+console.log("Full breakdown:", calculateInvoice(invoiceExample));                  // {taxable: 250, vat: 52.5, total: 302.5}
+
+// Loop over multiple VAT rates
+const vatRates = [0, 0.10, 0.21];
 vatRates.forEach(rate => {
-    const total = calculateInvoiceTotal(invoiceLines, rate);
+    // Create a temporary invoice with this VAT rate
+    const tempInvoice = { ...invoiceExample, ivaRate: rate, vatType: null };
+    const total = calculateInvoiceTotal(tempInvoice);
     console.log(`Total with VAT ${rate * 100}%: ${total}`);
 });
