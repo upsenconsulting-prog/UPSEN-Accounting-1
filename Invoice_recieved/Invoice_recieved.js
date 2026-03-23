@@ -16,19 +16,7 @@ btnNewInvoiceOCR.addEventListener('click', () => {
   modal.show();
 });
 
-const clients = [
-  { id: 1, name: 'Client A' },
-  { id: 2, name: 'Client B' },
-  { id: 3, name: 'Client C' }
-];
-
-const suppliers = [
-  { id: 1, name: 'Office Supplies AG' },
-  { id: 2, name: 'IT Services GmbH' },
-  { id: 3, name: 'Electrical Supplier AG' },
-  { id: 4, name: 'Cleaning Service Ltd.' }
-];
-
+// Save invoice
 document.getElementById('saveInvoiceBtn').addEventListener('click', () => {
   const form = document.getElementById('formNewInvoice');
   const formData = new FormData(form);
@@ -36,23 +24,7 @@ document.getElementById('saveInvoiceBtn').addEventListener('click', () => {
   formData.forEach((value, key) => {
     inv[key] = value;
   });
-
-  if (!inv.clientId) {
-    alert('Please select a client.');
-    return;
-  }
-
-  const validClient = clients.find(c => c.id == inv.clientId);
-  if (!validClient) {
-    alert('Selected client is not valid.');
-    return;
-  }
-
-  if (!inv.paymentMethodIssued) {
-    alert('Please select a payment method.');
-    return;
-  }
-
+  // store in localStorage
   let invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
   invoices.push(inv);
   localStorage.setItem('invoices', JSON.stringify(invoices));
@@ -61,38 +33,7 @@ document.getElementById('saveInvoiceBtn').addEventListener('click', () => {
   form.reset();
 });
 
-document.getElementById('saveReceivedInvoiceBtn').addEventListener('click', () => {
-  const form = document.getElementById('formNewInvoiceReceived');
-  const formData = new FormData(form);
-  let inv = {};
-  formData.forEach((value, key) => {
-    inv[key] = value;
-  });
-
-  if (!inv.supplierId) {
-    alert('Please select a supplier.');
-    return;
-  }
-
-  const validSupplier = suppliers.find(s => s.id == inv.supplierId);
-  if (!validSupplier) {
-    alert('Selected supplier is invalid.');
-    return;
-  }
-
-  if (!inv.paymentMethodReceived) {
-    alert('Please select a payment method.');
-    return;
-  }
-
-  let invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
-  invoices.push(inv);
-  localStorage.setItem('invoices', JSON.stringify(invoices));
-  updateTable();
-  bootstrap.Modal.getInstance(document.getElementById('modalNewInvoiceReceived')).hide();
-  form.reset();
-});
-
+// Upload OCR
 document.getElementById('saveOCRBtn').addEventListener('click', () => {
   const form = document.getElementById('formOCRInvoice');
   const fileInput = form.elements['ocrFile'];
@@ -101,6 +42,7 @@ document.getElementById('saveOCRBtn').addEventListener('click', () => {
     alert('Please select a file');
     return;
   }
+  // for demo: just save file name
   let invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
   invoices.push({
     invoiceNumber: 'OCR-' + Date.now(),
@@ -115,47 +57,48 @@ document.getElementById('saveOCRBtn').addEventListener('click', () => {
   form.reset();
 });
 
+// Download as PDF (using html2pdf or simple approach)
 document.getElementById('btnDownloadPDF').addEventListener('click', () => {
+  // Use html2pdf library or other technique. Here is a stub:
   alert('Download as PDF - Not implemented yet');
 });
 
+// Apply filter
 document.getElementById('applyFilter').addEventListener('click', () => {
   updateTable();
   filterCard.classList.add('d-none');
 });
 
+// Update table rendering
 function updateTable() {
   const tbody = document.getElementById('invoiceTbody');
   let invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
   tbody.innerHTML = '';
-
   if (invoices.length === 0) {
     tbody.innerHTML = `
       <tr>
         <td colspan="5" class="text-center text-muted">
-          There are no invoices for the selected period.
+          There are no invoices for the selected period.<br>
+          You can change the period using the selector on the top right.
         </td>
       </tr>`;
     return;
   }
-
   invoices.forEach(inv => {
     const tr = document.createElement('tr');
-
-    const supplierName = suppliers.find(s => s.id == inv.supplierId)?.name || '';
-    const clientName = clients.find(c => c.id == inv.clientId)?.name || '';
-
     tr.innerHTML = `
       <td>${inv.invoiceNumber || ''}</td>
       <td>${inv.state || ''}</td>
       <td>${inv.invoiceDate || inv.date || ''}</td>
-      <td>${supplierName || clientName || ''}</td>
+      <td>${inv.supplier || ''}</td>
       <td>${inv.amount || ''}</td>
     `;
     tbody.appendChild(tr);
   });
 }
 
+// On page load
 document.addEventListener('DOMContentLoaded', () => {
   updateTable();
 });
+
