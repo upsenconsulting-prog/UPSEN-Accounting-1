@@ -1,704 +1,1533 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Accounting - Facturas Emitidas</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <style>
-    * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #eef1f7; min-height: 100vh; }
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FactuFácil - Facturas Emitidas</title>
 
-    .sidebar { 
-      width: 260px; 
-      background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%); 
-      color: white; 
-      min-height: 100vh; 
-      position: fixed; 
-      box-shadow: 4px 0 20px rgba(0,0,0,0.15);
-    }
-    .sidebar-header { 
-      padding: 30px 20px; 
-      font-size: 1.6em; 
-      font-weight: bold; 
-      background: rgba(0,0,0,0.2); 
-      text-align: center; 
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-    .sidebar-header i { color: #1abc9c; }
-    .sidebar-menu { list-style: none; padding: 0; margin: 0; }
-    .sidebar-menu li { padding: 0; transition: all 0.3s; border-left: 4px solid transparent; }
-    .sidebar-menu li:hover { background: rgba(26, 188, 156, 0.15); border-left-color: #1abc9c; }
-    .sidebar-menu li.active { background: rgba(26, 188, 156, 0.2); border-left-color: #1abc9c; }
-    .sidebar-link { 
-      color: inherit; 
-      text-decoration: none; 
-      display: flex; 
-      align-items: center; 
-      gap: 12px; 
-      padding: 15px 20px;
-      transition: all 0.3s;
-    }
-    .sidebar-link:hover { color: #1abc9c; }
-    .sidebar-link i { width: 24px; text-align: center; color: rgba(255,255,255,0.7); transition: color 0.3s; }
-    .sidebar-menu li:hover i, .sidebar-menu li.active i { color: #1abc9c; }
+    <!-- Font Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
-    .main-content { margin-left: 260px; padding: 30px; min-height: 100vh; }
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-    .page-title { font-size: 2em; font-weight: 700; color: #2c3e50; display: flex; align-items: center; gap: 15px; }
-    .page-title i { color: #1abc9c; }
+    <style>
+        * { box-sizing: border-box; }
 
-    .modern-card { 
-      background: white; 
-      border-radius: 16px; 
-      padding: 25px; 
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
-      margin-bottom: 25px; 
-      transition: all 0.3s;
-      border: 1px solid rgba(0,0,0,0.05);
-    }
-    .modern-card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
+        /* === LIGHT MODE === */
+        :root {
+            --bg: #F7F9FC;
+            --text: #1F2937;
+            --card-bg: #FFFFFF;
+            --border: #E6EAF0;
+            --muted: #6B7280;
+            --metric1-bg: #e9f6ec;
+            --metric1-text: #0f6c69;
+            --metric2-bg: #fee8d9;
+            --metric2-text: #b86313;
+            --metric3-bg: #e2f1fd;
+            --metric3-text: #0958b2;
+            --metric4-bg: #e9e4fb;
+            --metric4-text: #314057;
+            --btn-primary-bg: #0958b2;
+            --btn-primary-text: #ffffff;
+            --btn-sec-bg: #FFFFFF;
+            --btn-sec-border: #D1D5DB;
+            --btn-sec-text: #4B5563;
+            --alert-bg: #FFF4E5;
+            --alert-border: #FEE8D9;
+            --alert-text: #B26A00;
+            --danger: #e74c3c;
+            --danger-bg: #fde8e8;
+            --danger-text: #c53030;
+            --success: #0f6c69;
+        }
 
-    .summary-card {
-      background: white;
-      border-radius: 16px;
-      padding: 25px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-      text-align: center;
-      transition: all 0.3s;
-      border: 1px solid rgba(0,0,0,0.05);
-      height: 100%;
-    }
-    .summary-card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
-    .summary-icon {
-      width: 60px;
-      height: 60px;
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 15px;
-      font-size: 1.5em;
-    }
-    .summary-icon.blue { background: linear-gradient(135deg, rgba(42, 77, 156, 0.15), rgba(58, 108, 214, 0.15)); color: #2a4d9c; }
-    .summary-icon.green { background: linear-gradient(135deg, rgba(26, 188, 156, 0.15), rgba(22, 160, 133, 0.15)); color: #1abc9c; }
-    .summary-icon.orange { background: linear-gradient(135deg, rgba(243, 156, 18, 0.15), rgba(230, 126, 34, 0.15)); color: #f39c12; }
-    .summary-icon.purple { background: linear-gradient(135deg, rgba(155, 89, 182, 0.15), rgba(142, 68, 173, 0.15)); color: #9b59b6; }
+        /* === DARK MODE === */
+        body.dark {
+            --bg: #0F172A;
+            --text: #F1F5F9;
+            --card-bg: #1E293B;
+            --border: #334155;
+            --muted: #94A3B8;
+            --metric1-bg: #064E3B;
+            --metric1-text: #6EE7B7;
+            --metric2-bg: #7C2D12;
+            --metric2-text: #FDBA74;
+            --metric3-bg: #1E3A8A;
+            --metric3-text: #93C5FD;
+            --metric4-bg: #4C1D95;
+            --metric4-text: #C4B5FD;
+            --btn-primary-bg: #1D4ED8;
+            --btn-primary-text: #ffffff;
+            --btn-sec-bg: transparent;
+            --btn-sec-border: #4B5563;
+            --btn-sec-text: #E5E7EB;
+            --alert-bg: #422006;
+            --alert-border: #713f12;
+            --alert-text: #FDBA74;
+            --danger: #ef4444;
+            --danger-bg: #7C2D12;
+            --danger-text: #FDBA74;
+            --success: #6EE7B7;
+        }
 
-    .summary-card h3 { font-size: 0.9em; color: #6c757d; margin-bottom: 10px; font-weight: 500; }
-    .summary-card p { font-size: 1.8em; font-weight: 700; color: #2c3e50; margin: 0; }
-    .summary-card span { font-size: 0.85em; color: #6c757d; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            margin: 0;
+        }
 
-    .section-title { 
-      color: #2a4d9c; 
-      font-weight: 600; 
-      margin-bottom: 20px; 
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .section-title i { color: #1abc9c; }
+        /* SIDEBAR */
+        .sidebar {
+            width: 260px;
+            background: var(--card-bg);
+            border-right: 1px solid var(--border);
+            color: var(--text);
+            min-height: 100vh;
+            position: fixed;
+            z-index: 100;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
 
-    .btn { border-radius: 8px; padding: 8px 16px; font-weight: 500; transition: all 0.3s; border: none; font-size: 0.9rem; }
-    .btn-primary { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); color: white; }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(42, 77, 156, 0.4); color: white; }
-    .btn-success { background: linear-gradient(135deg, #1abc9c, #16a085); color: white; }
-    .btn-success:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(26, 188, 156, 0.4); color: white; }
-    .btn-secondary { background: #e9ecef; border: none; color: #495057; }
-    .btn-secondary:hover { background: #dee2e6; transform: translateY(-2px); }
-    .btn-danger { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
-    .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4); color: white; }
+        .sidebar-header {
+            padding: 30px 20px;
+            font-size: 1.4em;
+            font-weight: 700;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
 
-    .form-control, .form-select {
-      border-radius: 10px;
-      padding: 12px 15px;
-      border: 2px solid #e9ecef;
-      transition: all 0.3s;
-    }
-    .form-control:focus, .form-select:focus {
-      border-color: #2a4d9c;
-      box-shadow: 0 0 0 4px rgba(42, 77, 156, 0.1);
-    }
+        .sidebar-header i { color: var(--metric3-text); }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    th { 
-      background: linear-gradient(135deg, #2a4d9c, #3a6cd6); 
-      color: white; 
-      font-weight: 600; 
-      padding: 10px 8px; 
-      font-size: 0.85rem;
-      text-align: left;
-      white-space: nowrap;
-    }
-    th:first-child { border-radius: 10px 0 0 0; }
-    th:last-child { border-radius: 0 10px 0 0; }
-    td { 
-      padding: 12px 8px; 
-      border-bottom: 1px solid #e9ecef; 
-      color: #2c3e50; 
-      font-size: 0.9rem;
-      white-space: nowrap;
-    }
-    tr:hover td { background: rgba(26, 188, 156, 0.05); }
-    
-    .table-responsive {
-      -webkit-overflow-scrolling: touch;
-    }
-    
-    @media (max-width: 992px) {
-      table { font-size: 0.85rem; }
-      th { 
-        font-size: 0.8rem; 
-        padding: 8px 4px !important; 
-      }
-      td { 
-        padding: 8px 4px !important; 
-        font-size: 0.85rem;
-      }
-      .action-buttons { white-space: nowrap; }
-      .btn-sm { 
-        padding: 4px 6px !important; 
-        font-size: 0.7rem !important; 
-        margin: 0 1px;
-      }
-    }
+        .sidebar-menu { list-style: none; padding: 15px 0; margin: 0; }
 
-    .modal-content { border-radius: 16px; overflow: hidden; border: none; box-shadow: 0 15px 50px rgba(0,0,0,0.2); }
-    .modal-header { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); color: white; border: none; padding: 20px 25px; }
-    .modal-header .btn-close { filter: brightness(0) invert(1); }
-    .modal-body { padding: 25px; background: #f6f8fc; }
-    .modal-footer { padding: 20px 25px; border-top: 1px solid #e9ecef; background: #f6f8fc; }
+        .sidebar-menu li { padding: 0 15px; margin-bottom: 5px; }
 
-    .chart-container { position: relative; height: 300px; }
+        .sidebar-link {
+            color: var(--muted);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
 
-    @media (max-width: 992px) {
-      .sidebar { position: relative; width: 100%; min-height: auto; }
-      .main-content { margin-left: 0; }
-    }
-  </style>
+        .sidebar-link i { width: 24px; text-align: center; font-size: 1.1em; transition: color 0.2s; }
+
+        .sidebar-link:hover { background: var(--border); color: var(--text); }
+
+        .sidebar-menu li.active .sidebar-link {
+            background: var(--metric3-bg);
+            color: var(--metric3-text);
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgb(0,0,0,0.05);
+        }
+
+        .sidebar-menu li.active .sidebar-link i { color: var(--metric3-text); }
+
+        /* MAIN CONTENT */
+        .main-content { margin-left: 260px; padding: 32px; min-height: 100vh; }
+
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+
+        .page-title { font-size: 1.8em; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 15px; margin: 0; }
+
+        .page-title i { color: var(--metric3-text); }
+
+        /* BUTTONS */
+        .btn { border-radius: 8px; padding: 8px 16px; font-weight: 500; font-size: 0.9rem; transition: all 0.2s; border: none; }
+
+        .btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); }
+        .btn-primary:hover { opacity: 0.9; color: var(--btn-primary-text); transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.15); }
+
+        .btn-secondary { background: var(--btn-sec-bg); color: var(--btn-sec-text); border: 1px solid var(--btn-sec-border); }
+        .btn-secondary:hover { background: var(--border); color: var(--text); transform: translateY(-1px); }
+
+        .btn-success { background: var(--metric1-bg); color: var(--metric1-text); border: 1px solid var(--metric1-text); }
+        .btn-success:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.1); }
+
+        .btn-info { background: var(--metric3-bg); color: var(--metric3-text); border: 1px solid var(--metric3-text); }
+        .btn-info:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.1); }
+
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.15); }
+
+        .btn-outline-secondary {
+            background: transparent;
+            color: var(--btn-sec-text);
+            border: 1px solid var(--btn-sec-border);
+        }
+        .btn-outline-secondary:hover {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+        .dark-toggle-btn {
+            background: var(--btn-sec-bg);
+            border: 1px solid var(--btn-sec-border);
+            color: var(--btn-sec-text);
+            border-radius: 8px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.1em;
+        }
+        .dark-toggle-btn:hover { background: var(--border); color: var(--text); }
+
+        /* MODERN CARDS */
+        .modern-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border);
+            transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
+        }
+
+        .modern-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgb(0,0,0,0.08); }
+        body.dark .modern-card:hover { box-shadow: 0 10px 25px rgb(0,0,0,0.3); }
+
+        /* KPI METRIC CARDS */
+        .kpi-card {
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            border: 1px solid var(--border);
+            transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
+            cursor: pointer;
+        }
+
+        .kpi-card:hover { transform: translateY(-6px); box-shadow: 0 10px 25px rgb(0,0,0,0.12); }
+        body.dark .kpi-card:hover { box-shadow: 0 10px 25px rgb(0,0,0,0.4); }
+
+        .kpi-header { display: flex; justify-content: space-between; align-items: flex-start; }
+
+        .kpi-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+        }
+
+        .kpi-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; opacity: 0.9; }
+        .kpi-value { font-size: 24px; font-weight: 700; margin-bottom: 4px; margin-top: 8px; }
+        .kpi-subtitle { font-size: 13px; opacity: 0.8; }
+
+        /* FORMS */
+        .form-control, .form-select {
+            border-radius: 8px;
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            color: var(--text);
+            transition: all 0.2s;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--metric3-text);
+            box-shadow: 0 0 0 3px rgb(9, 88, 178, 0.1);
+            background: var(--card-bg);
+            color: var(--text);
+        }
+
+        .form-label { color: var(--text); font-weight: 500; margin-bottom: 8px; }
+
+        /* TABLE */
+        .table { color: var(--text); border-color: var(--border); margin-bottom: 0; }
+        .table th {
+            background: transparent;
+            color: var(--text);
+            font-weight: 600;
+            border-bottom: 2px solid var(--border);
+            padding: 12px 8px;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+        .table td {
+            background: transparent;
+            color: var(--text);
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+            padding: 12px 8px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .table tbody tr { transition: all 0.2s ease; }
+        .table tbody tr:hover { transform: translateY(-2px); background: rgb(0,0,0,0.02); box-shadow: 0 4px 10px rgb(0,0,0,0.05); }
+        body.dark .table tbody tr:hover { background: rgb(255,255,255,0.03); box-shadow: 0 4px 10px rgb(0,0,0,0.2); }
+
+        .badge { padding: 6px 12px; border-radius: 8px; font-weight: 500; }
+        .badge-success, .badge-pagada { background: var(--metric1-bg); color: var(--metric1-text); }
+        .badge-warning, .badge-pendiente { background: var(--metric2-bg); color: var(--metric2-text); }
+        .badge-danger, .badge-vencida { background: var(--danger-bg); color: var(--danger-text); }
+
+        /* SECTION TITLE */
+        .section-title {
+            color: var(--text);
+            font-weight: 600;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-title i { color: var(--metric3-text); }
+
+        /* MODAL */
+        .modal-content {
+            background: var(--card-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .modal-header { border-bottom: 1px solid var(--border); padding: 20px; }
+        .modal-header .modal-title { font-weight: 600; }
+        .modal-header .btn-close { filter: brightness(0.5); }
+        body.dark .modal-header .btn-close { filter: invert(1); }
+
+        .modal-body { padding: 25px; }
+        .modal-footer { padding: 20px; border-top: 1px solid var(--border); }
+
+        /* ALERT */
+        .alert {
+            background: var(--alert-bg);
+            border: 1px solid var(--alert-border);
+            color: var(--alert-text);
+            border-radius: 8px;
+        }
+
+        /* CHART */
+        .chart-container { position: relative; height: 300px; margin-top: 20px; }
+
+        /* RESPONSIVE */
+        @media (max-width: 992px) {
+            .sidebar { position: relative; width: 100%; min-height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+            .main-content { margin-left: 0; padding: 20px; }
+            .table { font-size: 0.85rem; }
+            .table th { font-size: 0.8rem; padding: 8px 4px !important; }
+            .table td { padding: 8px 4px !important; font-size: 0.85rem; }
+            .btn-sm { padding: 4px 6px !important; font-size: 0.7rem !important; margin: 0 1px; }
+        }
+    </style>
 </head>
+
 <body>
-<div class="container-fluid p-0">
-  <div class="row m-0">
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <i class="fas fa-chart-line"></i>Accounting
-      </div>
-      <ul class="sidebar-menu">
-        <li><a href="../frontPage/frontPage.html" class="sidebar-link"><i class="fas fa-tachometer-alt"></i> Panel de control</a></li>
-        <li><a href="../expense/expense.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar"></i> Gastos</a></li>
-        <li class="active"><a href="../Invoice-issued/invoice-issued.html" class="sidebar-link"><i class="fas fa-file-export"></i> Facturas emitidas</a></li>
-        <li><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link"><i class="fas fa-file-import"></i> Facturas recibidas</a></li>
-        <li><a href="../budgetPage/budget.html" class="sidebar-link"><i class="fas fa-calculator"></i> Presupuestos</a></li>
-        <li><a href="../profile/profile.html" class="sidebar-link"><i class="fas fa-user"></i> Perfil</a></li>
-        <li><a href="../profile/settings.html" class="sidebar-link"><i class="fas fa-cog"></i> Configuracion</a></li>
-        <li style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 10px; padding-top: 10px;">
-          <a href="javascript:void(0)" class="sidebar-link" onclick="confirmLogout()" style="color: #e74c3c;">
-            <i class="fas fa-sign-out-alt"></i> Cerrar sesion
-          </a>
-        </li>
-      </ul>
-    </aside>
-
-    <main class="main-content col">
-      <div class="page-header">
-        <h1 class="page-title"><i class="fas fa-file-export"></i> Facturas emitidas</h1>
-        <div class="action-buttons" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-          <button class="btn btn-primary" id="newInvoiceBtn">
-            <i class="fas fa-plus me-1"></i>Nueva factura
-          </button>
-          <button class="btn btn-success" id="btnImport">
-            <i class="fas fa-file-import me-1"></i>Importar
-          </button>
-          <button class="btn btn-secondary" id="btnExport">
-            <i class="fas fa-file-export me-1"></i>Exportar
-          </button>
-        </div>
-      </div>
-
-      <div class="row mb-4">
-        <div class="col-md-2 mb-3">
-          <div class="summary-card">
-            <div class="summary-icon orange"><i class="fas fa-clock"></i></div>
-            <h3>Pendientes</h3>
-            <p id="pendingTotal">EUR 0,00</p>
-          </div>
-        </div>
-        <div class="col-md-2 mb-3">
-          <div class="summary-card">
-            <div class="summary-icon red"><i class="fas fa-exclamation-triangle"></i></div>
-            <h3>Vencidas</h3>
-            <p id="overdueTotal">EUR 0,00</p>
-          </div>
-        </div>
-        <div class="col-md-2 mb-3">
-          <div class="summary-card">
-            <div class="summary-icon blue"><i class="fas fa-calendar-check"></i></div>
-            <h3>Creadas mes</h3>
-            <p id="monthlyCount"><span>0</span></p>
-          </div>
-        </div>
-        <div class="col-md-2 mb-3">
-          <div class="summary-card">
-            <div class="summary-icon purple"><i class="fas fa-chart-line"></i></div>
-            <h3>Promedio</h3>
-            <p id="averageAmount"><span>EUR 0,00</span></p>
-          </div>
-        </div>
-        
-
-
-
-
-      <div class="modern-card">
-        <h5 class="section-title"><i class="fas fa-list"></i> Facturas emitidas</h5>
-        
-        <!-- NEW: Filter Row -->
-        <div class="row mb-3">
-          <div class="col-md-3">
-            <label class="form-label">Método Pago</label>
-            <select id="paymentFilter" class="form-select">
-              <option value="todas">Todas</option>
-              <option value="efectivo">💵 Efectivo</option>
-              <option value="tarjeta">💳 Tarjeta</option>
-              <option value="transferencia">🏦 Transferencia</option>
-              <option value="recibo">📄 Recibo</option>
-              <option value="cheque">✉️ Cheque</option>
-              <option value="paypal">💸 Paypal</option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <label class="form-label">Período</label>
-            <select id="dateFilter" class="form-select">
-              <option value="todos">Todos</option>
-              <option value="mes">Este mes</option>
-              <option value="trimestre">Este trimestre</option>
-              <option value="ano">Este año</option>
-            </select>
-          </div>
-          <div class="col-md-5">
-            <label class="form-label">Buscar</label>
-            <input type="text" id="searchInput" class="form-control" placeholder="Número, cliente, notas...">
-          </div>
-          <div class="col-md-2">
-            <label class="form-label">&nbsp;</label>
-            <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">Limpiar</button>
-          </div>
-        </div>
-        
-        <div class="table-responsive">
-          <table>
-
-            <thead>
-              <tr>
-              <th><i class="fas fa-hashtag me-1" title="Número"></i>#</th>
-              <th title="Cliente">Cliente</th>
-              <th title="Fecha Emisión">Fecha</th>
-              <th title="Fecha Vencimiento">Vence</th>
-              <th title="Base Imponible">Base</th>
-              <th title="IVA %">IVA%</th>
-              <th title="IVA Amount">IVA</th>
-              <th title="Total">Total</th>
-              <th title="Veri*Factu">Veri</th>
-              <th title="Estado">Estado</th>
-              <th title="Método Pago">Pago</th>
-              <th>Acciones</th>
-
-              </tr>
-            </thead>
-            <tbody id="invoiceTbody">
-              <tr>
-                <td colspan="7" class="text-center text-muted">Cargando datos...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="modern-card">
-        <h5 class="section-title"><i class="fas fa-chart-line"></i> Evolucion de ingresos</h5>
-        <div class="chart-container">
-          <canvas id="issuedChartCanvas"></canvas>
-        </div>
-      </div>
-    </main>
-  </div>
-</div>
-
-<!-- Modal Nueva Factura -->
-<div class="modal fade" id="modalNewInvoiceIssued">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>Nueva factura</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <form id="formNewInvoiceIssued">
-          <div class="mb-3">
-            <label class="form-label">Numero de factura</label>
-            <input type="text" name="invoiceNumber" class="form-control" placeholder="Ej: INV-2025-001" required />
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Cliente</label>
-            <input type="text" name="customer" class="form-control" placeholder="Nombre del cliente" required />
-          </div>
-          <div class="mb-3">
-            <label class="form-label">NIF Cliente</label>
-            <input type="text" name="customerNif" class="form-control" placeholder="NIF del cliente" />
-          </div>
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <label class="form-label">Fecha</label>
-              <input type="date" name="invoiceDate" class="form-control" required />
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-chart-line"></i>FactuFácil
             </div>
-            <div class="col-md-6">
-              <label class="form-label">Vence</label>
-              <input type="date" name="dueDate" class="form-control" required />
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="../frontPage/frontPage.html" class="sidebar-link">
+                        <i class="fas fa-tachometer-alt"></i>Panel de control
+                    </a>
+                </li>
+                <li>
+                    <a href="../expense/expense.html" class="sidebar-link">
+                        <i class="fas fa-file-invoice-dollar"></i>Gastos
+                    </a>
+                </li>
+                <li class="active">
+                    <a href="../Invoice-issued/invoice-issued.html" class="sidebar-link">
+                        <i class="fas fa-file-export"></i>Facturas emitidas
+                    </a>
+                </li>
+                <li>
+                    <a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link">
+                        <i class="fas fa-file-import"></i>Facturas recibidas
+                    </a>
+                </li>
+                <li>
+                    <a href="../budgetPage/budget.html" class="sidebar-link">
+                        <i class="fas fa-calculator"></i>Presupuestos
+                    </a>
+                </li>
+                <li>
+                    <a href="../profile/profile.html" class="sidebar-link">
+                        <i class="fas fa-user"></i>Perfil
+                    </a>
+                </li>
+                <li>
+                    <a href="../profile/settings.html" class="sidebar-link">
+                        <i class="fas fa-cog"></i>Configuración
+                    </a>
+                </li>
+                <li style="border-top: 1px solid var(--border); margin-top: 10px; padding-top: 10px;">
+                    <a href="javascript:void(0)" class="sidebar-link" onclick="confirmLogout()" style="color: var(--danger);">
+                        <i class="fas fa-sign-out-alt"></i>Cerrar sesión
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-file-export"></i> Facturas emitidas
+                </h1>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="newInvoiceBtn">
+                        <i class="fas fa-plus me-1"></i>Nueva factura
+                    </button>
+                    <button class="btn btn-success" id="btnImport">
+                        <i class="fas fa-file-import me-1"></i>Importar
+                    </button>
+                    <button class="btn btn-secondary" id="btnExport">
+                        <i class="fas fa-file-export me-1"></i>Exportar
+                    </button>
+                    <button class="dark-toggle-btn" id="themeToggle" title="Cambiar tema">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
             </div>
-          </div>
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <label class="form-label">Base Imponible (EUR)</label>
-              <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required />
+
+            <!-- KPI Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="kpi-card" style="background: var(--metric2-bg); color: var(--metric2-text);">
+                        <div class="kpi-header">
+                            <div>
+                                <div class="kpi-title">Pendientes</div>
+                                <h2 class="kpi-value" id="pendingTotal">€0,00</h2>
+                                <div class="kpi-subtitle">Por cobrar</div>
+                            </div>
+                            <div class="kpi-icon" style="background: rgb(255,255,255,0.2);">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="kpi-card" style="background: var(--danger-bg); color: var(--danger-text);">
+                        <div class="kpi-header">
+                            <div>
+                                <div class="kpi-title">Vencidas</div>
+                                <h2 class="kpi-value" id="overdueTotal">€0,00</h2>
+                                <div class="kpi-subtitle">Requieren atención</div>
+                            </div>
+                            <div class="kpi-icon" style="background: rgb(255,255,255,0.2);">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="kpi-card" style="background: var(--metric3-bg); color: var(--metric3-text);">
+                        <div class="kpi-header">
+                            <div>
+                                <div class="kpi-title">Creadas este mes</div>
+                                <h2 class="kpi-value" id="monthlyCount">0</h2>
+                                <div class="kpi-subtitle">Facturas</div>
+                            </div>
+                            <div class="kpi-icon" style="background: rgb(255,255,255,0.2);">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="kpi-card" style="background: var(--metric4-bg); color: var(--metric4-text);">
+                        <div class="kpi-header">
+                            <div>
+                                <div class="kpi-title">Promedio</div>
+                                <h2 class="kpi-value" id="averageAmount">€0,00</h2>
+                                <div class="kpi-subtitle">Por factura</div>
+                            </div>
+                            <div class="kpi-icon" style="background: rgb(255,255,255,0.2);">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-6">
-              <label class="form-label">IVA (%)</label>
-              <input type="number" step="0.01" name="ivaRate" class="form-control" placeholder="21" value="21" />
+
+            <!-- Invoices Table -->
+            <div class="modern-card">
+                <h5 class="section-title"><i class="fas fa-list"></i> Facturas emitidas</h5>
+
+                <!-- Filter Row -->
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Método Pago</label>
+                        <select id="paymentFilter" class="form-select">
+                            <option value="todas">Todas</option>
+                            <option value="efectivo">💵 Efectivo</option>
+                            <option value="tarjeta">💳 Tarjeta</option>
+                            <option value="transferencia">🏦 Transferencia</option>
+                            <option value="recibo">📄 Recibo</option>
+                            <option value="cheque">✉️ Cheque</option>
+                            <option value="paypal">💸 Paypal</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Período</label>
+                        <select id="dateFilter" class="form-select">
+                            <option value="todos">Todos</option>
+                            <option value="mes">Este mes</option>
+                            <option value="trimestre">Este trimestre</option>
+                            <option value="ano">Este año</option>
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Buscar</label>
+                        <input type="text" id="searchInput" class="form-control" placeholder="Número, cliente, notas...">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">Limpiar</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-hashtag me-1" title="Número"></i>#</th>
+                                <th title="Cliente">Cliente</th>
+                                <th title="Fecha Emisión">Fecha</th>
+                                <th title="Fecha Vencimiento">Vence</th>
+                                <th title="Base Imponible">Base</th>
+                                <th title="IVA %">IVA%</th>
+                                <th title="IVA Amount">IVA</th>
+                                <th title="Total">Total</th>
+                                <th title="Veri*Factu">Veri</th>
+                                <th title="Estado">Estado</th>
+                                <th title="Método Pago">Pago</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invoiceTbody">
+                            <tr>
+                                <td colspan="12" class="text-center" style="color: var(--muted);">Cargando datos...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-          </div>
-            <div class="mb-3">
-            <label class="form-label">Estado</label>
-            <select name="state" class="form-select">
-              <option value="Pendiente">Pendiente</option>
-              <option value="Pagada">Pagada</option>
-              <option value="Vencida">Vencida</option>
-            </select>
-          </div>
-          
-          <!-- NEW: Payment Method for New Invoice -->
-          <div class="mb-3">
-            <label class="form-label">Método de pago <small>(si Pagada)</small></label>
-            <select name="paymentMethod" class="form-select">
-              <option value="">-- Seleccionar --</option>
-              <option value="efectivo">💵 Efectivo</option>
-              <option value="tarjeta">💳 Tarjeta</option>
-              <option value="transferencia">🏦 Ingreso/Transferencia</option>
-              <option value="recibo">📄 Recibo Bancario</option>
-              <option value="cheque">✉️ Pagaré/Cheque</option>
-              <option value="paypal">💸 Paypal</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Fecha de pago <small>(si Pagada)</small></label>
-            <input type="date" name="paymentDate" class="form-control" />
-            <div class="form-text">Se deja vacío, se usará la fecha actual</div>
-          </div>
-        </form>
 
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-success" id="saveInvoiceIssuedBtn">
-          <i class="fas fa-save me-2"></i>Guardar
-        </button>
-      </div>
+            <!-- Chart -->
+            <div class="modern-card">
+                <h5 class="section-title"><i class="fas fa-chart-line"></i> Evolución de ingresos</h5>
+                <div class="chart-container">
+                    <canvas id="issuedChartCanvas"></canvas>
+                </div>
+            </div>
+        </main>
     </div>
-  </div>
-</div>
 
-<!-- Modal Ver Factura -->
-<div class="modal fade" id="viewInvoiceModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-file-export me-2"></i>Detalle de factura</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body" id="viewInvoiceContent"></div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Marcar Pagada -->
-<div class="modal fade" id="modalMarkPaid" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-check-circle me-2 text-success"></i>Marcar como Pagada</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <form id="formMarkPaid">
-          <input type="hidden" name="invoiceId" id="markPaidInvoiceId" />
-          <div class="mb-3">
-            <label class="form-label">Método de pago <span class="text-danger">*</span></label>
-            <select name="paymentMethod" class="form-select" required>
-              <option value="">-- Seleccionar método --</option>
-              <option value="efectivo">💵 Efectivo</option>
-              <option value="tarjeta">💳 Tarjeta</option>
-              <option value="transferencia">🏦 Ingreso/Transferencia</option>
-              <option value="recibo">📄 Recibo Bancario</option>
-              <option value="cheque">✉️ Pagaré/Cheque</option>
-              <option value="paypal">💸 Paypal</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Fecha de pago <span class="text-danger">*</span></label>
-            <input type="date" name="paymentDate" class="form-control" required />
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Notas</label>
-            <textarea name="paymentNotes" class="form-control" rows="2" placeholder="Ref, banco, nº tarjeta..."></textarea>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-success" id="confirmMarkPaid">
-          <i class="fas fa-check me-2"></i>Confirmar Pago
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Exportar Facturas -->
-<div class="modal fade" id="modalExport" tabindex="-1">
-
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-file-export me-2"></i>Exportar Facturas</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label">Formato</label>
-          <select id="exportFormat" class="form-select">
-            <option value="pdf">PDF</option>
-            <option value="csv">CSV</option>
-            <option value="excel">Excel</option>
-          </select>
+    <!-- Modal Nueva Factura -->
+    <div class="modal fade" id="modalNewInvoiceIssued">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>Nueva factura</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formNewInvoiceIssued">
+                        <div class="mb-3">
+                            <label class="form-label">Número de factura</label>
+                            <input type="text" name="invoiceNumber" class="form-control" placeholder="Ej: INV-2025-001" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Cliente</label>
+                            <input type="text" name="customer" class="form-control" placeholder="Nombre del cliente" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">NIF Cliente</label>
+                            <input type="text" name="customerNif" class="form-control" placeholder="NIF del cliente" />
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Fecha</label>
+                                <input type="date" name="invoiceDate" class="form-control" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Vence</label>
+                                <input type="date" name="dueDate" class="form-control" required />
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Base Imponible (EUR)</label>
+                                <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">IVA (%)</label>
+                                <input type="number" step="0.01" name="ivaRate" class="form-control" placeholder="21" value="21" />
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Estado</label>
+                            <select name="state" class="form-select">
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="Pagada">Pagada</option>
+                                <option value="Vencida">Vencida</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Método de pago <small>(si Pagada)</small></label>
+                            <select name="paymentMethod" class="form-select">
+                                <option value="">-- Seleccionar --</option>
+                                <option value="efectivo">💵 Efectivo</option>
+                                <option value="tarjeta">💳 Tarjeta</option>
+                                <option value="transferencia">🏦 Ingreso/Transferencia</option>
+                                <option value="recibo">📄 Recibo Bancario</option>
+                                <option value="cheque">✉️ Pagaré/Cheque</option>
+                                <option value="paypal">💸 Paypal</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Fecha de pago <small>(si Pagada)</small></label>
+                            <input type="date" name="paymentDate" class="form-control" />
+                            <div class="form-text" style="color: var(--muted);">Si se deja vacío, se usará la fecha actual</div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="saveInvoiceIssuedBtn">
+                        <i class="fas fa-save me-2"></i>Guardar
+                    </button>
+                </div>
+            </div>
         </div>
-        <div class="mb-3">
-          <label class="form-label">Periodo</label>
-          <select id="exportPeriod" class="form-select">
-            <option value="all">Todas</option>
-            <option value="month">Este mes</option>
-            <option value="year">Este ano</option>
-          </select>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-primary" id="confirmExportBtn">Exportar</button>
-      </div>
     </div>
-  </div>
-</div>
 
-<!-- Modal Importar Facturas Emitidas -->
-<div class="modal fade" id="modalImport" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-file-import me-2"></i>Importar Facturas Emitidas</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label">Seleccionar archivo CSV</label>
-          <input type="file" id="importFileInputIssued" class="form-control" accept=".csv" />
+    <!-- Modal Ver Factura -->
+    <div class="modal fade" id="viewInvoiceModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-file-export me-2"></i>Detalle de factura</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="viewInvoiceContent"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
         </div>
-        <div class="alert alert-info">
-          <i class="fas fa-info-circle me-2"></i>
-          <strong>Formato requerido:</strong> El CSV debe tener las columnas: Numero, Cliente, NIF, Fecha, Vence, Base Imponible, IVA Rate, Estado
-        </div>
-        <button type="ssbutton" class="btn btn-info" onclick="downloadIssuedInvoiceTemplate()">
-          <i class="fas fa-download me-2"></i>Descargar plantilla
-        </button>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-success" id="confirmImportBtn">
-          <i class="fas fa-file-import me-2"></i>Importar
-        </button>
-      </div>
     </div>
-  </div>
-</div>
 
-<!-- Hidden file input for import -->
-<input type="file" id="importFileInput" accept=".csv" style="display: none;" />
+    <!-- Modal Marcar Pagada -->
+    <div class="modal fade" id="modalMarkPaid" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-check-circle me-2" style="color: var(--success);"></i>Marcar como Pagada</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formMarkPaid">
+                        <input type="hidden" name="invoiceId" id="markPaidInvoiceId" />
+                        <div class="mb-3">
+                            <label class="form-label">Método de pago <span style="color: var(--danger);">*</span></label>
+                            <select name="paymentMethod" class="form-select" required>
+                                <option value="">-- Seleccionar método --</option>
+                                <option value="efectivo">💵 Efectivo</option>
+                                <option value="tarjeta">💳 Tarjeta</option>
+                                <option value="transferencia">🏦 Ingreso/Transferencia</option>
+                                <option value="recibo">📄 Recibo Bancario</option>
+                                <option value="cheque">✉️ Pagaré/Cheque</option>
+                                <option value="paypal">💸 Paypal</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Fecha de pago <span style="color: var(--danger);">*</span></label>
+                            <input type="date" name="paymentDate" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notas</label>
+                            <textarea name="paymentNotes" class="form-control" rows="2" placeholder="Ref, banco, nº tarjeta..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" id="confirmMarkPaid">
+                        <i class="fas fa-check me-2"></i>Confirmar Pago
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Modal Exportar -->
+    <div class="modal fade" id="modalExport" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-file-export me-2"></i>Exportar Facturas</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Formato</label>
+                        <select id="exportFormat" class="form-select">
+                            <option value="pdf">PDF</option>
+                            <option value="csv">CSV</option>
+                            <option value="excel">Excel</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Periodo</label>
+                        <select id="exportPeriod" class="form-select">
+                            <option value="all">Todas</option>
+                            <option value="month">Este mes</option>
+                            <option value="year">Este año</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="confirmExportBtn">Exportar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-<!-- Config -->
-<script src="../shared/firebase-config.js"></script>
-<!-- Auth FIRST - initializes Firebase -->
-<script src="../shared/auth-system.js"></script>
-<!-- Sync service -->
-<script src="../shared/firebase-sync.js"></script>
-<!-- Data Migration -->
-<script src="../shared/data-migration.js"></script>
-<!-- Store (uses sync service) -->
-<script src="../shared/store.js"></script>
-<!-- Page specific -->
-<script src="./invoice-issued.js"></script>
+    <!-- Modal Importar -->
+    <div class="modal fade" id="modalImport" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-file-import me-2"></i>Importar Facturas Emitidas</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Seleccionar archivo CSV</label>
+                        <input type="file" id="importFileInputIssued" class="form-control" accept=".csv" />
+                    </div>
+                    <div class="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Formato requerido:</strong> El CSV debe tener las columnas: Numero, Cliente, NIF, Fecha, Vence, Base Imponible, IVA Rate, Estado
+                    </div>
+                    <button type="button" class="btn btn-info" onclick="downloadIssuedInvoiceTemplate()">
+                        <i class="fas fa-download me-2"></i>Descargar plantilla
+                    </button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="confirmImportBtn">
+                        <i class="fas fa-file-import me-2"></i>Importar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="importFileInput" accept=".csv" style="display: none;" />
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // Dark Mode Toggle
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeToggleBtn = document.getElementById('themeToggle');
+            if (!themeToggleBtn) return;
+
+            const themeIcon = themeToggleBtn.querySelector('i');
+
+            if (localStorage.getItem("theme") === "dark") {
+                document.body.classList.add("dark");
+                if (themeIcon) themeIcon.classList.replace('fa-moon', 'fa-sun');
+            }
+
+            function updateChartColors(isDark) {
+                if (typeof Chart === 'undefined') return;
+                const textColor = isDark ? '#F1F5F9' : '#1F2937';
+                const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+
+                for (let id in Chart.instances) {
+                    try {
+                        let chart = Chart.instances[id];
+                        if (chart.options && chart.options.scales) {
+                            if (chart.options.scales.x) {
+                                chart.options.scales.x.grid.color = gridColor;
+                                chart.options.scales.x.ticks.color = textColor;
+                            }
+                            if (chart.options.scales.y) {
+                                chart.options.scales.y.grid.color = gridColor;
+                                chart.options.scales.y.ticks.color = textColor;
+                            }
+                        }
+                        chart.update();
+                    } catch (e) {}
+                }
+            }
+
+            setTimeout(() => updateChartColors(document.body.classList.contains("dark")), 1000);
+
+            themeToggleBtn.addEventListener('click', () => {
+                document.body.classList.toggle("dark");
+                const isDark = document.body.classList.contains("dark");
+
+                if (isDark) {
+                    localStorage.setItem("theme", "dark");
+                    if (themeIcon) themeIcon.classList.replace('fa-moon', 'fa-sun');
+                } else {
+                    localStorage.setItem("theme", "light");
+                    if (themeIcon) themeIcon.classList.replace('fa-sun', 'fa-moon');
+                }
+
+                updateChartColors(isDark);
+            });
+        });
+
+        // Confirm logout
+        window.confirmLogout = function() {
+            if (confirm('¿Cerrar sesión?')) {
+                localStorage.removeItem('upsen_current_user');
+                window.location.href = '../login.html';
+            }
+        };
+
+        // Clear filters
+        function clearFilters() {
+            document.getElementById('paymentFilter').value = 'todas';
+            document.getElementById('dateFilter').value = 'todos';
+            document.getElementById('searchInput').value = '';
+            if (typeof renderInvoices === 'function') renderInvoices();
+        }
+
+        // Modal instances
+        var modalInvoice = null;
+        var viewInvoiceModal = null;
+        var modalExport = null;
+        var modalImport = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var modalEl = document.getElementById('modalNewInvoiceIssued');
+            if (modalEl) {
+                modalInvoice = new bootstrap.Modal(modalEl);
+            }
+
+            var viewModalEl = document.getElementById('viewInvoiceModal');
+            if (viewModalEl) {
+                viewInvoiceModal = new bootstrap.Modal(viewModalEl);
+                window.viewInvoiceModal = viewInvoiceModal;
+            }
+
+            var exportModalEl = document.getElementById('modalExport');
+            if (exportModalEl) {
+                modalExport = new bootstrap.Modal(exportModalEl);
+            }
+
+            var importModalEl = document.getElementById('modalImport');
+            if (importModalEl) {
+                modalImport = new bootstrap.Modal(importModalEl);
+            }
+
+            // New Invoice Button
+            document.getElementById('newInvoiceBtn').addEventListener('click', function() {
+                var date = new Date();
+                var num = 'INV-' + date.getFullYear() + '-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+                var numberInput = document.querySelector('#formNewInvoiceIssued input[name="invoiceNumber"]');
+                if (numberInput) numberInput.value = num;
+
+                var invoiceDate = document.querySelector('#formNewInvoiceIssued input[name="invoiceDate"]');
+                var dueDate = document.querySelector('#formNewInvoiceIssued input[name="dueDate"]');
+                if (invoiceDate) invoiceDate.value = new Date().toISOString().split('T')[0];
+                if (dueDate) {
+                    var due = new Date();
+                    due.setDate(due.getDate() + 30);
+                    dueDate.value = due.toISOString().split('T')[0];
+                }
+
+                if (modalInvoice) {
+                    modalInvoice.show();
+                }
+            });
+
+            // Export Button
+            document.getElementById('btnExport').addEventListener('click', function() {
+                if (modalExport) {
+                    modalExport.show();
+                }
+            });
+
+            // Import Button
+            document.getElementById('btnImport').addEventListener('click', function() {
+                if (modalImport) {
+                    modalImport.show();
+                }
+            });
+
+            // Confirm Import Button
+            document.getElementById('confirmImportBtn').addEventListener('click', function() {
+                var fileInput = document.getElementById('importFileInputIssued');
+                if (fileInput && fileInput.files.length > 0) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        var content = e.target.result;
+                        var count = 0;
+                        if (typeof importInvoicesFromCSV === 'function') {
+                            count = importInvoicesFromCSV(content);
+                        }
+
+                        if (count > 0) {
+                            alert(count + ' facturas importadas con éxito!');
+                            if (typeof renderInvoices === 'function') renderInvoices();
+                            if (typeof renderChart === 'function') renderChart();
+                            if (typeof renderSummaryCards === 'function') renderSummaryCards();
+                            if (modalImport) modalImport.hide();
+                        } else {
+                            alert('Ninguna factura importada. Verifica el formato del CSV.');
+                        }
+
+                        fileInput.value = '';
+                    };
+                    reader.readAsText(fileInput.files[0]);
+                } else {
+                    alert('Por favor, selecciona un archivo CSV.');
+                }
+            });
+
+            // Confirm Export Button
+            document.getElementById('confirmExportBtn').addEventListener('click', function() {
+                var format = document.getElementById('exportFormat')?.value || 'pdf';
+                var period = document.getElementById('exportPeriod')?.value || 'all';
+
+                if (typeof exportInvoices === 'function') {
+                    exportInvoices(format, period);
+                }
+
+                if (modalExport) {
+                    modalExport.hide();
+                }
+            });
+
+            // Sidebar link handling
+            document.querySelectorAll('.sidebar-link').forEach(function(link) {
+                link.addEventListener('click', function(e) {
+                    var href = this.getAttribute('href');
+                    if (href.startsWith('#') || href.startsWith('javascript')) {
+                        return;
+                    }
+                    e.preventDefault();
+                    window.location.href = href;
+                });
+            });
+        });
+    </script>
 
 <script>
-// Modal instances
-var modalInvoice = null;
-var viewInvoiceModal = null;
-var modalExport = null;
-var modalImport = null;
+/**
+ * Iframe 元素高亮注入脚本
+ * 需要在目标网站中引入此脚本来支持跨域 iframe 高亮功能
+ *
+ * 使用方法：
+ * 1. 将此脚本添加到目标网站的 HTML 中
+ * 2. 或通过浏览器扩展、用户脚本等方式注入
+ */
 
-// Initialize modals
-document.addEventListener('DOMContentLoaded', function() {
-  var modalEl = document.getElementById('modalNewInvoiceIssued');
-  if (modalEl) {
-    modalInvoice = new bootstrap.Modal(modalEl);
+(function () {
+  "use strict";
+
+  // 检查是否在 iframe 中
+  if (window.self === window.top) {
+    return; // 不在 iframe 中，不执行
   }
 
-  var viewModalEl = document.getElementById('viewInvoiceModal');
-  if (viewModalEl) {
-    viewInvoiceModal = new bootstrap.Modal(viewModalEl);
-    // Expose to window for the viewInvoice function
-    window.viewInvoiceModal = viewInvoiceModal;
+  // 检查是否已经初始化过
+  if (window.__iframeHighlightInitialized) {
+    return;
   }
+  window.__iframeHighlightInitialized = true;
+  console.log("Iframe 高亮脚本已加载");
 
-  var exportModalEl = document.getElementById('modalExport');
-  if (exportModalEl) {
-    modalExport = new bootstrap.Modal(exportModalEl);
-  }
+  // 创建高亮覆盖层
+  var overlay = document.createElement("div");
+  overlay.id = "iframe-highlight-overlay";
+  overlay.style.cssText = "\n    position: fixed;\n    top: 0;\n    left: 0;\n    width: 100vw;\n    height: 100vh;\n    pointer-events: none;\n    z-index: 999999;\n    overflow: hidden;\n  ";
 
-  var importModalEl = document.getElementById('modalImport');
-  if (importModalEl) {
-    modalImport = new bootstrap.Modal(importModalEl);
-  }
+  // 创建悬停高亮框（虚线边框）
+  var highlightBox = document.createElement("div");
+  highlightBox.id = "iframe-highlight-box";
+  highlightBox.style.cssText = "\n    position: absolute;\n    border: 2px dashed #007AFF;\n    background: rgba(0, 122, 255, 0.08);\n    pointer-events: none;\n    display: none;\n    transition: all 0.1s ease;\n    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8);\n    border-radius: 2px;\n  ";
 
-  // New Invoice Button
-  document.getElementById('newInvoiceBtn').addEventListener('click', function() {
-    var date = new Date();
-    var num = 'INV-' + date.getFullYear() + '-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
-    var numberInput = document.querySelector('#formNewInvoiceIssued input[name="invoiceNumber"]');
-    if (numberInput) numberInput.value = num;
+  // 创建选中节点的常驻高亮框（实线边框）
+  var selectedBox = document.createElement("div");
+  selectedBox.id = "iframe-selected-box";
+  selectedBox.style.cssText = "\n    position: absolute;\n    border: 2px solid #007AFF;\n    pointer-events: none;\n    display: none;\n    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9), 0 0 8px rgba(255, 107, 53, 0.4);\n    border-radius: 2px;\n    z-index: 1000000;\n  ";
 
-    var invoiceDate = document.querySelector('#formNewInvoiceIssued input[name="invoiceDate"]');
-    var dueDate = document.querySelector('#formNewInvoiceIssued input[name="dueDate"]');
-    if (invoiceDate) invoiceDate.value = new Date().toISOString().split('T')[0];
-    if (dueDate) {
-      var due = new Date();
-      due.setDate(due.getDate() + 30);
-      dueDate.value = due.toISOString().split('T')[0];
+  // 创建悬停标签显示
+  var tagLabel = document.createElement("div");
+  tagLabel.id = "iframe-tag-label";
+  tagLabel.style.cssText = "\n    position: absolute;\n    background: #007AFF;\n    color: white;\n    padding: 2px 6px;\n    font-size: 11px;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n    border-radius: 2px;\n    pointer-events: none;\n    display: none;\n    white-space: nowrap;\n    z-index: 1000001;\n    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);\n    font-weight: 500;\n  ";
+
+  // 创建选中节点标签
+  var selectedLabel = document.createElement("div");
+  selectedLabel.id = "iframe-selected-label";
+  selectedLabel.style.cssText = "\n    position: absolute;\n    background: #007AFF;\n    color: white;\n    padding: 3px 8px;\n    font-size: 11px;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n    border-radius: 3px;\n    pointer-events: none;\n    display: none;\n    white-space: nowrap;\n    z-index: 1000002;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);\n    font-weight: 600;\n  ";
+  overlay.appendChild(highlightBox);
+  overlay.appendChild(selectedBox);
+  overlay.appendChild(tagLabel);
+  overlay.appendChild(selectedLabel);
+  document.body.appendChild(overlay);
+
+  // 存储当前选中的元素
+  var selectedElement = null;
+  var highlightEnabled = false;
+
+  // 更新选中元素的高亮显示
+  function updateSelectedHighlight(element) {
+    console.log("updateSelectedHighlight called with:", element);
+    if (!element) {
+      selectedBox.style.display = "none";
+      selectedLabel.style.display = "none";
+      selectedElement = null;
+      console.log("Cleared selected highlight");
+      return;
+    }
+    selectedElement = element;
+    var rect = element.getBoundingClientRect();
+    console.log("Selected element rect:", rect);
+
+    // 更新选中高亮框位置
+    selectedBox.style.display = "block";
+    selectedBox.style.left = "".concat(rect.left - 2, "px");
+    selectedBox.style.top = "".concat(rect.top - 2, "px");
+    selectedBox.style.width = "".concat(rect.width + 4, "px");
+    selectedBox.style.height = "".concat(rect.height + 4, "px");
+
+    // 更新选中标签位置和内容
+    selectedLabel.style.display = "block";
+    selectedLabel.textContent = "\u2713 <".concat(element.tagName.toLowerCase(), ">");
+
+    // 计算标签位置，确保不超出视窗
+    var labelTop = rect.top - 28;
+    var labelLeft = rect.left;
+
+    // 如果标签会超出顶部，显示在元素下方
+    if (labelTop < 5) {
+      labelTop = rect.bottom + 5;
     }
 
-    if (modalInvoice) {
-      modalInvoice.show();
+    // 如果标签会超出右侧，向左调整
+    var labelWidth = selectedLabel.offsetWidth || 100; // 预估宽度
+    if (labelLeft + labelWidth > window.innerWidth - 10) {
+      labelLeft = window.innerWidth - labelWidth - 10;
     }
-  });
-
-  // Export Button
-  document.getElementById('btnExport').addEventListener('click', function() {
-    if (modalExport) {
-      modalExport.show();
-    }
-  });
-
-  // Import Button
-  document.getElementById('btnImport').addEventListener('click', function() {
-    if (modalImport) {
-      modalImport.show();
-    }
-  });
-
-  // Confirm Import Button
-  document.getElementById('confirmImportBtn').addEventListener('click', function() {
-    var fileInput = document.getElementById('importFileInputIssued');
-    if (fileInput && fileInput.files.length > 0) {
-      var reader = new FileReader();
-      reader.onload = function(e) {
-        var content = e.target.result;
-        var count = 0;
-        if (typeof importInvoicesFromCSV === 'function') {
-          count = importInvoicesFromCSV(content);
-        }
-
-        if (count > 0) {
-          alert(count + ' facturas importadas con éxito!');
-          renderInvoices();
-          renderChart();
-          renderSummaryCards();
-          if (modalImport) modalImport.hide();
-        } else {
-          alert('Ninguna factura importada. Verifica el formato del CSV.');
-        }
-
-        fileInput.value = '';
-      };
-      reader.readAsText(fileInput.files[0]);
-    } else {
-      alert('Por favor, selecciona un archivo CSV.');
-    }
-  });
-
-  // Confirm Export Button
-  document.getElementById('confirmExportBtn').addEventListener('click', function() {
-    var format = document.getElementById('exportFormat')?.value || 'pdf';
-    var period = document.getElementById('exportPeriod')?.value || 'all';
-
-    if (typeof exportInvoices === 'function') {
-      exportInvoices(format, period);
-    } else {
-      // Fallback export
-      exportInvoicesFallback(format, period);
-    }
-
-    if (modalExport) {
-      modalExport.hide();
-    }
-  });
-
-  // Refresh button - only add event listener if element exists
-  var refreshBtn = document.getElementById('refreshBtn');
-  if (refreshBtn) {
-    refreshBtn.addEventListener('click', function() {
-      location.reload();
+    selectedLabel.style.left = "".concat(Math.max(5, labelLeft), "px");
+    selectedLabel.style.top = "".concat(labelTop, "px");
+    console.log("Selected highlight positioned at:", {
+      left: selectedBox.style.left,
+      top: selectedBox.style.top,
+      width: selectedBox.style.width,
+      height: selectedBox.style.height
     });
   }
-
-  // Sidebar link handling
-  document.querySelectorAll('.sidebar-link').forEach(function(link) {
-    link.addEventListener('click', function(e) {
-      var href = this.getAttribute('href');
-      if (href.startsWith('#') || href.startsWith('javascript')) {
-        return;
+  function getElementSelector(element) {
+    if (!(element instanceof Element)) throw new Error('Argument must be a DOM element');
+    var segments = [];
+    var current = element;
+    while (current !== document.documentElement) {
+      var selector = '';
+      // 优先检查唯一ID
+      if (current.id && document.querySelectorAll("#".concat(current.id)).length === 1) {
+        segments.unshift("#".concat(current.id));
+        break; // ID唯一，无需继续向上
       }
+
+      // 生成类名选择器（取第一个有效类名）
+      var classes = Array.from(current.classList).filter(function (c) {
+        return !c.startsWith('js-');
+      });
+      var className = classes.length > 0 ? ".".concat(classes[0]) : '';
+
+      // 生成位置索引（nth-child）
+      var tag = current.tagName.toLowerCase();
+      if (!className) {
+        var siblings = Array.from(current.parentNode.children);
+        var index = siblings.findIndex(function (el) {
+          return el === current;
+        }) + 1;
+        selector = "".concat(tag, ":nth-child(").concat(index, ")");
+      } else {
+        selector = className;
+      }
+      segments.unshift(selector);
+      current = current.parentElement;
+    }
+
+    // 处理根元素
+    if (current === document.documentElement) {
+      segments.unshift('html');
+    }
+    return segments.join(' > ');
+  }
+
+  // 获取元素文本内容
+  function getElementText(element) {
+    var _element$textContent;
+    if (element.tagName === "INPUT") {
+      return element.value || element.placeholder || "";
+    }
+    if (element.tagName === "TEXTAREA") {
+      return element.value || element.placeholder || "";
+    }
+    var text = ((_element$textContent = element.textContent) === null || _element$textContent === void 0 ? void 0 : _element$textContent.trim()) || "";
+    return text.length > 50 ? text.substring(0, 50) + "..." : text;
+  }
+
+  // 获取元素属性信息
+  function getElementAttributes(element) {
+    var attrs = {};
+    for (var i = 0; i < element.attributes.length; i++) {
+      var attr = element.attributes[i];
+      attrs[attr.name] = attr.value;
+    }
+    return attrs;
+  }
+
+  // 鼠标悬停事件处理
+  function handleMouseOver(e) {
+    if (!highlightEnabled) return;
+    var target = e.target;
+    if (!target || target === overlay || target === highlightBox || target === tagLabel || target === selectedBox || target === selectedLabel) {
+      return;
+    }
+
+    // 避免高亮 html 和 body 元素
+    if (target === document.documentElement || target === document.body) {
+      return;
+    }
+
+    // 如果是已选中的元素，不显示悬停高亮
+    if (target === selectedElement) {
+      highlightBox.style.display = "none";
+      tagLabel.style.display = "none";
+      return;
+    }
+    var rect = target.getBoundingClientRect();
+    var selector = getElementSelector(target);
+    var text = getElementText(target);
+    var attributes = getElementAttributes(target);
+
+    // 更新悬停高亮框位置
+    highlightBox.style.display = "block";
+    highlightBox.style.left = "".concat(rect.left - 2, "px");
+    highlightBox.style.top = "".concat(rect.top - 2, "px");
+    highlightBox.style.width = "".concat(rect.width + 4, "px");
+    highlightBox.style.height = "".concat(rect.height + 4, "px");
+
+    // 更新标签位置和内容
+    tagLabel.style.display = "block";
+    tagLabel.textContent = "<".concat(target.tagName.toLowerCase(), ">");
+
+    // 计算标签位置，确保不超出视窗
+    var labelTop = rect.top - 22;
+    var labelLeft = rect.left;
+
+    // 如果标签会超出顶部，显示在元素下方
+    if (labelTop < 0) {
+      labelTop = rect.bottom + 5;
+    }
+
+    // 如果标签会超出右侧，向左调整
+    if (labelLeft + tagLabel.offsetWidth > window.innerWidth) {
+      labelLeft = window.innerWidth - tagLabel.offsetWidth - 5;
+    }
+    tagLabel.style.left = "".concat(Math.max(0, labelLeft), "px");
+    tagLabel.style.top = "".concat(labelTop, "px");
+
+    // 发送消息到父窗口
+    var elementInfo = {
+      tagName: target.tagName.toLowerCase(),
+      rect: {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+        x: rect.x,
+        y: rect.y
+      },
+      selector: selector,
+      text: text,
+      attributes: attributes,
+      url: window.location.href,
+      path: window.location.pathname,
+      timestamp: Date.now()
+    };
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-hover",
+        data: elementInfo,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 鼠标离开事件处理
+  function handleMouseOut(e) {
+    if (!highlightEnabled) return;
+    var relatedTarget = e.relatedTarget;
+
+    // 如果鼠标移动到高亮相关元素上，不隐藏高亮
+    if (relatedTarget && (relatedTarget === highlightBox || relatedTarget === tagLabel || relatedTarget === overlay || relatedTarget === selectedBox || relatedTarget === selectedLabel)) {
+      return;
+    }
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-hover",
+        data: null,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 点击事件处理
+  function handleClick(e) {
+    var target = e.target;
+    if (!target || target === overlay || target === highlightBox || target === tagLabel || target === selectedBox || target === selectedLabel) {
+      return;
+    }
+
+    // 避免处理 html 和 body 元素
+    if (target === document.documentElement || target === document.body) {
+      return;
+    }
+
+    // 检查是否是交互元素，这些元素需要保留默认行为
+    var isInteractiveElement = ['input', 'textarea', 'select', 'button', 'a'].includes(target.tagName.toLowerCase());
+
+    // 如果高亮功能启用，对于非交互元素阻止默认行为和事件传播
+    if (highlightEnabled) {
       e.preventDefault();
-      window.location.href = href;
+      e.stopPropagation();
+    }
+    var rect = target.getBoundingClientRect();
+    var selector = getElementSelector(target);
+    var text = getElementText(target);
+    var attributes = getElementAttributes(target);
+    console.log("Element clicked:", {
+      tagName: target.tagName,
+      selector: selector,
+      rect: rect
     });
-  });
-});
+
+    // 立即更新选中高亮
+    updateSelectedHighlight(target);
+
+    // 隐藏悬停高亮，因为现在是选中状态
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    var elementInfo = {
+      tagName: target.tagName.toLowerCase(),
+      rect: {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+        x: rect.x,
+        y: rect.y
+      },
+      selector: selector,
+      text: text,
+      attributes: attributes,
+      url: window.location.href,
+      path: window.location.pathname,
+      timestamp: Date.now()
+    };
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-click",
+        data: elementInfo,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 监听来自父窗口的消息
+  function handleParentMessage(event) {
+    console.log("Received message from parent:", event.data);
+    if (event.data.type === "iframe-highlight-toggle") {
+      var enabled = event.data.enabled;
+      console.log("Highlight toggle:", enabled);
+      if (enabled) {
+        enableHighlight();
+      } else {
+        disableHighlight();
+      }
+    } else if (event.data.type === "enable-iframe-highlight") {
+      console.log("Enable iframe highlight");
+      enableHighlight();
+    } else if (event.data.type === "disable-iframe-highlight") {
+      console.log("Disable iframe highlight");
+      disableHighlight();
+    } else if (event.data.type === "toggle-iframe-highlight") {
+      var _enabled = event.data.enabled !== undefined ? event.data.enabled : !highlightEnabled;
+      console.log("Toggle iframe highlight to:", _enabled);
+      if (_enabled) {
+        enableHighlight();
+      } else {
+        disableHighlight();
+      }
+    } else if (event.data.type === "update-selected-element") {
+      var selector = event.data.selector;
+      console.log("Update selected element with selector:", selector);
+      if (selector) {
+        try {
+          var element = document.querySelector(selector);
+          console.log("Found element by selector:", element);
+          updateSelectedHighlight(element);
+        } catch (error) {
+          console.warn("Failed to select element:", error);
+          updateSelectedHighlight(null);
+        }
+      } else {
+        updateSelectedHighlight(null);
+      }
+    } else if (event.data.type === "clear-selected-element") {
+      console.log("Clear selected element");
+      updateSelectedHighlight(null);
+    }
+  }
+
+  // 启用高亮功能
+  function enableHighlight() {
+    console.log("Enabling highlight");
+    document.addEventListener("mouseover", handleMouseOver, true);
+    document.addEventListener("mouseout", handleMouseOut, true);
+    document.addEventListener("click", handleClick, true);
+    highlightEnabled = true;
+    overlay.style.display = "block";
+  }
+
+  // 禁用高亮功能
+  function disableHighlight() {
+    console.log("Disabling highlight");
+    highlightEnabled = false;
+    // 保持事件监听器，但通过 highlightEnabled 变量控制行为
+    // 这样可以保留选中状态的显示
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    // 不隐藏 selectedBox 和 selectedLabel，保留选中状态
+  }
+
+  // 完全禁用高亮功能（移除所有监听器）
+  function fullyDisableHighlight() {
+    console.log("Fully disabling highlight");
+    highlightEnabled = false;
+    document.removeEventListener("mouseover", handleMouseOver, true);
+    document.removeEventListener("mouseout", handleMouseOut, true);
+    document.removeEventListener("click", handleClick, true);
+    overlay.style.display = "none";
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    selectedBox.style.display = "none";
+    selectedLabel.style.display = "none";
+  }
+
+  // 添加事件监听
+  enableHighlight();
+  window.addEventListener("message", handleParentMessage);
+
+  // 暴露全局函数供外部调用
+  window.__iframeHighlightControl = {
+    enable: enableHighlight,
+    disable: disableHighlight,
+    fullyDisable: fullyDisableHighlight,
+    isEnabled: function isEnabled() {
+      return highlightEnabled;
+    },
+    getSelectedElement: function getSelectedElement() {
+      return selectedElement;
+    },
+    updateSelected: updateSelectedHighlight,
+    // 通过消息发送开关控制
+    sendToggleMessage: function sendToggleMessage(enabled) {
+      window.parent.postMessage({
+        type: 'iframe-highlight-status',
+        enabled: enabled || highlightEnabled,
+        source: 'iframe-highlight-injector'
+      }, '*');
+    }
+  };
+
+  // 通知父窗口脚本已加载
+  try {
+    window.parent.postMessage({
+      type: "iframe-highlight-ready",
+      data: {
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+        timestamp: Date.now()
+      },
+      source: "iframe-highlight-injector"
+    }, "*");
+  } catch (error) {
+    console.warn("无法发送就绪消息到父窗口:", error);
+  }
+
+  // 清理函数
+  window.__iframeHighlightCleanup = function () {
+    fullyDisableHighlight();
+    window.removeEventListener("message", handleParentMessage);
+    if (overlay.parentElement) {
+      overlay.parentElement.removeChild(overlay);
+    }
+    delete window.__iframeHighlightInitialized;
+    delete window.__iframeHighlightCleanup;
+  };
+})();
 
 </script>
-  </body>
+<style>
+#minimax-floating-ball {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 10px 12px;
+  background: #222222;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  color: #F8F8F8;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  z-index: 9999;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+#minimax-floating-ball:hover {
+  transform: translateY(-2px);
+  background: #383838;
+}
+.minimax-ball-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.minimax-logo-wave {
+  
+  width: 20px;
+  height: 17px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='17' viewBox='0 0 20 17' fill='none'%3E%3Cpath d='M20 12.3718L16.283 16.2413H12.2518V13.1614H9.17175V16.2413H7.00999V13.1613H3.92998V16.2413H0V4.00101L3.84145 0H20V12.3718Z' fill='white'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.minimax-ball-text {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.minimax-close-icon {
+  margin-left: 8px;
+  font-size: 16px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.minimax-close-icon:hover {
+  opacity: 1;
+}
+</style>
+<div id="minimax-floating-ball">
+  <div class="minimax-ball-content">
+    <div class="minimax-logo-wave"></div>
+    <span class="minimax-ball-text">Created by MiniMax Agent</span>
+  </div>
+  <div class="minimax-close-icon">×</div>
+</div>
+<script>
+// Initialize floating ball functionality
+function initFloatingBall() {
+  const ball = document.getElementById('minimax-floating-ball');
+  if (!ball) return;
+
+  // Initial animation
+  ball.style.opacity = '0';
+  ball.style.transform = 'translateY(20px)';
+
+  setTimeout(() => {
+    ball.style.opacity = '1';
+    ball.style.transform = 'translateY(0)';
+  }, 500);
+
+  // Handle logo click
+  const ballContent = ball.querySelector('.minimax-ball-content');
+  ballContent.addEventListener('click', function (e) {
+    e.stopPropagation();
+    window.open('https://agent.minimax.io/', '_blank');
+    ball.style.transform = 'scale(0.95)';
+    setTimeout(() => {
+      ball.style.transform = 'scale(1)';
+    }, 100);
+  });
+
+  // Handle close button click
+  const closeIcon = ball.querySelector('.minimax-close-icon');
+  closeIcon.addEventListener('click', function (e) {
+    e.stopPropagation();
+    ball.style.opacity = '0';
+    ball.style.transform = 'translateY(20px)';
+
+    setTimeout(() => {
+      ball.style.display = 'none';
+    }, 300);
+  });
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', initFloatingBall); 
+</script>
+</body>
 </html>
