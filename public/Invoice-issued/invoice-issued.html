@@ -89,6 +89,7 @@
     .summary-icon.green { background: linear-gradient(135deg, rgba(26, 188, 156, 0.15), rgba(22, 160, 133, 0.15)); color: #1abc9c; }
     .summary-icon.orange { background: linear-gradient(135deg, rgba(243, 156, 18, 0.15), rgba(230, 126, 34, 0.15)); color: #f39c12; }
     .summary-icon.purple { background: linear-gradient(135deg, rgba(155, 89, 182, 0.15), rgba(142, 68, 173, 0.15)); color: #9b59b6; }
+    .summary-icon.red { background: linear-gradient(135deg, rgba(231, 76, 60, 0.15), rgba(192, 57, 43, 0.15)); color: #e74c3c; }
 
     .summary-card h3 { font-size: 0.9em; color: #6c757d; margin-bottom: 10px; font-weight: 500; }
     .summary-card p { font-size: 1.8em; font-weight: 700; color: #2c3e50; margin: 0; }
@@ -187,166 +188,155 @@
   </style>
 </head>
 <body>
-<div class="container-fluid p-0">
-  <div class="row m-0">
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <i class="fas fa-chart-line"></i>Accounting
-      </div>
-      <ul class="sidebar-menu">
-        <li><a href="../frontPage/frontPage.html" class="sidebar-link"><i class="fas fa-tachometer-alt"></i> Panel de control</a></li>
-        <li><a href="../expense/expense.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar"></i> Gastos</a></li>
-        <li class="active"><a href="../Invoice-issued/invoice-issued.html" class="sidebar-link"><i class="fas fa-file-export"></i> Facturas emitidas</a></li>
-        <li><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link"><i class="fas fa-file-import"></i> Facturas recibidas</a></li>
-        <li><a href="../budgetPage/budget.html" class="sidebar-link"><i class="fas fa-calculator"></i> Presupuestos</a></li>
-        <li><a href="../profile/profile.html" class="sidebar-link"><i class="fas fa-user"></i> Perfil</a></li>
-        <li><a href="../profile/settings.html" class="sidebar-link"><i class="fas fa-cog"></i> Configuracion</a></li>
-        <li style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 10px; padding-top: 10px;">
-          <a href="javascript:void(0)" class="sidebar-link" onclick="confirmLogout()" style="color: #e74c3c;">
-            <i class="fas fa-sign-out-alt"></i> Cerrar sesion
-          </a>
-        </li>
-      </ul>
-    </aside>
-
-    <main class="main-content col">
-      <div class="page-header">
-        <h1 class="page-title"><i class="fas fa-file-export"></i> Facturas emitidas</h1>
-        <div class="action-buttons" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-          <button class="btn btn-primary" id="newInvoiceBtn">
-            <i class="fas fa-plus me-1"></i>Nueva factura
-          </button>
-          <button class="btn btn-success" id="btnImport">
-            <i class="fas fa-file-import me-1"></i>Importar
-          </button>
-          <button class="btn btn-secondary" id="btnExport">
-            <i class="fas fa-file-export me-1"></i>Exportar
-          </button>
-        </div>
-      </div>
-
-      <div class="row mb-4">
-        <div class="col-md-2 mb-3">
-          <div class="summary-card">
-            <div class="summary-icon orange"><i class="fas fa-clock"></i></div>
-            <h3>Pendientes</h3>
-            <p id="pendingTotal">EUR 0,00</p>
-          </div>
-        </div>
-        <div class="col-md-2 mb-3">
-          <div class="summary-card">
-            <div class="summary-icon red"><i class="fas fa-exclamation-triangle"></i></div>
-            <h3>Vencidas</h3>
-            <p id="overdueTotal">EUR 0,00</p>
-          </div>
-        </div>
-        <div class="col-md-2 mb-3">
-          <div class="summary-card">
-            <div class="summary-icon blue"><i class="fas fa-calendar-check"></i></div>
-            <h3>Creadas mes</h3>
-            <p id="monthlyCount"><span>0</span></p>
-          </div>
-        </div>
-        <div class="col-md-2 mb-3">
-          <div class="summary-card">
-            <div class="summary-icon purple"><i class="fas fa-chart-line"></i></div>
-            <h3>Promedio</h3>
-            <p id="averageAmount"><span>EUR 0,00</span></p>
-          </div>
-        </div>
-        
-
-
-
-
-      <div class="modern-card">
-        <h5 class="section-title"><i class="fas fa-list"></i> Facturas emitidas</h5>
-        
-        <!-- NEW: Filter Row -->
-        <div class="row mb-3">
-          <div class="col-md-3">
-            <label class="form-label">Método Pago</label>
-            <select id="paymentFilter" class="form-select">
-              <option value="todas">Todas</option>
-              <option value="efectivo">💵 Efectivo</option>
-              <option value="tarjeta">💳 Tarjeta</option>
-              <option value="transferencia">🏦 Transferencia</option>
-              <option value="recibo">📄 Recibo</option>
-              <option value="cheque">✉️ Cheque</option>
-              <option value="paypal">💸 Paypal</option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <label class="form-label">Período</label>
-            <select id="dateFilter" class="form-select">
-              <option value="todos">Todos</option>
-              <option value="mes">Este mes</option>
-              <option value="trimestre">Este trimestre</option>
-              <option value="ano">Este año</option>
-            </select>
-          </div>
-          <div class="col-md-5">
-            <label class="form-label">Buscar</label>
-            <input type="text" id="searchInput" class="form-control" placeholder="Número, cliente, notas...">
-          </div>
-          <div class="col-md-2">
-            <label class="form-label">&nbsp;</label>
-            <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">Limpiar</button>
-          </div>
-        </div>
-        
-        <div class="table-responsive">
-          <table>
-
-            <thead>
-              <tr>
-              <th><i class="fas fa-hashtag me-1" title="Número"></i>#</th>
-              <th title="Cliente">Cliente</th>
-              <th title="Fecha Emisión">Fecha</th>
-              <th title="Fecha Vencimiento">Vence</th>
-              <th title="Base Imponible">Base</th>
-              <th title="IVA %">IVA%</th>
-              <th title="IVA Amount">IVA</th>
-              <th title="Total">Total</th>
-              <th title="Veri*Factu">Veri</th>
-              <th title="Estado">Estado</th>
-              <th title="Método Pago">Pago</th>
-              <th>Acciones</th>
-
-              </tr>
-            </thead>
-            <tbody id="invoiceTbody">
-              <tr>
-                <td colspan="7" class="text-center text-muted">Cargando datos...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="modern-card">
-        <h5 class="section-title"><i class="fas fa-chart-line"></i> Evolucion de ingresos</h5>
-        <div class="chart-container">
-          <canvas id="issuedChartCanvas"></canvas>
-        </div>
-      </div>
-    </main>
+  <div class="sidebar">
+  <div class="sidebar-header">
+    <i class="fas fa-file-invoice"></i> Contabilidad
   </div>
+  <ul class="sidebar-menu">
+    <li><a href="../expense/expense.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar"></i> Gastos</a></li>
+    <li class="active"><a href="../Invoice-issued/invoice-issued.html" class="sidebar-link"><i class="fas fa-file-export"></i> Facturas emitidas</a></li>
+    <li><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link"><i class="fas fa-file-import"></i> Facturas recibidas</a></li>
+    <li><a href="../budgetPage/budget.html" class="sidebar-link"><i class="fas fa-calculator"></i> Presupuestos</a></li>
+    <li><a href="../profile/profile.html" class="sidebar-link"><i class="fas fa-user"></i> Perfil</a></li>
+    <li><a href="../profile/settings.html" class="sidebar-link"><i class="fas fa-cog"></i> Configuración</a></li>
+    <li style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 10px; padding-top: 10px;">
+      <a href="javascript:void(0)" class="sidebar-link" onclick="confirmLogout()" style="color: #e74c3c;">
+        <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+      </a>
+    </li>
+  </ul>
 </div>
+
+<main class="main-content col">
+  <div class="page-header">
+    <h1 class="page-title"><i class="fas fa-file-export"></i> Facturas emitidas</h1>
+    <div class="action-buttons" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+      <button class="btn btn-primary" id="newInvoiceBtn">
+        <i class="fas fa-plus me-1"></i> Nueva factura
+      </button>
+      <button class="btn btn-success" id="btnImport">
+        <i class="fas fa-file-import me-1"></i> Importar
+      </button>
+      <button class="btn btn-secondary" id="btnExport">
+        <i class="fas fa-file-export me-1"></i> Exportar
+      </button>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col-md-2 mb-3">
+      <div class="summary-card">
+        <div class="summary-icon orange"><i class="fas fa-clock"></i></div>
+        <h3>Pendientes</h3>
+        <p id="pendingTotal">EUR 0,00</p>
+      </div>
+    </div>
+    <div class="col-md-2 mb-3">
+      <div class="summary-card">
+        <div class="summary-icon red"><i class="fas fa-exclamation-triangle"></i></div>
+        <h3>Vencidas</h3>
+        <p id="overdueTotal">EUR 0,00</p>
+      </div>
+    </div>
+    <div class="col-md-2 mb-3">
+      <div class="summary-card">
+        <div class="summary-icon blue"><i class="fas fa-calendar-check"></i></div>
+        <h3>Creadas mes</h3>
+        <p id="monthlyCount"><span>0</span></p>
+      </div>
+    </div>
+    <div class="col-md-2 mb-3">
+      <div class="summary-card">
+        <div class="summary-icon purple"><i class="fas fa-chart-line"></i></div>
+        <h3>Promedio</h3>
+        <p id="averageAmount"><span>EUR 0,00</span></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="modern-card">
+    <h5 class="section-title"><i class="fas fa-list"></i> Facturas emitidas</h5>
+
+    <!-- Filter Row -->
+    <div class="row mb-3">
+      <div class="col-md-3">
+        <label class="form-label">Método Pago</label>
+        <select id="paymentFilter" class="form-select">
+          <option value="todas">Todas</option>
+          <option value="efectivo">Efectivo</option>
+          <option value="tarjeta">Tarjeta</option>
+          <option value="transferencia">Transferencia</option>
+          <option value="recibo">Recibo</option>
+          <option value="cheque">Cheque</option>
+          <option value="paypal">Paypal</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Período</label>
+        <select id="dateFilter" class="form-select">
+          <option value="todos">Todos</option>
+          <option value="mes">Este mes</option>
+          <option value="trimestre">Este trimestre</option>
+          <option value="ano">Este año</option>
+        </select>
+      </div>
+      <div class="col-md-5">
+        <label class="form-label">Buscar</label>
+        <input type="text" id="searchInput" class="form-control" placeholder="Número, cliente, notas...">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">&nbsp;</label>
+        <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">Limpiar</button>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th><i class="fas fa-hashtag me-1"></i>#</th>
+            <th>Cliente</th>
+            <th>Fecha</th>
+            <th>Vence</th>
+            <th>Base</th>
+            <th>IVA%</th>
+            <th>IVA</th>
+            <th>Total</th>
+            <th>Veri</th>
+            <th>Estado</th>
+            <th>Pago</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="invoiceTbody">
+          <tr>
+            <td colspan="12" class="text-center text-muted">Cargando datos...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+    <div class="modern-card">
+    <h5 class="section-title"><i class="fas fa-chart-line"></i> Evolución de ingresos</h5>
+    <div class="chart-container">
+      <canvas id="issuedChartCanvas"></canvas>
+    </div>
+  </div>
+</main>
 
 <!-- Modal Nueva Factura -->
 <div class="modal fade" id="modalNewInvoiceIssued">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>Nueva factura</h5>
+        <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i> Nueva factura</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <form id="formNewInvoiceIssued">
           <div class="mb-3">
-            <label class="form-label">Numero de factura</label>
-            <input type="text" name="invoiceNumber" class="form-control" placeholder="Ej: INV-2025-001" required />
+            <label class="form-label">Número de factura</label>
+            <input type="text" name="invoiceNumber" class="form-control" placeholder="Ej: INV-2026-001" required />
           </div>
           <div class="mb-3">
             <label class="form-label">Cliente</label>
@@ -366,23 +356,23 @@
               <input type="date" name="dueDate" class="form-control" required />
             </div>
           </div>
+
           <div class="mb-3">
-  <label class="form-label">Líneas de factura</label>
+            <label class="form-label">Líneas de factura</label>
+            <div id="invoiceLines"></div>
+            <button type="button" class="btn btn-sm btn-primary mt-2" onclick="addLine()">
+              <i class="fas fa-plus me-1"></i> Añadir línea
+            </button>
+          </div>
 
-  <div id="invoiceLines"></div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">IVA (%)</label>
+              <input type="number" step="0.01" name="ivaRate" class="form-control" placeholder="21" value="21" />
+            </div>
+          </div>
 
-  <button type="button" class="btn btn-sm btn-primary mt-2" onclick="addLine()">
-    <i class="fas fa-plus me-1"></i>Añadir línea
-  </button>
-</div>
-
-<div class="row mb-3">
-  <div class="col-md-6">
-    <label class="form-label">IVA (%)</label>
-    <input type="number" step="0.01" name="ivaRate" class="form-control" placeholder="21" value="21" />
-  </div>
-</div>
-            <div class="mb-3">
+          <div class="mb-3">
             <label class="form-label">Estado</label>
             <select name="state" class="form-select">
               <option value="Pendiente">Pendiente</option>
@@ -390,18 +380,18 @@
               <option value="Vencida">Vencida</option>
             </select>
           </div>
-          
-          <!-- NEW: Payment Method for New Invoice -->
+
+          <!-- Payment method without emojis -->
           <div class="mb-3">
             <label class="form-label">Método de pago <small>(si Pagada)</small></label>
             <select name="paymentMethod" class="form-select">
               <option value="">-- Seleccionar --</option>
-              <option value="efectivo">💵 Efectivo</option>
-              <option value="tarjeta">💳 Tarjeta</option>
-              <option value="transferencia">🏦 Ingreso/Transferencia</option>
-              <option value="recibo">📄 Recibo Bancario</option>
-              <option value="cheque">✉️ Pagaré/Cheque</option>
-              <option value="paypal">💸 Paypal</option>
+              <option value="efectivo">Efectivo</option>
+              <option value="tarjeta">Tarjeta</option>
+              <option value="transferencia">Transferencia</option>
+              <option value="recibo">Recibo</option>
+              <option value="cheque">Cheque</option>
+              <option value="paypal">Paypal</option>
             </select>
           </div>
           <div class="mb-3">
@@ -410,24 +400,22 @@
             <div class="form-text">Se deja vacío, se usará la fecha actual</div>
           </div>
         </form>
-
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         <button type="button" class="btn btn-success" id="saveInvoiceIssuedBtn">
-          <i class="fas fa-save me-2"></i>Guardar
+          <i class="fas fa-save me-2"></i> Guardar
         </button>
       </div>
     </div>
   </div>
 </div>
-
 <!-- Modal Ver Factura -->
 <div class="modal fade" id="viewInvoiceModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-file-export me-2"></i>Detalle de factura</h5>
+        <h5 class="modal-title"><i class="fas fa-file-invoice me-2"></i> Detalle de factura</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body" id="viewInvoiceContent"></div>
@@ -443,7 +431,7 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-check-circle me-2 text-success"></i>Marcar como Pagada</h5>
+        <h5 class="modal-title"><i class="fas fa-check-circle me-2 text-success"></i> Marcar como Pagada</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
@@ -453,12 +441,12 @@
             <label class="form-label">Método de pago <span class="text-danger">*</span></label>
             <select name="paymentMethod" class="form-select" required>
               <option value="">-- Seleccionar método --</option>
-              <option value="efectivo">💵 Efectivo</option>
-              <option value="tarjeta">💳 Tarjeta</option>
-              <option value="transferencia">🏦 Ingreso/Transferencia</option>
-              <option value="recibo">📄 Recibo Bancario</option>
-              <option value="cheque">✉️ Pagaré/Cheque</option>
-              <option value="paypal">💸 Paypal</option>
+              <option value="efectivo">Efectivo</option>
+              <option value="tarjeta">Tarjeta</option>
+              <option value="transferencia">Transferencia</option>
+              <option value="recibo">Recibo</option>
+              <option value="cheque">Cheque</option>
+              <option value="paypal">Paypal</option>
             </select>
           </div>
           <div class="mb-3">
@@ -474,7 +462,7 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         <button type="button" class="btn btn-success" id="confirmMarkPaid">
-          <i class="fas fa-check me-2"></i>Confirmar Pago
+          <i class="fas fa-check me-2"></i> Confirmar Pago
         </button>
       </div>
     </div>
@@ -483,11 +471,10 @@
 
 <!-- Modal Exportar Facturas -->
 <div class="modal fade" id="modalExport" tabindex="-1">
-
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-file-export me-2"></i>Exportar Facturas</h5>
+        <h5 class="modal-title"><i class="fas fa-file-export me-2"></i> Exportar Facturas</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
@@ -504,7 +491,7 @@
           <select id="exportPeriod" class="form-select">
             <option value="all">Todas</option>
             <option value="month">Este mes</option>
-            <option value="year">Este ano</option>
+            <option value="year">Este año</option>
           </select>
         </div>
       </div>
@@ -515,13 +502,12 @@
     </div>
   </div>
 </div>
-
 <!-- Modal Importar Facturas Emitidas -->
 <div class="modal fade" id="modalImport" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-file-import me-2"></i>Importar Facturas Emitidas</h5>
+        <h5 class="modal-title"><i class="fas fa-file-import me-2"></i> Importar Facturas Emitidas</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
@@ -533,14 +519,14 @@
           <i class="fas fa-info-circle me-2"></i>
           <strong>Formato requerido:</strong> El CSV debe tener las columnas: Numero, Cliente, NIF, Fecha, Vence, Base Imponible, IVA Rate, Estado
         </div>
-        <button type="ssbutton" class="btn btn-info" onclick="downloadIssuedInvoiceTemplate()">
-          <i class="fas fa-download me-2"></i>Descargar plantilla
+        <button type="button" class="btn btn-info" onclick="downloadIssuedInvoiceTemplate()">
+          <i class="fas fa-download me-2"></i> Descargar plantilla
         </button>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         <button type="button" class="btn btn-success" id="confirmImportBtn">
-          <i class="fas fa-file-import me-2"></i>Importar
+          <i class="fas fa-file-import me-2"></i> Importar
         </button>
       </div>
     </div>
@@ -570,15 +556,12 @@
 <script src="../shared/store.js"></script>
 <!-- Page specific -->
 <script src="./invoice-issued.js"></script>
-
 <script>
- function updateLineTotal(input) {
+function updateLineTotal(input) {
   const row = input.closest('.line');
-
   const qty = parseFloat(row.querySelector('input[placeholder="Cantidad"]').value) || 0;
   const price = parseFloat(row.querySelector('input[placeholder="Precio"]').value) || 0;
   const iva = parseFloat(row.querySelector('select[name="iva"]').value) || 0;
-
   const totalInput = row.querySelector('input[placeholder="Total"]');
 
   const base = qty * price;
@@ -589,43 +572,43 @@
 
 function addLine() {
   const container = document.getElementById('invoiceLines');
-
   const div = document.createElement('div');
   div.classList.add('row', 'mb-2', 'line');
 
   div.innerHTML = `
-  <div class="col-md-3">
-    <input type="text" name="description" class="form-control" placeholder="Descripción">
-  </div>
-  <div class="col-md-2">
-    <input type="number" name="quantity" class="form-control" placeholder="Cantidad" value="1">
-  </div>
-  <div class="col-md-2">
-    <input type="number" name="price" class="form-control" placeholder="Precio" value="0">
-  </div>
-  <div class="col-md-2">
-  <select name="iva" class="form-select">
-    <option value="21">21%</option>
-    <option value="10">10%</option>
-    <option value="4">4%</option>
-    <option value="0">0%</option>
-  </select>
-</div>
-  <div class="col-md-2">
-    <input type="number" name="total" class="form-control" placeholder="Total" disabled>
-  </div>S
-  <div class="col-md-1">
-    <button type="button" class="btn btn-danger btn-sm" onclick="removeLine(this)">✕</button>
-  </div>
-`;
+    <div class="col-md-3">
+      <input type="text" name="description" class="form-control" placeholder="Descripción">
+    </div>
+    <div class="col-md-2">
+      <input type="number" name="quantity" class="form-control" placeholder="Cantidad" value="1">
+    </div>
+    <div class="col-md-2">
+      <input type="number" name="price" class="form-control" placeholder="Precio" value="0">
+    </div>
+    <div class="col-md-2">
+      <select name="iva" class="form-select">
+        <option value="21">21%</option>
+        <option value="10">10%</option>
+        <option value="4">4%</option>
+        <option value="0">0%</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <input type="number" name="total" class="form-control" placeholder="Total" disabled>
+    </div>
+    <div class="col-md-1">
+      <button type="button" class="btn btn-danger btn-sm" onclick="removeLine(this)">✕</button>
+    </div>
+  `;
 
   const qtyInput = div.querySelector('input[placeholder="Cantidad"]');
-const priceInput = div.querySelector('input[placeholder="Precio"]');
-const ivaInput = div.querySelector('select[name="iva"]');
+  const priceInput = div.querySelector('input[placeholder="Precio"]');
+  const ivaInput = div.querySelector('select[name="iva"]');
 
-qtyInput.addEventListener('input', () => updateLineTotal(qtyInput));
-priceInput.addEventListener('input', () => updateLineTotal(priceInput));
-ivaInput.addEventListener('change', () => updateLineTotal(ivaInput));
+  qtyInput.addEventListener('input', () => updateLineTotal(qtyInput));
+  priceInput.addEventListener('input', () => updateLineTotal(priceInput));
+  ivaInput.addEventListener('change', () => updateLineTotal(ivaInput));
+
   container.appendChild(div);
   updateLineTotal(div);
 }
@@ -633,139 +616,122 @@ ivaInput.addEventListener('change', () => updateLineTotal(ivaInput));
 function removeLine(btn) {
   btn.closest('.line').remove();
 }
+
 // Modal instances
-var modalInvoice = null;
-var viewInvoiceModal = null;
-var modalExport = null;
-var modalImport = null;
+let modalInvoice = null;
+let viewInvoiceModal = null;
+let modalExport = null;
+let modalImport = null;
 
-// Initialize modals
-document.addEventListener('DOMContentLoaded', function() { addLine();
-  var modalEl = document.getElementById('modalNewInvoiceIssued');
-  if (modalEl) {
-    modalInvoice = new bootstrap.Modal(modalEl);
-  }
+// Initialize modals and buttons
+document.addEventListener('DOMContentLoaded', function() {
+  addLine();
 
-  var viewModalEl = document.getElementById('viewInvoiceModal');
+  const modalEl = document.getElementById('modalNewInvoiceIssued');
+  if (modalEl) modalInvoice = new bootstrap.Modal(modalEl);
+
+  const viewModalEl = document.getElementById('viewInvoiceModal');
   if (viewModalEl) {
     viewInvoiceModal = new bootstrap.Modal(viewModalEl);
-    // Expose to window for the viewInvoice function
     window.viewInvoiceModal = viewInvoiceModal;
   }
 
-  var exportModalEl = document.getElementById('modalExport');
-  if (exportModalEl) {
-    modalExport = new bootstrap.Modal(exportModalEl);
-  }
+  const exportModalEl = document.getElementById('modalExport');
+  if (exportModalEl) modalExport = new bootstrap.Modal(exportModalEl);
 
-  var importModalEl = document.getElementById('modalImport');
-  if (importModalEl) {
-    modalImport = new bootstrap.Modal(importModalEl);
-  }
+  const importModalEl = document.getElementById('modalImport');
+  if (importModalEl) modalImport = new bootstrap.Modal(importModalEl);
 
-  // New Invoice Button
+  // Buttons
   document.getElementById('newInvoiceBtn').addEventListener('click', function() {
-    var date = new Date();
-    var num = 'INV-' + date.getFullYear() + '-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
-    var numberInput = document.querySelector('#formNewInvoiceIssued input[name="invoiceNumber"]');
-    if (numberInput) numberInput.value = num;
+    const date = new Date();
+    const num = 'INV-' + date.getFullYear() + '-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+    document.querySelector('#formNewInvoiceIssued input[name="invoiceNumber"]').value = num;
 
-    var invoiceDate = document.querySelector('#formNewInvoiceIssued input[name="invoiceDate"]');
-    var dueDate = document.querySelector('#formNewInvoiceIssued input[name="dueDate"]');
-    if (invoiceDate) invoiceDate.value = new Date().toISOString().split('T')[0];
-    if (dueDate) {
-      var due = new Date();
-      due.setDate(due.getDate() + 30);
-      dueDate.value = due.toISOString().split('T')[0];
-    }
+    const invoiceDate = document.querySelector('#formNewInvoiceIssued input[name="invoiceDate"]');
+    const dueDate = document.querySelector('#formNewInvoiceIssued input[name="dueDate"]');
+    invoiceDate.value = date.toISOString().split('T')[0];
 
-    if (modalInvoice) {
-      modalInvoice.show();
-    }
+    const due = new Date();
+    due.setDate(due.getDate() + 30);
+    dueDate.value = due.toISOString().split('T')[0];
+
+    if (modalInvoice) modalInvoice.show();
   });
 
-  // Export Button
-  document.getElementById('btnExport').addEventListener('click', function() {
-    if (modalExport) {
-      modalExport.show();
-    }
-  });
+  document.getElementById('btnExport').addEventListener('click', () => modalExport?.show());
+  document.getElementById('btnImport').addEventListener('click', () => modalImport?.show());
+});
+</script>
+<script>
+  // Function to recalculate all totals at the invoice level
+  function updateInvoiceTotals() {
+    const lines = document.querySelectorAll('#invoiceLines .line');
+    let totalBase = 0;
+    let totalVAT = 0;
 
-  // Import Button
-  document.getElementById('btnImport').addEventListener('click', function() {
-    if (modalImport) {
-      modalImport.show();
-    }
-  });
+    lines.forEach(line => {
+      const qty = parseFloat(line.querySelector('input[placeholder="Cantidad"]').value) || 0;
+      const price = parseFloat(line.querySelector('input[placeholder="Precio"]').value) || 0;
+      const iva = parseFloat(line.querySelector('select[name="iva"]').value) || 0;
 
-  // Confirm Import Button
-  document.getElementById('confirmImportBtn').addEventListener('click', function() {
-    var fileInput = document.getElementById('importFileInputIssued');
-    if (fileInput && fileInput.files.length > 0) {
-      var reader = new FileReader();
-      reader.onload = function(e) {
-        var content = e.target.result;
-        var count = 0;
-        if (typeof importInvoicesFromCSV === 'function') {
-          count = importInvoicesFromCSV(content);
-        }
+      const lineSubtotal = qty * price;
+      const lineVAT = lineSubtotal * iva / 100;
 
-        if (count > 0) {
-          alert(count + ' facturas importadas con éxito!');
-          renderInvoices();
-          renderChart();
-          renderSummaryCards();
-          if (modalImport) modalImport.hide();
-        } else {
-          alert('Ninguna factura importada. Verifica el formato del CSV.');
-        }
+      line.querySelector('input[placeholder="Total"]').value = (lineSubtotal + lineVAT).toFixed(2);
 
-        fileInput.value = '';
-      };
-      reader.readAsText(fileInput.files[0]);
-    } else {
-      alert('Por favor, selecciona un archivo CSV.');
-    }
-  });
-
-  // Confirm Export Button
-  document.getElementById('confirmExportBtn').addEventListener('click', function() {
-    var format = document.getElementById('exportFormat')?.value || 'pdf';
-    var period = document.getElementById('exportPeriod')?.value || 'all';
-
-    if (typeof exportInvoices === 'function') {
-      exportInvoices(format, period);
-    } else {
-      // Fallback export
-      exportInvoicesFallback(format, period);
-    }
-
-    if (modalExport) {
-      modalExport.hide();
-    }
-  });
-
-  // Refresh button - only add event listener if element exists
-  var refreshBtn = document.getElementById('refreshBtn');
-  if (refreshBtn) {
-    refreshBtn.addEventListener('click', function() {
-      location.reload();
+      totalBase += lineSubtotal;
+      totalVAT += lineVAT;
     });
+
+    // Update totals on the modal or summary fields if needed
+    const totalBaseEl = document.getElementById('totalBaseAmount');
+    const totalVATEl = document.getElementById('totalVATAmount');
+    const totalInvoiceEl = document.getElementById('totalInvoiceAmount');
+
+    if (totalBaseEl) totalBaseEl.textContent = totalBase.toFixed(2);
+    if (totalVATEl) totalVATEl.textContent = totalVAT.toFixed(2);
+    if (totalInvoiceEl) totalInvoiceEl.textContent = (totalBase + totalVAT).toFixed(2);
   }
 
-  // Sidebar link handling
-  document.querySelectorAll('.sidebar-link').forEach(function(link) {
-    link.addEventListener('click', function(e) {
-      var href = this.getAttribute('href');
-      if (href.startsWith('#') || href.startsWith('javascript')) {
-        return;
-      }
-      e.preventDefault();
-      window.location.href = href;
-    });
-  });
-});
+  // Attach event listeners for real-time calculation
+  function attachLineListeners(line) {
+    const qtyInput = line.querySelector('input[placeholder="Cantidad"]');
+    const priceInput = line.querySelector('input[placeholder="Precio"]');
+    const ivaInput = line.querySelector('select[name="iva"]');
 
+    const recalc = () => {
+      updateLineTotal(qtyInput);
+      updateInvoiceTotals();
+    };
+
+    qtyInput.addEventListener('input', recalc);
+    priceInput.addEventListener('input', recalc);
+    ivaInput.addEventListener('change', recalc);
+  }
+
+  // Override addLine to include invoice-level recalculation
+  const originalAddLine = addLine;
+  addLine = function () {
+    originalAddLine();
+    const lastLine = document.querySelector('#invoiceLines .line:last-child');
+    attachLineListeners(lastLine);
+    updateInvoiceTotals();
+  };
+
+  // Remove any non-functional visual elements (e.g., green checkmarks)
+  document.querySelectorAll('.non-functional-checkmark').forEach(el => el.remove());
+
+  // Optional: Function to render payment icons consistently
+  function getPaymentIcon(paymentMethod) {
+    switch(paymentMethod) {
+      case 'efectivo': return '<i class="bi bi-cash-stack"></i>'; // Linear cash icon
+      case 'tarjeta': return '<i class="bi bi-credit-card-2-front"></i>'; // Linear card icon
+      case 'transferencia': return '<i class="bi bi-bank"></i>'; // Linear bank icon
+      case 'recibo': return '<i class="bi bi-file-text"></i>'; // Linear document icon
+      case 'cheque': return '<i class="bi bi-file-check"></i>'; // Linear check icon
+      case 'paypal': return '<i class="bi bi-paypal"></i>'; // Linear PayPal icon
+      default: return '<i class="bi bi-question-circle"></i>';
+    }
+  }
 </script>
-  </body>
-</html>
