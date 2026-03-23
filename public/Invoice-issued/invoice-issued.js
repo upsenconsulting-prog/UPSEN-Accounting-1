@@ -55,19 +55,10 @@ function isLoggedIn() {
   return userId && userId !== 'demo' && userId !== 'unknown';
 }
 
-// ========== ACESSO AO STORE.JS (SEM RECURSÃO) ==========
-// Vamos guardar a referência original do store.js antes de definir a nossa função
-var _storeAddInvoiceIssued = null;
-var _storeDeleteInvoiceIssued = null;
-
-// Detectar se store.js está disponível e guardar referências
+// ========== ACESSO AO STORE.JS ==========
 function initStoreReferences() {
-  if (typeof window.addInvoiceIssued === 'function') {
-    _storeAddInvoiceIssued = window.addInvoiceIssued;
-  }
-  if (typeof window.deleteInvoiceIssued === 'function') {
-    _storeDeleteInvoiceIssued = window.deleteInvoiceIssued;
-  }
+  // Esta função agora é apenas para compatibilidade
+  // A lógica de detecção foi movida para addInvoiceIssued
 }
 
 // Usar store.js
@@ -112,21 +103,20 @@ function addInvoiceIssued(invoice) {
     createdAt: invoice.createdAt || new Date().toISOString()
   };
   
-  // Salvar localmente primeiro (sempre funciona)
+  // Se store.js estiver disponível, usar ele (salva no Firebase + localStorage)
+  if (window.addInvoiceIssued && typeof window.addInvoiceIssued === 'function' && window.addInvoiceIssued !== addInvoiceIssued) {
+    console.log('Usando store.js para salvar no Firebase...');
+    return window.addInvoiceIssued(newInvoice);
+  }
+  
+  // Fallback: salvar apenas localmente
+  console.log('Store.js não disponível, salvando apenas localmente...');
   var invoices = getUserInvoicesIssued();
   invoices.push(newInvoice);
   var key = 'upsen_invoices_issued_' + getUserId();
   localStorage.setItem(key, JSON.stringify(invoices));
   
   console.log('Fatura salva localmente:', newInvoice.invoiceNumber);
-  
-  // Tentar salvar no Firebase através do store.js (se disponível e diferente desta função)
-  if (_storeAddInvoiceIssued && _storeAddInvoiceIssued !== addInvoiceIssued) {
-    console.log('Salvando no Firebase via store.js...');
-    _storeAddInvoiceIssued(newInvoice).catch(function(err) {
-      console.warn('Erro ao salvar no Firebase:', err);
-    });
-  }
   
   // Renderizar
   if (typeof renderInvoices === 'function') renderInvoices();
@@ -622,11 +612,47 @@ function getVeriFactuStatus(invoice) {
   }
 }
 
+async function populateCustomerSelect() {
+  var select = document.getElementById('customerSelect');
+  var nameInput = document.getElementById('customerName');
+  var nifInput = document.getElementById('customerNif');
+
+  if (!select || !window.ClientService || !window.ClientService.getClients) return;
+
+  try {
+    var clients = await window.ClientService.getClients();
+    select.innerHTML = '<option value="">-- Seleccionar cliente --</option>';
+    clients.forEach(function(client) {
+      var opt = document.createElement('option');
+      opt.value = client.id;
+      opt.textContent = (client.nombre || client.name || '(sin nombre)') + ' - ' + (client.nif_nie_cif || client.nif || 'sin NIF');
+      select.appendChild(opt);
+    });
+
+    select.addEventListener('change', function() {
+      var selected = clients.find(function(c) { return c.id === select.value; });
+      if (selected) {
+        var custName = selected.nombre || selected.name || '';
+        var custNif = selected.nif_nie_cif || selected.nif || '';
+        if (nameInput) nameInput.value = custName;
+        if (nifInput) nifInput.value = custNif;
+      } else {
+        if (nameInput) nameInput.value = '';
+        if (nifInput) nifInput.value = '';
+      }
+    });
+
+  } catch (error) {
+    console.error('Error populando lista de clientes:', error);
+  }
+}
+
 async function saveInvoiceIssued() {
   var form = $('formNewInvoiceIssued');
   if (!form) return false;
 
   var invoiceNumber = "";
+  var customerId = "";
   var customer = "";
   var customerNif = "";
   var invoiceDate = "";
@@ -639,6 +665,7 @@ async function saveInvoiceIssued() {
   for (var i = 0; i < inputs.length; i++) {
     var name = inputs[i].name || inputs[i].getAttribute('name');
     if (name === 'invoiceNumber') invoiceNumber = inputs[i].value;
+    if (name === 'customerId') customerId = inputs[i].value;
     if (name === 'customer') customer = inputs[i].value;
     if (name === 'customerNif') customerNif = inputs[i].value;
     if (name === 'invoiceDate') invoiceDate = inputs[i].value;
@@ -646,6 +673,16 @@ async function saveInvoiceIssued() {
     if (name === 'amount') amount = inputs[i].value;
     if (name === 'ivaRate') ivaRate = inputs[i].value;
     if (name === 'state') state = inputs[i].value;
+  }
+
+  // If customer is selected from clients, set name and NIF from service
+  if (customerId && window.ClientService && typeof window.ClientService.getClients === 'function') {
+    var clients = await window.ClientService.getClients();
+    var matched = clients.find(function(c) { return c.id === customerId; });
+    if (matched) {
+      customer = matched.nombre || matched.name || customer || '';
+      customerNif = matched.nif_nie_cif || matched.nif || customerNif || '';
+    }
   }
 
   if (!invoiceNumber || !customer || !invoiceDate || !dueDate || !amount) {
@@ -683,6 +720,7 @@ async function saveInvoiceIssued() {
       var fallbackFields = computeFallbackVeriFactuFields(invoiceData);
       Object.assign(invoiceData, fallbackFields);
       
+      console.log('💾 Chamando addInvoiceIssued com dados (fallback):', invoiceData);
       addInvoiceIssued(invoiceData);
       verifactuSuccess = false;
     }
@@ -693,6 +731,7 @@ async function saveInvoiceIssued() {
     var fallbackFields = computeFallbackVeriFactuFields(invoiceData);
     Object.assign(invoiceData, fallbackFields);
     
+    console.log('💾 Chamando addInvoiceIssued com dados:', invoiceData);
     addInvoiceIssued(invoiceData);
   }
 
@@ -710,7 +749,12 @@ async function saveInvoiceIssued() {
 }
 
 // ========== ABRIR MODAL ==========
-function openNewInvoiceModal() {
+async function openNewInvoiceModal() {
+  // Populate customer select first
+  if (typeof populateCustomerSelect === 'function') {
+    await populateCustomerSelect();
+  }
+
   var date = new Date();
   var num = 'INV-' + date.getFullYear() + '-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
   var numberInput = document.querySelector('#formNewInvoiceIssued input[name="invoiceNumber"]');
