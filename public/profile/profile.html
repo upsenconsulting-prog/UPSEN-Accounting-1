@@ -23,7 +23,6 @@
       --card-bg: #FFFFFF;
       --border: #E6EAF0;
       --muted: #6B7280;
-
       --metric1-bg: #e9f6ec;
       --metric1-text: #0f6c69;
       --metric2-bg: #fee8d9;
@@ -32,18 +31,16 @@
       --metric3-text: #0958b2;
       --metric4-bg: #e9e4fb;
       --metric4-text: #314057;
-
       --btn-primary-bg: #0958b2;
       --btn-primary-text: #ffffff;
       --btn-sec-bg: #FFFFFF;
       --btn-sec-border: #D1D5DB;
       --btn-sec-text: #4B5563;
-
       --alert-bg: #FFF4E5;
       --alert-border: #FEE8D9;
       --alert-text: #B26A00;
-
       --danger: #e74c3c;
+      --success: #0f6c69;
     }
 
     /* === DARK MODE === */
@@ -53,7 +50,6 @@
       --card-bg: #1E293B;
       --border: #334155;
       --muted: #94A3B8;
-
       --metric1-bg: #064E3B;
       --metric1-text: #6EE7B7;
       --metric2-bg: #7C2D12;
@@ -62,18 +58,16 @@
       --metric3-text: #93C5FD;
       --metric4-bg: #4C1D95;
       --metric4-text: #C4B5FD;
-
       --btn-primary-bg: #1D4ED8;
       --btn-primary-text: #ffffff;
       --btn-sec-bg: transparent;
       --btn-sec-border: #4B5563;
       --btn-sec-text: #E5E7EB;
-
       --alert-bg: #422006;
       --alert-border: #713f12;
       --alert-text: #FDBA74;
-
       --danger: #ef4444;
+      --success: #6EE7B7;
     }
 
     body {
@@ -87,41 +81,119 @@
 
     /* SIDEBAR */
     .sidebar {
-      width: 260px; background: var(--card-bg); border-right: 1px solid var(--border);
-      color: var(--text); min-height: 100vh; position: fixed; z-index: 100;
+      width: 260px;
+      background: var(--card-bg);
+      border-right: 1px solid var(--border);
+      color: var(--text);
+      min-height: 100vh;
+      position: fixed;
+      z-index: 100;
       transition: background-color 0.3s ease, border-color 0.3s ease;
     }
+
     .sidebar-header {
-      padding: 30px 20px; font-size: 1.4em; font-weight: 700; text-align: center;
-      border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: center; gap: 10px;
+      padding: 30px 20px;
+      font-size: 1.4em;
+      font-weight: 700;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
     }
+
     .sidebar-header i { color: var(--metric3-text); }
+
     .sidebar-menu { list-style: none; padding: 15px 0; margin: 0; }
+
     .sidebar-menu li { padding: 0 15px; margin-bottom: 5px; }
+
     .sidebar-link {
-      color: var(--muted); text-decoration: none; display: flex; align-items: center;
-      gap: 12px; padding: 12px 15px; border-radius: 8px; transition: all 0.2s ease; font-weight: 500;
+      color: var(--muted);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 15px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      font-weight: 500;
     }
+
     .sidebar-link i { width: 24px; text-align: center; font-size: 1.1em; transition: color 0.2s; }
+
     .sidebar-link:hover { background: var(--border); color: var(--text); }
+
     .sidebar-menu li.active .sidebar-link {
-      background: var(--metric3-bg); color: var(--metric3-text); font-weight: 600; box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      background: var(--metric3-bg);
+      color: var(--metric3-text);
+      font-weight: 600;
+      box-shadow: 0 2px 6px rgb(0,0,0,0.05);
     }
+
+    .sidebar-menu li.active .sidebar-link i { color: var(--metric3-text); }
 
     /* MAIN CONTENT */
     .main-content { margin-left: 260px; padding: 32px; min-height: 100vh; }
+
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+
     .page-title { font-size: 1.8em; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 15px; margin: 0; }
+
     .page-title i { color: var(--metric3-text); }
+
+    /* BUTTONS */
+    .btn { border-radius: 8px; padding: 8px 16px; font-weight: 500; font-size: 0.9rem; transition: all 0.2s; border: none; }
+
+    .btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); }
+    .btn-primary:hover { opacity: 0.9; color: var(--btn-primary-text); transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.15); }
+
+    .btn-secondary { background: var(--btn-sec-bg); color: var(--btn-sec-text); border: 1px solid var(--btn-sec-border); }
+    .btn-secondary:hover { background: var(--border); color: var(--text); transform: translateY(-1px); }
+
+    .btn-success { background: var(--metric1-bg); color: var(--metric1-text); border: 1px solid var(--metric1-text); }
+    .btn-success:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.1); }
+
+    .btn-info { background: var(--metric3-bg); color: var(--metric3-text); border: 1px solid var(--metric3-text); }
+    .btn-info:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.1); }
+
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.15); }
+
+    .btn-warning { background: var(--metric2-bg); color: var(--metric2-text); border: 1px solid var(--metric2-text); }
+    .btn-warning:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.1); }
+
+    .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .dark-toggle-btn {
+      background: var(--btn-sec-bg);
+      border: 1px solid var(--btn-sec-border);
+      color: var(--btn-sec-text);
+      border-radius: 8px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 1.1em;
+    }
+    .dark-toggle-btn:hover { background: var(--border); color: var(--text); }
 
     /* MODERN CARDS */
     .modern-card {
-      background: var(--card-bg); border-radius: 12px; padding: 24px;
-      margin-bottom: 25px; border: 1px solid var(--border);
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 25px;
+      border: 1px solid var(--border);
       transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
     }
-    .modern-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
-    body.dark .modern-card:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+
+    .modern-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgb(0,0,0,0.08); }
+    body.dark .modern-card:hover { box-shadow: 0 10px 25px rgb(0,0,0,0.3); }
 
     /* USER AVATAR & INFO */
     .user-avatar {
@@ -130,7 +202,7 @@
       display: flex; align-items: center; justify-content: center;
       font-size: 2.5em; font-weight: 600; margin: 0 auto 20px;
       border: 3px solid var(--border);
-      transition: background-color 0.3s ease, color 0.3s ease;
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
     }
     .user-name { text-align: center; font-size: 1.5em; font-weight: 700; color: var(--text); margin-bottom: 5px; }
     .user-email { text-align: center; color: var(--muted); font-size: 1em; margin-bottom: 15px; }
@@ -141,7 +213,15 @@
     }
 
     /* SECTION TITLE */
-    .section-title { color: var(--text); font-weight: 600; font-size: 1.1em; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .section-title {
+      color: var(--text);
+      font-weight: 600;
+      font-size: 1.1em;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
     .section-title i { color: var(--metric3-text); }
 
     /* INFO LABELS */
@@ -150,48 +230,35 @@
 
     /* FORM CONTROLS */
     .form-control, .form-select {
-      border-radius: 8px; padding: 10px 14px;
+      border-radius: 8px;
+      padding: 12px 15px;
       border: 1px solid var(--border);
-      background: var(--card-bg); color: var(--text);
+      background: var(--card-bg);
+      color: var(--text);
       transition: all 0.2s;
     }
+
     .form-control:focus, .form-select:focus {
-      border-color: var(--btn-primary-bg);
-      box-shadow: 0 0 0 3px rgba(9, 88, 178, 0.1);
-      background: var(--card-bg); color: var(--text);
+      border-color: var(--metric3-text);
+      box-shadow: 0 0 0 3px rgb(9, 88, 178, 0.1);
+      background: var(--card-bg);
+      color: var(--text);
     }
-    .form-label { font-weight: 500; color: var(--text); margin-bottom: 6px; }
 
-    /* BUTTONS */
-    .btn { border-radius: 8px; padding: 8px 16px; font-weight: 500; font-size: 0.9rem; transition: all 0.2s; border: none; }
-    .btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); }
-    .btn-primary:hover { opacity: 0.9; color: var(--btn-primary-text); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-    .btn-secondary { background: var(--btn-sec-bg); color: var(--btn-sec-text); border: 1px solid var(--btn-sec-border); }
-    .btn-secondary:hover { background: var(--border); color: var(--text); transform: translateY(-1px); }
-    .btn-success { background: var(--metric1-text); color: #ffffff; }
-    .btn-success:hover { opacity: 0.9; color: #ffffff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-    .btn-info { background: var(--metric3-bg); color: var(--metric3-text); border: 1px solid var(--border); }
-    .btn-info:hover { background: var(--metric3-text); color: #ffffff; transform: translateY(-1px); }
-    .btn-danger { background: var(--danger); color: #ffffff; }
-    .btn-danger:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-    .btn-warning { background: var(--metric2-bg); color: var(--metric2-text); border: 1px solid var(--border); }
-    .btn-warning:hover { background: var(--metric2-text); color: #ffffff; transform: translateY(-1px); }
-
-    .dark-toggle-btn {
-      background: var(--btn-sec-bg); border: 1px solid var(--btn-sec-border); color: var(--btn-sec-text);
-      border-radius: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: all 0.2s; font-size: 1.1em;
-    }
-    .dark-toggle-btn:hover { background: var(--border); color: var(--text); }
+    .form-label { color: var(--text); font-weight: 500; margin-bottom: 8px; }
 
     /* STAT CARDS */
     .stat-card {
-      background: var(--card-bg); border-radius: 12px; padding: 20px;
-      text-align: center; border: 1px solid var(--border);
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      border: 1px solid var(--border);
       transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
     }
-    .stat-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
-    body.dark .stat-card:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+    .stat-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgb(0,0,0,0.08); }
+    body.dark .stat-card:hover { box-shadow: 0 10px 25px rgb(0,0,0,0.3); }
+
     .stat-icon {
       width: 50px; height: 50px; border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
@@ -207,17 +274,24 @@
     /* ALERTS */
     .alert { border-radius: 10px; padding: 15px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
     .alert-success { background: var(--metric1-bg); color: var(--metric1-text); border: 1px solid var(--border); }
-    .alert-error { background: #fce8e8; color: var(--danger); border: 1px solid var(--border); }
-    body.dark .alert-error { background: #7f1d1d; color: #fca5a5; }
+    .alert-error { background: #fde8e8; color: #c53030; border: 1px solid var(--border); }
+    body.dark .alert-error { background: #7C2D12; color: #FDBA74; }
 
     /* MODAL */
-    .modal-content { background: var(--card-bg); color: var(--text); border: 1px solid var(--border); border-radius: 12px; }
-    .modal-header { border-bottom: 1px solid var(--border); padding: 20px; background: var(--card-bg); }
+    .modal-content {
+      background: var(--card-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .modal-header { border-bottom: 1px solid var(--border); padding: 20px; }
     .modal-header .modal-title { font-weight: 600; }
     .modal-header .btn-close { filter: brightness(0.5); }
     body.dark .modal-header .btn-close { filter: invert(1); }
-    .modal-body { padding: 25px; background: var(--card-bg); }
-    .modal-footer { padding: 20px; border-top: 1px solid var(--border); background: var(--card-bg); }
+
+    .modal-body { padding: 25px; }
+    .modal-footer { padding: 20px; border-top: 1px solid var(--border); }
 
     /* LOADING OVERLAY */
     #loadingOverlay {
@@ -256,12 +330,17 @@
         <li><a href="../budgetPage/budget.html" class="sidebar-link"><i class="fas fa-calculator"></i> Presupuestos</a></li>
         <li class="active"><a href="profile.html" class="sidebar-link"><i class="fas fa-user"></i> Perfil</a></li>
         <li><a href="settings.html" class="sidebar-link"><i class="fas fa-cog"></i> Configuracion</a></li>
+        <li style="border-top: 1px solid var(--border); margin-top: 10px; padding-top: 10px;">
+          <a href="javascript:void(0)" class="sidebar-link" onclick="logout()" style="color: var(--danger);">
+            <i class="fas fa-sign-out-alt"></i> Cerrar sesion
+          </a>
+        </li>
       </ul>
     </aside>
     <main class="main-content col">
       <div class="page-header">
         <h1 class="page-title"><i class="fas fa-user"></i> Mi Perfil</h1>
-        <div class="d-flex gap-2 align-items-center">
+        <div class="action-buttons">
           <button class="btn btn-primary" onclick="showEditModal()"><i class="fas fa-edit me-2"></i>Editar Perfil</button>
           <button class="dark-toggle-btn" id="themeToggle" title="Cambiar tema"><i class="fas fa-moon"></i></button>
         </div>
@@ -452,20 +531,20 @@ function hideLoading() { var o = document.getElementById('loadingOverlay'); if (
 function getUserId() { try { var s = localStorage.getItem('upsen_current_user'); if (s) { var d = JSON.parse(s); if (d && d.user) return d.user.uid || d.user.id || 'demo'; } } catch (e) {} return 'demo'; }
 function getUserData(k) { try { var d = localStorage.getItem(k); if (d) return JSON.parse(d); } catch (e) {} return []; }
 function setText(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; }
-function formatDate(ds) { 
-  if (!ds) return '-'; 
+function formatDate(ds) {
+  if (!ds) return '-';
   // Handle Firestore timestamp
   if (ds && ds.toDate && typeof ds.toDate === 'function') {
     ds = ds.toDate();
   }
-  var d = new Date(ds); 
+  var d = new Date(ds);
   if (isNaN(d.getTime())) return '-';
-  return d.toLocaleDateString('es-ES', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); 
+  return d.toLocaleDateString('es-ES', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 }
 document.addEventListener('DOMContentLoaded', function() {
   editModal = new bootstrap.Modal(document.getElementById('editProfileModal'));
   passwordModal = new bootstrap.Modal(document.getElementById('passwordModal'));
-  
+
   function checkAuth() {
     // Check Firebase Auth directly first
     var firebaseUser = null;
@@ -473,7 +552,7 @@ document.addEventListener('DOMContentLoaded', function() {
       firebaseUser = window.firebaseAuth.currentUser;
       console.log('Firebase Auth user found:', firebaseUser.email);
     }
-    
+
     // Check localStorage session
     var hasLocalSession = false;
     try {
@@ -486,7 +565,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
     } catch (e) {}
-    
+
     // If we have Firebase user or local session, load profile
     if (firebaseUser || hasLocalSession) {
       if (window.AuthSystem && window.AuthSystem.isLoggedIn && window.AuthSystem.isLoggedIn()) {
@@ -505,17 +584,17 @@ document.addEventListener('DOMContentLoaded', function() {
       hideLoading();
       return;
     }
-    
+
     // Wait for Auth
-    if (window.AuthSystem && window.AuthSystem.isLoggedIn && window.AuthSystem.isLoggedIn()) { 
-      loadProfile(); 
-      hideLoading(); 
+    if (window.AuthSystem && window.AuthSystem.isLoggedIn && window.AuthSystem.isLoggedIn()) {
+      loadProfile();
+      hideLoading();
     }
     else {
       setTimeout(checkAuth, 100);
     }
   }
-  
+
   setTimeout(checkAuth, 500);
 });
 function loadProfileFromLocal(user) {
@@ -541,12 +620,11 @@ function loadProfileFromLocal(user) {
 }
 function loadStats() {
   // Usar store.js para obter estatísticas
-  // Versão síncrona para renderização imediata
   var inv = [];
   var iss = [];
   var exp = [];
   var bud = [];
-  
+
   if (window.getInvoicesReceivedSync) {
     inv = window.getInvoicesReceivedSync();
   }
@@ -559,7 +637,7 @@ function loadStats() {
   if (window.getBudgetsSync) {
     bud = window.getBudgetsSync();
   }
-  
+
   setText('statInvoices', inv.length || 0);
   setText('statIssued', iss.length || 0);
   setText('statExpenses', exp.length || 0);
@@ -576,19 +654,19 @@ async function saveProfile() {
   var currency = document.getElementById('editCurrency').value;
   var language = document.getElementById('editLanguage').value;
   var theme = document.getElementById('editTheme').value;
-  
+
   if (!name || !company) { showAlert('editAlert', 'Completa todos los campos.', 'error'); return; }
-  
+
   var saveBtn = document.querySelector('#editProfileModal .btn-primary');
   if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...'; }
-  
+
   var res = await AuthSystem.updateUserProfile({name:name, company:company, phone:phone, settings:{currency:currency, language:language, theme:theme}});
-  
+
   if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-save me-2"></i>Guardar'; }
-  
-  if (res.success) { 
-    editModal.hide(); 
-    loadProfile(); 
+
+  if (res.success) {
+    editModal.hide();
+    loadProfile();
     showAlert('alertMessage', 'Perfil actualizado correctamente!', 'success');
     // Apply theme change
     if (window.applyTheme) applyTheme(theme);
@@ -642,8 +720,8 @@ function exportDataPDF() {
   doc.save('upsen_perfil.pdf');
   showAlert('alertMessage', 'PDF exportado!', 'success');
 }
-function deleteAccount() { 
-  if (confirm('Eliminar cuenta? Esta accion no se puede deshacer.')) { 
+function deleteAccount() {
+  if (confirm('Eliminar cuenta? Esta accion no se puede deshacer.')) {
     AuthSystem.deleteAccount().then(function(result) {
       if (result && result.success) {
         window.location.href = '../login.html';
@@ -651,14 +729,14 @@ function deleteAccount() {
         showAlert('alertMessage', result.message || 'Error al eliminar cuenta', 'error');
       }
     });
-  } 
+  }
 }
 // Logout function with Firebase sign out
-function logout() { 
-  if (confirm('Cerrar sesion?')) { 
+function logout() {
+  if (confirm('Cerrar sesion?')) {
     // 1. Limpar localStorage primeiro
     localStorage.removeItem('upsen_current_user');
-    
+
     // 2. Try to sign out from Firebase
     if (window.firebaseAuth) {
       window.firebaseAuth.signOut().then(function() {
@@ -667,14 +745,14 @@ function logout() {
         console.log('Firebase sign out error:', e);
       });
     }
-    
+
     // 3. Try AuthService logout
     if (AuthSystem && AuthSystem.logout) {
       AuthSystem.logout();
     }
-    
-    window.location.href = '../login.html'; 
-  } 
+
+    window.location.href = '../login.html';
+  }
 }
 </script>
 </body>
