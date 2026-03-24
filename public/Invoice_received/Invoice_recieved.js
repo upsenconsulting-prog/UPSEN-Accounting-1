@@ -257,22 +257,55 @@ function updateInvoiceReceived(id, updates) {
   for (var i = 0; i < invoices.length; i++) {
     if (invoices[i].id === id) {
       invoices[i] = Object.assign({}, invoices[i], updates);
-      // Usar a função centralizada do store.js para atualizar
-      if (window.updateInvoiceReceived) {
-        window.updateInvoiceReceived(id, updates);
-      }
+      saveUserInvoicesReceived(invoices);
       break;
     }
   }
 }
 
 async function renderSummaryCards() {
-  var list = await getAllInvoicesReceived();
+  var list = getAllInvoicesReceived();
   var now = new Date();
   var pendingTotal = 0;
   var paidTotal = 0;
   var monthlyTotal = 0;
   var overdueCount = 0;
+  
+  for (var i = 0; i < list.length; i++) {
+    var inv = list[i];
+    var amount = Number(inv.amount || 0);
+    
+    if (inv.state === 'Pendiente') {
+      pendingTotal += amount;
+      
+      if (inv.invoiceDate) {
+        var invoiceDate = new Date(inv.invoiceDate);
+        var dueDate = new Date(invoiceDate);
+        dueDate.setDate(dueDate.getDate() + 30);
+        if (dueDate < now) {
+          overdueCount++;
+        }
+      }
+    } else if (inv.state === 'Pagada') {
+      paidTotal += amount;
+    }
+    
+    if (inv.invoiceDate) {
+      var parts = inv.invoiceDate.split('-');
+      if (parts.length >= 2) {
+        var year = parseInt(parts[0]);
+        var month = parseInt(parts[1]) - 1;
+        if (year === now.getFullYear() && month === now.getMonth()) {
+          monthlyTotal += amount;
+        }
+      }
+    }
+  }
+  
+  if ($('pendingTotal')) $('pendingTotal').textContent = moneyEUR(pendingTotal);
+  if ($('paidTotal')) $('paidTotal').textContent = moneyEUR(paidTotal);
+  if ($('monthlyTotal')) $('monthlyTotal').textContent = moneyEUR(monthlyTotal);
+  if ($('overdueCount')) $('overdueCount').textContent = overdueCount;
   
   for (var i = 0; i < list.length; i++) {
     var inv = list[i];
@@ -315,7 +348,7 @@ async function renderChart() {
   var chartContainer = document.getElementById('receivedChartCanvas');
   if (!chartContainer) return;
 
-  var list = await getAllInvoicesReceived();
+  var list = getAllInvoicesReceived();
   var supplierTotals = {};
   
   for (var i = 0; i < list.length; i++) {
@@ -351,7 +384,7 @@ async function renderInvoices() {
   var tbody = $('invoiceTBody');
   if (!tbody) return;
 
-  var list = await getAllInvoicesReceived();
+  var list = getAllInvoicesReceived();
   
   // Apply filters - NEW
   if (window.paymentFilter && window.paymentFilter !== 'todas') {
@@ -447,8 +480,10 @@ async function renderInvoices() {
     delBtns[j].addEventListener('click', function() {
       var id = this.getAttribute('data-del');
       if (confirm('Eliminar factura?')) {
-        deleteInvoiceReceived(id); // Chama a função do store.js
-        // A UI será atualizada pelo listener 'dataUpdated-invoicesReceived'
+        deleteInvoiceReceived(id);
+        renderInvoices();
+        renderChart();
+        renderSummaryCards();
       }
     });
   }
@@ -514,7 +549,7 @@ async function renderInvoices() {
 }
 
 window.viewInvoice = function(id) {
-  var list = getUserInvoicesReceived(); // Usar a versão síncrona para UI rápida
+  var list = getAllInvoicesReceived();
   var invoice = list.find(function(inv) { return inv.id === id; });
   if (!invoice) return;
 
@@ -550,7 +585,7 @@ window.viewInvoice = function(id) {
   }
 };
 
-async function saveInvoiceReceived() {
+function saveInvoiceReceived() {
   var form = $('formNewInvoiceReceived');
   if (!form) return false;
 
@@ -592,12 +627,24 @@ async function saveInvoiceReceived() {
   // Usar Veri*Factu Integration se disponível
   if (window.VeriFactuIntegration && window.VeriFactuIntegration.createInvoiceReceived) {
     console.log('A criar fatura recebida com Veri*Factu...');
-    await window.VeriFactuIntegration.createInvoiceReceived(invoiceData);
+    window.VeriFactuIntegration.createInvoiceReceived(invoiceData).then(function() {
+      renderInvoices();
+      renderChart();
+      renderSummaryCards();
+    }).catch(function(err) {
+      console.error('Erro no registo Veri*Factu:', err);
+      // Se falhar o hash, ainda cria a fatura normalmente
+      addInvoiceReceived(invoiceData);
+      renderInvoices();
+      renderChart();
+      renderSummaryCards();
+    });
   } else {
-    // Fallback: usar a função de adicionar do store.js diretamente
-    if (window.addInvoiceReceived) {
-      await window.addInvoiceReceived(invoiceData);
-    }
+    // Fallback: usar função normal
+    addInvoiceReceived(invoiceData);
+    renderInvoices();
+    renderChart();
+    renderSummaryCards();
   }
 
   var modalEl = document.getElementById('modalNewInvoiceReceived');
@@ -643,7 +690,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   
   // Wait for auth to be ready before loading data
   window.waitForAuth(function() {
-    console.log('Auth pronto, a inicializar a página de faturas recebidas...');
+    console.log('Auth ready, initializing invoice received page...');
     
     var newInvoiceBtn = document.getElementById('btnNewInvoice');
     if (newInvoiceBtn) {
@@ -655,7 +702,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     var saveBtn = document.getElementById('saveInvoiceReceivedBtn');
     if (saveBtn) {
       saveBtn.addEventListener('click', function() {
-        saveInvoiceReceived(); // Agora é uma função async
+        saveInvoiceReceived();
       });
     }
     
@@ -962,7 +1009,7 @@ function clearFilters() {
 }
 
 function renderInvoicesFiltered() {
-  var tbody = document.getElementById('invoiceTBody');
+  var tbody = $('invoiceTBody');
   if (!tbody) return;
 
   var allInvoices = getAllInvoicesReceived();
@@ -993,7 +1040,7 @@ function renderInvoicesFiltered() {
 }
 
 function renderInvoicesFromList(list) {
-  var tbody = document.getElementById('invoiceTBody');
+  var tbody = $('invoiceTBody');
   if (!tbody) return;
 
   tbody.innerHTML = '';
@@ -1034,7 +1081,7 @@ function renderInvoicesFromList(list) {
 }
 
 function attachInvoiceListeners() {
-  var tbody = document.getElementById('invoiceTBody');
+  var tbody = $('invoiceTBody');
   if (!tbody) return;
 
   var delBtns = tbody.querySelectorAll('[data-del]');
@@ -1042,7 +1089,14 @@ function attachInvoiceListeners() {
     delBtns[j].addEventListener('click', function() {
       var id = this.getAttribute('data-del');
       if (confirm('Eliminar factura?')) {
-        deleteInvoiceReceived(id); // A UI será atualizada pelo listener
+        deleteInvoiceReceived(id);
+        if (currentFilters.state || currentFilters.dateFrom || currentFilters.dateTo) {
+          renderInvoicesFiltered();
+        } else {
+          renderInvoices();
+        }
+        renderChart();
+        renderSummaryCards();
       }
     });
   }
@@ -1399,3 +1453,4 @@ function exportReceivedInvoicesToExcel(list) {
   link.click();
   alert('Excel descargado correctamente!');
 }
+

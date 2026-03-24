@@ -80,61 +80,6 @@
       margin: 0;
     }
 
-    /* SIDEBAR */
-    .sidebar {
-      width: 260px;
-      background: var(--card-bg);
-      border-right: 1px solid var(--border);
-      color: var(--text);
-      min-height: 100vh;
-      position: fixed;
-      z-index: 100;
-      transition: background-color 0.3s ease, border-color 0.3s ease;
-    }
-
-    .sidebar-header {
-      padding: 30px 20px;
-      font-size: 1.4em;
-      font-weight: 700;
-      text-align: center;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-
-    .sidebar-header i { color: var(--metric3-text); }
-
-    .sidebar-menu { list-style: none; padding: 15px 0; margin: 0; }
-
-    .sidebar-menu li { padding: 0 15px; margin-bottom: 5px; }
-
-    .sidebar-link {
-      color: var(--muted);
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 15px;
-      border-radius: 8px;
-      transition: all 0.2s ease;
-      font-weight: 500;
-    }
-
-    .sidebar-link i { width: 24px; text-align: center; font-size: 1.1em; transition: color 0.2s; }
-
-    .sidebar-link:hover { background: var(--border); color: var(--text); }
-
-    .sidebar-menu li.active .sidebar-link {
-      background: var(--metric3-bg);
-      color: var(--metric3-text);
-      font-weight: 600;
-      box-shadow: 0 2px 6px rgb(0,0,0,0.05);
-    }
-
-    .sidebar-menu li.active .sidebar-link i { color: var(--metric3-text); }
-
     /* MAIN CONTENT */
     .main-content { margin-left: 260px; padding: 32px; min-height: 100vh; }
 
@@ -320,25 +265,7 @@
 </head>
 <body>
 <div class="container-fluid p-0">
-  <div class="row m-0">
-    <aside class="sidebar">
-      <div class="sidebar-header"><i class="fas fa-chart-line"></i>FactuFácil</div>
-      <ul class="sidebar-menu">
-        <li><a href="../frontPage/frontPage.html" class="sidebar-link"><i class="fas fa-tachometer-alt"></i> Panel</a></li>
-        <li><a href="../expense/expense.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar"></i> Gastos</a></li>
-        <li><a href="../Invoice-issued/invoice-issued.html" class="sidebar-link"><i class="fas fa-file-export"></i> Facturas emitidas</a></li>
-        <li><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link"><i class="fas fa-file-import"></i> Facturas recibidas</a></li>
-        <li><a href="../budgetPage/budget.html" class="sidebar-link"><i class="fas fa-calculator"></i> Presupuestos</a></li>
-        <li class="active"><a href="profile.html" class="sidebar-link"><i class="fas fa-user"></i> Perfil</a></li>
-        <li><a href="settings.html" class="sidebar-link"><i class="fas fa-cog"></i> Configuracion</a></li>
-        <li style="border-top: 1px solid var(--border); margin-top: 10px; padding-top: 10px;">
-          <a href="javascript:void(0)" class="sidebar-link" onclick="logout()" style="color: var(--danger);">
-            <i class="fas fa-sign-out-alt"></i> Cerrar sesion
-          </a>
-        </li>
-      </ul>
-    </aside>
-    <main class="main-content col">
+    <main class="main-content">
       <div class="page-header">
         <h1 class="page-title"><i class="fas fa-user"></i> Mi Perfil</h1>
         <div class="action-buttons">
@@ -427,7 +354,6 @@
         </div>
       </div>
     </main>
-  </div>
 </div>
 <div class="modal fade" id="editProfileModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
@@ -499,6 +425,7 @@
 <script src="../shared/data-migration.js"></script>
 <!-- Store (uses sync service) -->
 <script src="../shared/store.js"></script>
+<script src="../shared/sidebar.js"></script>
 <script>
 // --- DARK MODE LOGIC ---
 document.addEventListener('DOMContentLoaded', () => {

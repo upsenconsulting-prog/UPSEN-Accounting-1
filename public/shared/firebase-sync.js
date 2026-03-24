@@ -92,7 +92,7 @@
         return;
       }
 
-      console.log('[Sync] Lendo companies/' + userId + '/' + collectionName);
+      console.log(`[Sync] A ler do Firestore: companies/${userId}/${collectionName}`);
 
       window.firebaseDb
         .collection('companies')
@@ -117,13 +117,13 @@
             data.push(item);
           });
 
-          console.log('[Sync] ' + collectionName + ': ' + data.length + ' documentos');
+          console.log(`[Sync] Sucesso para ${collectionName}: ${data.length} documentos encontrados.`);
 
           if (data.length > 0) {
             localStorage.setItem(userKey, JSON.stringify(data));
           }
 
-          resolve(data.length > 0 ? data : null);
+          resolve(data); // Sempre resolver com os dados, mesmo que seja um array vazio
         })
         .catch(function(error) {
           console.warn('[Sync] Erro:', error.message);
