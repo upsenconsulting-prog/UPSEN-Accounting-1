@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clientes - FactuFácil</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f7f9fc; color: #1f2937; font-family: 'Inter', sans-serif; }
+    .container { max-width: 1100px; margin-top: 24px; margin-bottom: 40px; }
+    .card { border-radius: 12px; border: 1px solid #e6eaf0; }
+    .text-danger { color: #b91c1c; }
+    .form-label { font-weight: 600; }
+    .table-wrapper { max-height: 440px; overflow-y: auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1><i class="fas fa-users"></i> Gestión de Clientes</h1>
+      <a href="frontPage/frontPage.html" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver al Panel</a>
+    </div>
+
+    <div id="authStatus" class="alert alert-info d-none"></div>
+
+    <!-- Client Form -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Agregar/Editar Cliente</h5>
+        <form id="clientForm" class="row gy-3">
+          <input type="hidden" id="clientId">
+          <div class="col-md-4">
+            <label for="name" class="form-label">Nombre</label>
+            <input type="text" id="name" class="form-control" placeholder="Nombre del cliente" required>
+          </div>
+          <div class="col-md-4">
+            <label for="nif" class="form-label">NIF/NIE/CIF</label>
+            <input type="text" id="nif" class="form-control" placeholder="NIF/NIE/CIF" required>
+          </div>
+          <div class="col-md-4">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" id="email" class="form-control" placeholder="cliente@ejemplo.com" required>
+          </div>
+          <div class="col-md-4">
+            <label for="phone" class="form-label">Teléfono</label>
+            <input type="tel" id="phone" class="form-control" placeholder="+34 600 000 000">
+          </div>
+          <div class="col-md-4">
+            <label for="address" class="form-label">Dirección fiscal</label>
+            <input type="text" id="address" class="form-control" placeholder="Calle, nº">
+          </div>
+          <div class="col-md-4">
+            <label for="country" class="form-label">País</label>
+            <input type="text" id="country" class="form-control" placeholder="España">
+          </div>
+          <div class="col-12 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i> Guardar cliente
+            </button>
+            <button type="button" id="clearBtn" class="btn btn-outline-secondary">
+              <i class="fas fa-eraser"></i> Nuevo cliente
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Clients List -->
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Clientes guardados</h5>
+        <div class="table-wrapper">
+          <table class="table table-striped table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Nombre</th>
+                <th>NIF/NIE/CIF</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th>País</th>
+                <th>Creado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="clientsTbody">
+              <!-- Clients will be populated here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="shared/firebase-config.js"></script>
+  <script src="shared/auth-system.js"></script>
+  <script src="backend-1/backend/clientService.js"></script>
+  <script src="backend-1/backend/providerService.js"></script>
+  <script src="customers.js"></script>
+</body>
+</html>
