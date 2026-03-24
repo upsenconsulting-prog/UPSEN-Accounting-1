@@ -1,5 +1,5 @@
 // expense.js - Com dados isolados por usuário + IVA + Importação em massa
-// AGORA USA store.js COMO FONTE PRIMÁRIA (Firebase + localStorage backup)
+// INTEGRAT CU NOILE CERINȚE: 4 TARJETAS, 6 TARJETAS, ULTIMAS FACTURAS
 
 function $(id) {
   return document.getElementById(id);
@@ -7,14 +7,13 @@ function $(id) {
 
 function moneyEUR(n) {
   var v = Number(n || 0);
-  return 'EUR ' + v.toFixed(2);
+  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(v);
 }
 
 // ========== MARK ACTIVE PAGE ==========
 function markActivePage() {
   var currentPage = window.location.href;
   var links = document.querySelectorAll('.sidebar-link');
-  
   for (var i = 0; i < links.length; i++) {
     links[i].parentElement.classList.remove('active');
     if (links[i].href === currentPage) {
@@ -28,11 +27,9 @@ var expenseChart = null;
 
 // ========== USAR STORE.JS (Firebase + localStorage) ==========
 function getUserExpenses() {
-  // Usar store.js - versão síncrona para renderização imediata
   if (window.getExpensesSync) {
     return window.getExpensesSync();
   }
-  // Fallback se store.js não estiver disponível
   return [];
 }
 
@@ -48,8 +45,6 @@ function loadExpensesFromFirebase(userId) {
 }
 
 function saveUserExpense(expense) {
-  // NÃO criar ID aqui - deixar store.js criar o ID
-  // Passar os dados diretamente para store.js
   var expenseData = {
     date: expense.date || '',
     category: expense.category || '',
@@ -60,20 +55,19 @@ function saveUserExpense(expense) {
     notes: expense.notes || '',
     paymentMethod: expense.paymentMethod || '',
     supplierNif: expense.supplierNif || '',
-    supplierName: expense.supplierName || ''
+    supplierName: expense.supplierName || '',
+    receiptNumber: expense.receiptNumber || '',
+    state: expense.state || 'Pagado'
   };
   
-  // Usar store.js - função assíncrona que salva no Firebase E localStorage
   if (window.addExpense) {
-    window.addExpense(expenseData).then(function() {
+    return window.addExpense(expenseData).then(function() {
       renderExpenses();
       renderChart();
       renderSummaryCards();
     }).catch(function(err) {
       console.error('Erro ao salvar despesa:', err);
     });
-  } else {
-    console.error('store.js não disponível');
   }
 }
 
@@ -87,7 +81,7 @@ function deleteUserExpense(id) {
   }
 }
 
-// ========== IMPORTAR DADOS EM MASSA ==========
+// ========== IMPORTAR DADOS EM MASSA (CSV) ==========
 function importExpensesFromCSV(csvContent) {
   var lines = csvContent.split('\n');
   if (lines.length < 2) {
@@ -107,9 +101,8 @@ function importExpensesFromCSV(csvContent) {
     var inQuotes = false;
     for (var j = 0; j < line.length; j++) {
       var char = line[j];
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === ',' && !inQuotes) {
+      if (char === '"') inQuotes = !inQuotes;
+      else if (char === ',' && !inQuotes) {
         values.push(current.trim());
         current = '';
       } else {
@@ -134,563 +127,237 @@ function importExpensesFromCSV(csvContent) {
     }
     
     if (expense.date && expense.amount) {
+      const base = Number(expense.amount);
+      const rate = Number(expense.ivaRate || 21);
+      const ivaVal = base * (rate / 100);
+      expense.ivaAmount = ivaVal;
+      expense.totalAmount = base + ivaVal;
       saveUserExpense(expense);
       importedCount++;
     }
   }
-  
   return importedCount;
 }
 
-function handleFileImport(event) {
-  var file = event.target.files[0];
-  if (!file) return;
-  
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    var content = e.target.result;
-    var count = 0;
-    
-    if (file.name.endsWith('.csv')) {
-      count = importExpensesFromCSV(content);
-    } else if (file.name.endsWith('.xls') || file.name.endsWith('.xlsx')) {
-      alert('Para Excel, por favor converta para CSV primeiro.');
-    } else {
-      alert('Formato não suportado. Use CSV.');
-    }
-    
-    if (count > 0) {
-      alert(count + ' despesas importadas com sucesso!');
-      setTimeout(function() {
-        renderExpenses();
-        renderChart();
-        renderSummaryCards();
-      }, 500);
-    } else {
-      alert('Nenhuma despesa importada. Verifique o formato do CSV.');
-    }
-    
-    event.target.value = '';
-  };
-  reader.readAsText(file);
-}
-
-// ========== RENDER FUNCTIONS ==========
+// ========== RENDER SUMMARY (CALCULO BACKEND) ==========
 function renderSummaryCards() {
-  var list = getUserExpenses();
-  var now = new Date();
-  var currentMonth = now.getMonth();
-  var currentYear = now.getFullYear();
-  
-  var monthlyTotal = 0;
-  var monthlyIVA = 0;
-  var categoryTotals = {};
-  var lastExpense = null;
-  
-  for (var i = 0; i < list.length; i++) {
-    var exp = list[i];
-    
-    if (exp.date) {
-      var parts = exp.date.split('-');
-      if (parts.length >= 2) {
-        var year = parseInt(parts[0]);
-        var month = parseInt(parts[1]) - 1;
-        if (year === currentYear && month === currentMonth) {
-          monthlyTotal += Number(exp.totalAmount || exp.amount || 0);
-          monthlyIVA += Number(exp.ivaAmount || 0);
-        }
-      }
-    }
-    
-    var cat = exp.category || "Sin categoría";
-    categoryTotals[cat] = (categoryTotals[cat] || 0) + Number(exp.amount || 0);
-    
-    if (!lastExpense || (exp.date && exp.date > lastExpense.date)) {
-      lastExpense = exp;
-    }
-  }
-  
-  var monthlyTotalEl = $("monthlyTotal");
-  if (monthlyTotalEl) {
-    monthlyTotalEl.textContent = moneyEUR(monthlyTotal);
-  }
-  
-  var monthlyIVAEl = $("monthlyIVA");
-  if (monthlyIVAEl) {
-    monthlyIVAEl.textContent = moneyEUR(monthlyIVA);
-  }
-  
-  var topCategoryEl = $("topCategory");
-  if (topCategoryEl) {
-    var keys = Object.keys(categoryTotals);
-    if (keys.length > 0) {
-      var topCat = keys[0];
-      var topVal = categoryTotals[keys[0]];
-      for (var k = 0; k < keys.length; k++) {
-        if (categoryTotals[keys[k]] > topVal) {
-          topCat = keys[k];
-          topVal = categoryTotals[keys[k]];
-        }
-      }
-      var topCatSpan = topCategoryEl.querySelector('span');
-      if (topCatSpan) {
-        topCatSpan.textContent = topCat;
-      } else {
-        topCategoryEl.textContent = topCat;
-      }
-    } else {
-      var topCatSpan = topCategoryEl.querySelector('span');
-      if (topCatSpan) {
-        topCatSpan.textContent = "Sin datos";
-      } else {
-        topCategoryEl.textContent = "Sin datos";
-      }
-    }
-  }
-  
-  var lastExpenseEl = $("lastExpense");
-  if (lastExpenseEl) {
-    if (lastExpense) {
-      var lastExpenseSpan = lastExpenseEl.querySelector('span');
-      if (lastExpenseSpan) {
-        lastExpenseSpan.innerHTML = lastExpense.date + ' - ' + lastExpense.category;
-      } else {
-        lastExpenseEl.innerHTML = lastExpense.date + ' - ' + lastExpense.category;
-      }
-    } else {
-      var lastExpenseSpan = lastExpenseEl.querySelector('span');
-      if (lastExpenseSpan) {
-        lastExpenseSpan.textContent = "Sin gastos";
-      } else {
-        lastExpenseEl.textContent = "Sin gastos";
-      }
-    }
-  }
-}
+  const expenses = getUserExpenses();
+  const invoicesIssued = (window.getInvoicesIssuedSync) ? window.getInvoicesIssuedSync() : [];
 
-function renderChart() {
-  var chartContainer = document.getElementById('expenseChartCanvas');
-  if (!chartContainer) return;
+  // GASTOS
+  let totalBaseGastos = 0;
+  let totalIvaSoportado = 0;
+  let totalGastos = 0;
+  let pendingGastos = 0;
+  let overdueGastos = 0;
 
-  var list = getUserExpenses();
-  var categoryTotals = {};
-  
-  for (var i = 0; i < list.length; i++) {
-    var exp = list[i];
-    var cat = exp.category || "Sin categoría";
-    categoryTotals[cat] = (categoryTotals[cat] || 0) + Number(exp.amount || 0);
-  }
-
-  var labels = Object.keys(categoryTotals);
-  var data = Object.values(categoryTotals);
-
-  var ctx = chartContainer.getContext('2d');
-
-  if (expenseChart) {
-    expenseChart.destroy();
-  }
-
-  expenseChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: labels.length ? labels : ['Sem dados'],
-      datasets: [{
-        label: 'Gastos por categoría',
-        data: data.length ? data : [0],
-        backgroundColor: [
-          '#2a4d9c', '#3a6cd6', '#1abc9c', '#e74c3c', '#f39c12',
-          '#9b59b6', '#3498db', '#1abc9c', '#e67e22', '#34495e'
-        ],
-        borderWidth: 0
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: {
-            callback: function(value) { return 'EUR ' + value; }
-          }
-        }
-      }
-    }
+  expenses.forEach(exp => {
+    totalBaseGastos += Number(exp.amount || 0);
+    totalIvaSoportado += Number(exp.ivaAmount || 0);
+    totalGastos += Number(exp.totalAmount || 0);
+    if (exp.state === 'Pendiente') pendingGastos++;
+    if (exp.state === 'Vencida') overdueGastos++;
   });
+
+  // INGRESOS (Facturas Emitidas)
+  let totalBaseIngresos = 0;
+  let totalIvaRepercutido = 0;
+  let totalIngresos = 0;
+
+  invoicesIssued.forEach(inv => {
+    totalBaseIngresos += Number(inv.amount || 0);
+    totalIvaRepercutido += Number(inv.ivaAmount || 0);
+    totalIngresos += Number(inv.totalAmount || 0);
+  });
+
+  // RESULTADO & IVA FINAL
+  const resultadoNeto = totalBaseIngresos - totalBaseGastos;
+  const ivaFinal = totalIvaRepercutido - totalIvaSoportado;
+
+  // Render UI - 4 Tarjetas
+  if ($('resumen-ingresos-total')) $('resumen-ingresos-total').innerText = moneyEUR(totalIngresos);
+  if ($('resumen-ingresos-base')) $('resumen-ingresos-base').innerText = moneyEUR(totalBaseIngresos);
+  if ($('resumen-ingresos-iva')) $('resumen-ingresos-iva').innerText = moneyEUR(totalIvaRepercutido);
+
+  if ($('resumen-gastos-total')) $('resumen-gastos-total').innerText = moneyEUR(totalGastos);
+  if ($('resumen-gastos-base')) $('resumen-gastos-base').innerText = moneyEUR(totalBaseGastos);
+  if ($('resumen-gastos-iva')) $('resumen-gastos-iva').innerText = moneyEUR(totalIvaSoportado);
+
+  if ($('resumen-resultado-neto')) {
+    $('resumen-resultado-neto').innerText = moneyEUR(resultadoNeto);
+    $('resumen-resultado-neto').style.color = resultadoNeto >= 0 ? "#1E7D34" : "#B42318";
+  }
+
+  if ($('resumen-iva-final')) {
+    $('resumen-iva-final').innerText = moneyEUR(ivaFinal);
+    if ($('iva-status')) $('iva-status').innerText = ivaFinal >= 0 ? "IVA a pagar" : "IVA a compensar";
+  }
+
+  // Render UI - 6 Tarjetas Detalle
+  if ($('stats-count')) $('stats-count').innerText = expenses.length;
+  if ($('stats-base')) $('stats-base').innerText = moneyEUR(totalBaseGastos);
+  if ($('stats-iva')) $('stats-iva').innerText = moneyEUR(totalIvaSoportado);
+  if ($('stats-total')) $('stats-total').innerText = moneyEUR(totalGastos);
+  if ($('stats-pending')) $('stats-pending').innerText = pendingGastos;
+  if ($('stats-overdue')) $('stats-overdue').innerText = overdueGastos;
+
+  renderRecentInvoices(invoicesIssued);
 }
 
+// ========== RENDER TABLES ==========
 function renderExpenses() {
   var tbody = $("expenseTBody");
   if (!tbody) return;
-
   var list = getUserExpenses();
   tbody.innerHTML = "";
 
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No hay gastos registrados todavía.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No hay gastos registrados.</td></tr>';
     return;
   }
 
-  for (var i = 0; i < list.length; i++) {
-    var e = list[i];
+  list.forEach(e => {
     var tr = document.createElement("tr");
-    var ivaDisplay = e.ivaRate > 0 ? e.ivaRate + '%' : '-';
-    tr.innerHTML = '<td>' + (e.date || "-") + '</td>' +
-      '<td>' + (e.category || "-") + '</td>' +
-      '<td>' + moneyEUR(e.amount) + '</td>' +
-      '<td>' + ivaDisplay + '</td>' +
-      '<td>' + moneyEUR(e.ivaAmount || 0) + '</td>' +
-      '<td>' + moneyEUR(e.totalAmount || e.amount) + '</td>' +
-      '<td>' + (e.notes || "") + '</td>' +
-      '<td class="action-buttons">' +
-        '<button class="btn btn-primary btn-sm py-1 px-2 me-1" style="font-size:0.75rem" data-view="' + e.id + '"><i class="fas fa-eye"></i></button>' +
-        '<button class="btn btn-danger btn-sm py-1 px-2" style="font-size:0.75rem" data-del="' + e.id + '"><i class="fas fa-trash"></i></button>' +
-      '</td>';
+    tr.innerHTML = `
+      <td>${e.date || "-"}</td>
+      <td><span class="badge bg-light text-dark border">${e.category || "General"}</span></td>
+      <td>${e.supplierName || "-"}</td>
+      <td class="text-end">${moneyEUR(e.amount)}</td>
+      <td class="text-center">${e.ivaRate}%</td>
+      <td class="text-end fw-bold">${moneyEUR(e.totalAmount || e.amount)}</td>
+      <td class="text-center">
+        <button class="btn btn-sm btn-light border me-1" onclick="window.viewExpense('${e.id}')"><i class="fas fa-eye text-primary"></i></button>
+        <button class="btn btn-sm btn-light border" onclick="deleteExpenseHandler('${e.id}')"><i class="fas fa-trash text-danger"></i></button>
+      </td>`;
     tbody.appendChild(tr);
-  }
-
-  var delBtns = tbody.querySelectorAll("[data-del]");
-  for (var j = 0; j < delBtns.length; j++) {
-    delBtns[j].addEventListener("click", function() {
-      var id = this.getAttribute("data-del");
-      if (confirm('Eliminar este gasto?')) {
-        deleteUserExpense(id);
-      }
-    });
-  }
-
-  var viewBtns = tbody.querySelectorAll("[data-view]");
-  for (var k = 0; k < viewBtns.length; k++) {
-    viewBtns[k].addEventListener("click", function() {
-      var id = this.getAttribute("data-view");
-      viewExpense(id);
-    });
-  }
+  });
 }
 
-window.viewExpense = function(id) {
-  var list = getUserExpenses();
-  var expense = list.find(function(e) { return e.id === id; });
-  if (!expense) return;
+function renderRecentInvoices(invoices) {
+  const tbody = $("recentInvoicesTBody");
+  if (!tbody) return;
+  const recent = [...invoices].sort((a, b) => new Date(b.invoiceDate) - new Date(a.invoiceDate)).slice(0, 5);
+  tbody.innerHTML = "";
+  recent.forEach(inv => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="px-4 fw-semibold" style="color:#5B3DF5;">${inv.invoiceNumber}</td>
+      <td>${inv.invoiceDate}</td>
+      <td>${inv.customer}</td>
+      <td class="text-end">${moneyEUR(inv.amount)}</td>
+      <td class="text-end fw-bold">${moneyEUR(inv.totalAmount)}</td>
+      <td class="text-center">
+        <button class="btn btn-sm btn-light border">Ver</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
 
-  var content = document.getElementById('viewExpenseContent');
-  if (content) {
-    content.innerHTML = '<div class="row mb-3">' +
-      '<div class="col-md-6"><strong>Fecha:</strong> ' + (expense.date || '-') + '</div>' +
-      '<div class="col-md-6"><strong>Categoria:</strong> ' + (expense.category || '-') + '</div>' +
-      '</div>' +
-      '<div class="row mb-3">' +
-      '<div class="col-md-6"><strong>Base Imponible:</strong> <span class="fs-5 fw-bold">' + moneyEUR(expense.amount) + '</span></div>' +
-      '<div class="col-md-6"><strong>IVA (' + (expense.ivaRate || 0) + '%):</strong> ' + moneyEUR(expense.ivaAmount || 0) + '</div>' +
-      '</div>' +
-      '<div class="row mb-3">' +
-      '<div class="col-md-6"><strong>Total:</strong> <span class="fs-4 fw-bold text-success">' + moneyEUR(expense.totalAmount || expense.amount) + '</span></div>' +
-      '<div class="col-md-6"><strong>Metodo de pago:</strong> ' + (expense.paymentMethod || '-') + '</div>' +
-      '</div>' +
-      (expense.supplierName ? '<div class="mb-3"><strong>Proveedor:</strong> ' + expense.supplierName + '</div>' : '') +
-      (expense.supplierNif ? '<div class="mb-3"><strong>NIF:</strong> ' + expense.supplierNif + '</div>' : '') +
-      (expense.notes ? '<div class="mb-3"><strong>Notas:</strong> ' + expense.notes + '</div>' : '') +
-      '<div class="text-muted mt-3 text-end"><small>Creado: ' + new Date(expense.createdAt || '').toLocaleString() + '</small></div>';
-  }
-
-  if (window.viewExpenseModal) {
-    window.viewExpenseModal.show();
-  }
-};
-
-function saveExpense() {
-  var form = $("formNewExpense");
-  if (!form) {
-    console.error('Form not found');
+// ========== ACTIONS ==========
+window.saveExpense = function() {
+  const date = $("expenseDate").value;
+  const amount = parseFloat($("expenseAmount").value) || 0;
+  const category = $("expenseCategory").value;
+  const ivaRate = parseFloat($("expenseIvaRate").value) || 0;
+  
+  if (!date || amount <= 0) {
+    alert("Completa fecha e importe.");
     return;
   }
 
-  // Get values using direct ID access for reliability
-  var dateInput = document.getElementById('expenseDate') || form.querySelector('input[name="date"]');
-  var categoryInput = document.getElementById('expenseCategory') || form.querySelector('input[name="category"]');
-  var amountInput = document.getElementById('expenseAmount') || form.querySelector('input[name="amount"]');
-  var ivaRateInput = document.getElementById('expenseIvaRate') || form.querySelector('select[name="ivaRate"]') || form.querySelector('input[name="ivaRate"]');
-  var notesInput = document.getElementById('expenseNotes') || form.querySelector('input[name="notes"]');
-  var supplierNameInput = document.getElementById('expenseSupplierName') || form.querySelector('input[name="supplierName"]');
-  var supplierNifInput = document.getElementById('expenseSupplierNif') || form.querySelector('input[name="supplierNif"]');
+  const ivaAmount = amount * (ivaRate / 100);
+  const totalAmount = amount + ivaAmount;
 
-  var date = dateInput ? dateInput.value : '';
-  var category = categoryInput ? categoryInput.value : '';
-  var amount = amountInput ? amountInput.value : '';
-  var ivaRate = ivaRateInput ? ivaRateInput.value : '21';
-  var notes = notesInput ? notesInput.value : '';
-  var supplierName = supplierNameInput ? supplierNameInput.value : '';
-  var supplierNif = supplierNifInput ? supplierNifInput.value : '';
-
-  console.log('Saving expense - date:', date, 'category:', category, 'amount:', amount);
-
-  if (!date || !category || !amount) {
-    alert("Completa: fecha, categoría e importe.");
-    console.log('Validation failed - date:', date, 'category:', category, 'amount:', amount);
-    return;
-  }
-
-  // Calcular IVA aqui para passar os valores corretos
-  var baseImponible = Number(amount || 0);
-  var ivaRateNum = Number(ivaRate || 21);
-  var ivaAmount = baseImponible * (ivaRateNum / 100);
-  var totalAmount = baseImponible + ivaAmount;
-
-  saveUserExpense({ 
-    date: date, 
-    category: category, 
-    amount: baseImponible, 
-    ivaRate: ivaRateNum, 
+  saveUserExpense({
+    date: date,
+    amount: amount,
+    category: category,
+    ivaRate: ivaRate,
     ivaAmount: ivaAmount,
     totalAmount: totalAmount,
-    notes: notes, 
-    paymentMethod: '',
-    supplierName: supplierName,
-    supplierNif: supplierNif
+    supplierName: $("expenseSupplierName").value,
+    notes: $("expenseNotes").value,
+    receiptNumber: $("expenseReceipt") ? $("expenseReceipt").value : '',
+    paymentMethod: $("expensePaymentMethod") ? $("expensePaymentMethod").value : 'Tarjeta',
+    state: 'Pagado'
+  }).then(() => {
+    const modalEl = document.getElementById('modalNewExpense');
+    bootstrap.Modal.getInstance(modalEl).hide();
   });
+};
 
-  // Hide modal - usar a instância do modal se disponível
-  var modalEl = document.getElementById('modalNewExpense');
-  if (modalEl) {
-    var modal = bootstrap.Modal.getInstance(modalEl);
-    if (modal) {
-      modal.hide();
-    } else {
-      // Se não há instância, criar e esconder
-      var bsModal = new bootstrap.Modal(modalEl);
-      bsModal.hide();
-    }
-  }
+window.deleteExpenseHandler = function(id) {
+  if (confirm('¿Eliminar este gasto?')) deleteUserExpense(id);
+};
 
-  form.reset();
-  
-  // NÃO fazer re-render aqui - o saveUserExpense já faz isso
-  // Isso evita duplicação quando o modal esconde e o utilizador clica em outro lugar
-}
-
-function openNewExpenseModal() {
-  var dateInput = document.querySelector('#formNewExpense input[name="date"]');
-  if (dateInput && !dateInput.value) {
-    dateInput.value = new Date().toISOString().split('T')[0];
-  }
-  
-  var modalEl = document.getElementById('modalNewExpense');
-  if (modalEl) {
-    var modal = bootstrap.Modal.getInstance(modalEl);
-    if (!modal) {
-      modal = new bootstrap.Modal(modalEl);
-    }
-    modal.show();
-  }
-}
-
-// ========== INICIALIZAR ==========
-document.addEventListener("DOMContentLoaded", function() {
-  markActivePage();
-  
-  function checkAndInit() {
-    if (window.getExpensesSync && window.FirebaseSync) {
-      console.log('store.js disponível, inicializando expense page...');
-      
-      // Primeiro sincronizar dados do Firebase
-      if (window.FirebaseSync.syncAllToLocalStorage) {
-        console.log('Sincronizando dados do Firebase...');
-        window.FirebaseSync.syncAllToLocalStorage().then(function() {
-          console.log('Sincronização concluída!');
-          initPage();
-        }).catch(function(err) {
-          console.warn('Erro na sincronização:', err);
-          initPage();
-        });
-      } else {
-        initPage();
-      }
-    } else {
-      console.log('Aguardando store.js...');
-      setTimeout(checkAndInit, 500);
-    }
-  }
-  
-  // Iniciar verificação
-  setTimeout(checkAndInit, 500);
-  
-function initPage() {
-    console.log('Inicializando expense page...');
-    
-    // Os listeners dos botões estão no expense.html para evitar duplicação
-    // - newExpenseBtn
-    // - saveExpenseBtn
-    // - refreshBtn
-    // - btnImport / confirmImportBtn
-    // - btnExport / confirmExportBtn
-    
-    // Apenas renderizar os dados iniciais
-    renderExpenses();
-    renderChart();
-    renderSummaryCards();
-    
-    // ========== REALTIME SYNC - Recarregar quando houver alterações ==========
-    window.addEventListener('dataUpdated-expenses', function() {
-      console.log('📥 Dados de gastos atualizados do Firebase, recarregando...');
-      renderExpenses();
-      renderChart();
-      renderSummaryCards();
-    });
-  }
-});
-
-// ========== EXPORTAR GASTOS ==========
+// ========== EXPORT FUNCTIONS (CONSERVATE) ==========
 function exportExpenses(format) {
   var list = getUserExpenses();
-  if (!list.length) {
-    alert('No hay gastos para exportar.');
-    return;
-  }
-  
-  if (format === 'pdf') {
-    exportExpensesToPDF(list);
-  } else if (format === 'csv') {
-    exportExpensesToCSV(list);
-  } else if (format === 'excel') {
-    exportExpensesToExcel(list);
-  }
-}
-
-function exportExpensesFallback(format) {
-  exportExpenses(format);
-}
-
-function exportExpensesToPDF(list) {
-  if (typeof window.jspdf === 'undefined') {
-    alert('Biblioteca PDF no disponible.');
-    return;
-  }
-  
-  var doc = new window.jspdf.jsPDF();
-  
-  doc.setFillColor(42, 77, 156);
-  doc.rect(0, 0, 210, 35, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(20);
-  doc.text('UPSEN Accounting', 105, 18, {align: 'center'});
-  doc.setFontSize(12);
-  doc.text('Gastos', 105, 28, {align: 'center'});
-  
-  doc.setTextColor(100);
-  doc.setFontSize(10);
-  doc.text('Generado: ' + new Date().toLocaleDateString('es-ES'), 195, 45, {align: 'right'});
-  doc.line(15, 40, 195, 40);
-  
-  var y = 55;
-  doc.setTextColor(0);
-  doc.setFontSize(12);
-  doc.text('Fecha', 15, y);
-  doc.text('Categoria', 45, y);
-  doc.text('Base', 110, y);
-  doc.text('IVA', 140, y);
-  doc.text('Total', 170, y);
-  
-  y += 8;
-  doc.setFontSize(10);
-  doc.line(15, y - 3, 195, y - 3);
-  
-  for (var i = 0; i < list.length && y < 270; i++) {
-    var exp = list[i];
-    doc.text(exp.date || '-', 15, y);
-    doc.text((exp.category || '-').substring(0, 20), 45, y);
-    doc.text(moneyEUR(exp.amount || 0), 110, y);
-    doc.text(moneyEUR(exp.ivaAmount || 0), 140, y);
-    doc.text(moneyEUR(exp.totalAmount || exp.amount || 0), 170, y);
-    y += 8;
-  }
-  
-  var total = 0;
-  var totalIVA = 0;
-  for (var j = 0; j < list.length; j++) {
-    total += Number(list[j].amount || 0);
-    totalIVA += Number(list[j].ivaAmount || 0);
-  }
-  y += 5;
-  doc.setFontSize(12);
-  doc.text('Total:', 100, y);
-  doc.setFontSize(14);
-  doc.setTextColor(42, 77, 156);
-  doc.text(moneyEUR(total), 140, y);
-  doc.text(moneyEUR(totalIVA), 170, y);
-  
-  doc.save('gastos.pdf');
-  alert('PDF descargado correctamente!');
+  if (!list.length) return alert('No hay datos.');
+  if (format === 'csv') exportExpensesToCSV(list);
+  if (format === 'pdf') exportExpensesToPDF(list);
 }
 
 function exportExpensesToCSV(list) {
-  var csv = 'Fecha,Categoria,Base Imponible,IVA Rate,IVA Amount,Total,Notas,Proveedor,NIF\n';
-  
-  for (var i = 0; i < list.length; i++) {
-    var exp = list[i];
-    csv += '"' + (exp.date || '') + '",';
-    csv += '"' + (exp.category || '') + '",';
-    csv += '"' + (exp.amount || 0) + '",';
-    csv += '"' + (exp.ivaRate || 0) + '",';
-    csv += '"' + (exp.ivaAmount || 0) + '",';
-    csv += '"' + (exp.totalAmount || exp.amount || 0) + '",';
-    csv += '"' + (exp.notes || '') + '",';
-    csv += '"' + (exp.supplierName || '') + '",';
-    csv += '"' + (exp.supplierNif || '') + '"\n';
-  }
-  
+  var csv = 'Fecha,Categoria,Base,IVA Rate,IVA Amount,Total,Proveedor\n';
+  list.forEach(exp => {
+    csv += `"${exp.date}","${exp.category}",${exp.amount},${exp.ivaRate},${exp.ivaAmount},${exp.totalAmount},"${exp.supplierName}"\n`;
+  });
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   var link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.download = 'gastos.csv';
   link.click();
-  alert('CSV descargado correctamente!');
 }
 
-function exportExpensesToExcel(list) {
-  var html = '<table border="1">';
-  html += '<tr><th>Fecha</th><th>Categoria</th><th>Base Imponible</th><th>IVA %</th><th>IVA</th><th>Total</th><th>Notas</th><th>Proveedor</th><th>NIF</th></tr>';
-  
-  for (var i = 0; i < list.length; i++) {
-    var exp = list[i];
-    html += '<tr>';
-    html += '<td>' + (exp.date || '') + '</td>';
-    html += '<td>' + (exp.category || '') + '</td>';
-    html += '<td>' + (exp.amount || 0) + '</td>';
-    html += '<td>' + (exp.ivaRate || 0) + '</td>';
-    html += '<td>' + (exp.ivaAmount || 0) + '</td>';
-    html += '<td>' + (exp.totalAmount || exp.amount || 0) + '</td>';
-    html += '<td>' + (exp.notes || '') + '</td>';
-    html += '<td>' + (exp.supplierName || '') + '</td>';
-    html += '<td>' + (exp.supplierNif || '') + '</td>';
-    html += '</tr>';
+function exportExpensesToPDF(list) {
+  if (typeof window.jspdf === 'undefined') return alert('jsPDF no disponible.');
+  var doc = new window.jspdf.jsPDF();
+  doc.text("Reporte de Gastos", 14, 20);
+  let y = 30;
+  list.forEach(exp => {
+    doc.text(`${exp.date} - ${exp.category} - ${moneyEUR(exp.totalAmount)}`, 14, y);
+    y += 10;
+  });
+  doc.save('gastos.pdf');
+}
+
+// ========== INITIALIZATION ==========
+document.addEventListener("DOMContentLoaded", function() {
+  markActivePage();
+  function checkAndInit() {
+    if (window.getExpensesSync && window.FirebaseSync) {
+      window.FirebaseSync.syncAllToLocalStorage().then(() => {
+        renderExpenses();
+        renderSummaryCards();
+        if (typeof renderChart === 'function') renderChart();
+      });
+    } else {
+      setTimeout(checkAndInit, 500);
+    }
   }
-  html += '</table>';
-  
-  var excelHtml = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
-  excelHtml += '<head><meta charset="UTF-8"></head><body>' + html + '</body></html>';
-  
-  var blob = new Blob([excelHtml], { type: 'application/vnd.ms-excel' });
-  var link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'gastos.xls';
-  link.click();
-  alert('Excel descargado correctamente!');
-}
+  checkAndInit();
+  window.addEventListener('dataUpdated-expenses', () => {
+    renderExpenses();
+    renderSummaryCards();
+  });
+});
 
-function downloadExpenseTemplate() {
-  var template = 'Fecha,Categoria,Base Imponible,IVA Rate,IVA Amount,Notas,Proveedor,NIF\n';
-  template += '2024-01-15,Suministros,150.00,21,31.50,Luz enero,Endesa,12345678A\n';
-  template += '2024-01-20,Alquiler,500.00,21,105.00,Oficina,Inmobiliaria XYZ,87654321B\n';
-  template += '2024-01-25,Material Oficina,75.00,21,15.75,Papelerías,Distribuciones,11223344C\n';
+// ========== CHART ==========
+function renderChart() {
+  const ctx = document.getElementById('expenseChartCanvas');
+  if (!ctx) return;
+  const expenses = getUserExpenses();
+  const cats = {};
+  expenses.forEach(e => cats[e.category] = (cats[e.category] || 0) + Number(e.amount));
   
-  var blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
-  var link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'template_gastos.csv';
-  link.click();
-  alert('Template descargado! Use este formato para importar dados.');
+  if (window.myChart) window.myChart.destroy();
+  window.myChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(cats),
+      datasets: [{ data: Object.values(cats), backgroundColor: ['#5B3DF5', '#7A5CFF', '#B26A00', '#15966D', '#B42318'] }]
+    },
+    options: { maintainAspectRatio: false }
+  });
 }
-
