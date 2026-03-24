@@ -158,31 +158,73 @@
     .billing-card p { font-size: 0.9em; color: var(--muted); margin-bottom: 10px; }
     .billing-warning { color: var(--danger); font-weight: 600; }
 
-    /* KPI METRIC CARDS */
+    /* KPI METRIC CARDS - SIMPLIFIED RECTANGULAR STYLE */
     .kpi-card {
-      border-radius: 12px; padding: 20px; display: flex; flex-direction: column;
-      height: 100%; border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      border: none;
       transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
       cursor: pointer;
     }
-    .kpi-card:hover { transform: translateY(-6px); box-shadow: 0 10px 25px rgba(0,0,0,0.12); }
-    body.dark .kpi-card:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
+    .kpi-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+    body.dark .kpi-card:hover { box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
 
-    .kpi-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
-    .kpi-icon {
-      width: 40px; height: 40px; border-radius: 8px;
-      display: flex; align-items: center; justify-content: center; font-size: 1.2em;
+    .kpi-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      opacity: 0.9;
     }
 
-    .kpi-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; opacity: 0.9; }
-    .kpi-value { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
-    .kpi-subtitle { font-size: 13px; opacity: 0.8; }
+    .kpi-main {
+      margin-bottom: 16px;
+    }
 
-    .kpi-stats { display: flex; justify-content: space-between; margin-top: auto; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.05); }
-    body.dark .kpi-stats { border-top: 1px solid rgba(255,255,255,0.05); }
-    .kpi-stat { text-align: left; }
-    .kpi-stat-value { font-size: 1.1em; font-weight: 600; }
-    .kpi-stat-label { font-size: 0.75em; text-transform: uppercase; opacity: 0.8; }
+    .kpi-value {
+      font-size: 26px;
+      font-weight: 700;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      opacity: 0.8;
+      margin-left: 4px;
+    }
+
+    .kpi-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px solid rgba(0,0,0,0.08);
+    }
+    body.dark .kpi-stats { border-top: 1px solid rgba(255,255,255,0.1); }
+
+    .kpi-stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .kpi-stat-label {
+      opacity: 0.8;
+      font-weight: 500;
+    }
+
+    .kpi-stat-value {
+      font-weight: 600;
+    }
 
     /* TABELA FACTURAS */
     .table { color: var(--text); border-color: var(--border); margin-bottom: 0; }
@@ -309,75 +351,87 @@
         </div>
       </div>
 
-      <!-- KPI METRICS -->
+      <!-- KPI METRICS - SIMPLIFIED RECTANGULAR STYLE -->
       <div class="row mb-4">
-        <!-- Metric 1: Recibidas -->
-        <div class="col-md-4 mb-3">
+        <!-- Metric 1: Ingresos (Green) -->
+        <div class="col-md-3 mb-3">
           <div class="kpi-card" style="background: var(--metric1-bg); color: var(--metric1-text);">
-            <div class="kpi-header">
-              <div>
-                <div class="kpi-title">Facturas Recibidas</div>
-                <h2 class="kpi-value" id="kpi-received-total">€0,00</h2>
-                <div class="kpi-subtitle">Este mes</div>
-              </div>
-              <div class="kpi-icon" style="background: rgba(255,255,255,0.2);"><i class="fas fa-file-import"></i></div>
+            <div class="kpi-title">Ingresos</div>
+            <div class="kpi-main">
+              <span class="kpi-value" id="kpi-income-total">0,00 €</span>
+              <span class="kpi-label">BASE</span>
             </div>
             <div class="kpi-stats">
-              <div class="kpi-stat">
-                <div class="kpi-stat-value" id="kpi-received-count">0</div>
-                <div class="kpi-stat-label">Facturas</div>
+              <div class="kpi-stat-row">
+                <span class="kpi-stat-label">IVA:</span>
+                <span class="kpi-stat-value" id="kpi-income-iva">0,00 €</span>
               </div>
-              <div class="kpi-stat text-end">
-                <div class="kpi-stat-value" id="kpi-received-pending">0</div>
-                <div class="kpi-stat-label">Pendientes</div>
+              <div class="kpi-stat-row">
+                <span class="kpi-stat-label">NUM ENTRADAS:</span>
+                <span class="kpi-stat-value" id="kpi-income-count">0</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Metric 2: Emitidas -->
-        <div class="col-md-4 mb-3">
-          <div class="kpi-card" style="background: var(--metric3-bg); color: var(--metric3-text);">
-            <div class="kpi-header">
-              <div>
-                <div class="kpi-title">Facturas Emitidas</div>
-                <h2 class="kpi-value" id="kpi-issued-total">€0,00</h2>
-                <div class="kpi-subtitle">Total este mes</div>
-              </div>
-              <div class="kpi-icon" style="background: rgba(255,255,255,0.2);"><i class="fas fa-file-export"></i></div>
-            </div>
-            <div class="kpi-stats">
-              <div class="kpi-stat">
-                <div class="kpi-stat-value" id="kpi-issued-count">0</div>
-                <div class="kpi-stat-label">Facturas</div>
-              </div>
-              <div class="kpi-stat text-end">
-                <div class="kpi-stat-value" id="kpi-issued-pending">0</div>
-                <div class="kpi-stat-label">Pendientes</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Metric 3: Gastos -->
-        <div class="col-md-4 mb-3">
+        <!-- Metric 2: Gastos (Orange) -->
+        <div class="col-md-3 mb-3">
           <div class="kpi-card" style="background: var(--metric2-bg); color: var(--metric2-text);">
-            <div class="kpi-header">
-              <div>
-                <div class="kpi-title">Gastos</div>
-                <h2 class="kpi-value" id="kpi-expenses-total">€0,00</h2>
-                <div class="kpi-subtitle">Total este mes</div>
-              </div>
-              <div class="kpi-icon" style="background: rgba(255,255,255,0.2);"><i class="fas fa-shopping-cart"></i></div>
+            <div class="kpi-title">Gastos</div>
+            <div class="kpi-main">
+              <span class="kpi-value" id="kpi-expenses-total">0,00 €</span>
+              <span class="kpi-label">BASE IMPUTABLE</span>
             </div>
             <div class="kpi-stats">
-              <div class="kpi-stat">
-                <div class="kpi-stat-value" id="kpi-expenses-count">0</div>
-                <div class="kpi-stat-label">Gastos</div>
+              <div class="kpi-stat-row">
+                <span class="kpi-stat-label">IVA IMPUTABLE:</span>
+                <span class="kpi-stat-value" id="kpi-expenses-iva">0,00 €</span>
               </div>
-              <div class="kpi-stat text-end">
-                <div class="kpi-stat-value" id="kpi-expenses-category">-</div>
-                <div class="kpi-stat-label">Mayor cat.</div>
+              <div class="kpi-stat-row">
+                <span class="kpi-stat-label">NUM ENTRADAS:</span>
+                <span class="kpi-stat-value" id="kpi-expenses-count">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metric 3: Resultado (Blue) -->
+        <div class="col-md-3 mb-3">
+          <div class="kpi-card" style="background: var(--metric3-bg); color: var(--metric3-text);">
+            <div class="kpi-title">Resultado</div>
+            <div class="kpi-main">
+              <span class="kpi-value" id="kpi-result-total">0,00 €</span>
+              <span class="kpi-label">BASE IMPUTABLE</span>
+            </div>
+            <div class="kpi-stats">
+              <div class="kpi-stat-row">
+                <span class="kpi-stat-label">IVA IMPUTABLE:</span>
+                <span class="kpi-stat-value" id="kpi-result-iva">0,00 €</span>
+              </div>
+              <div class="kpi-stat-row">
+                <span class="kpi-stat-label">BALANCE:</span>
+                <span class="kpi-stat-value" id="kpi-result-balance">Neutro</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metric 4: Presupuestos (Purple) - NEW -->
+        <div class="col-md-3 mb-3">
+          <div class="kpi-card" style="background: var(--metric4-bg); color: var(--metric4-text);">
+            <div class="kpi-title">Presupuestos</div>
+            <div class="kpi-main">
+              <span class="kpi-value" id="kpi-budget-total">0,00 €</span>
+              <span class="kpi-label">TOTAL</span>
+            </div>
+            <div class="kpi-stats">
+              <div class="kpi-stat-row">
+                <span class="kpi-stat-label">ACEPTADOS:</span>
+                <span class="kpi-stat-value" id="kpi-budget-accepted">0</span>
+              </div>
+              <div class="kpi-stat-row">
+                <span class="kpi-stat-label">PENDIENTES:</span>
+                <span class="kpi-stat-value" id="kpi-budget-pending">0</span>
               </div>
             </div>
           </div>
