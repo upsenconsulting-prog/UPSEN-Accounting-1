@@ -1,0 +1,11 @@
+.bg-lightest {
+  background: #F8F9FC !important;
+}
+
+.text-primary {
+  color: #5B3DF5 !important;
+}
+
+table input.form-control {
+  min-width: 80px;
+}
