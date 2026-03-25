@@ -1,4 +1,3 @@
-scoate comentariile in romana te rog si mentine codul exact la fel ca si cel pe care til dau acum, modifica doar ce trebuie ca task 1 sa fie ok:
 // public/shared/store.js
 // Store com Firebase como fonte primária e localStorage como backup
 // Requer: firebase-sync.js deve ser carregado antes deste arquivo
@@ -18,7 +17,7 @@ function uid() {
   // crypto.randomUUID() é o ideal, mas nem todos os browsers antigos suportam
   if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
   return "id-" + Date.now() + "-" + Math.random().toString(16).slice(2);
-}+
+}
 
 // ===== Keys =====
 const KEYS = {
@@ -72,13 +71,18 @@ function getUserDataKey(baseKey) {
 function read(key) {
   // Primeiro tentar chave do utilizador atual
   var userKey = getUserDataKey(key);
-  var data = localStorage.getItem(userKey);
-  if (data) {
-    try {
-      return JSON.parse(data);
-    } catch (e) {
-      return [];
+  try {
+    var data = localStorage.getItem(userKey);
+    if (data) {
+      try {
+        return JSON.parse(data);
+      } catch (e) {
+        return [];
+      }
     }
+  } catch (e) {
+    console.warn('[Store] Acesso ao localStorage bloqueado ou falhou:', e);
+    return [];
   }
   
   // Não fazer fallback para chaves globais - cada utilizador tem dados separados
@@ -88,7 +92,11 @@ function read(key) {
 // Write to localStorage - usa APENAS chave única por utilizador
 function write(key, data) {
   var userKey = getUserDataKey(key);
-  localStorage.setItem(userKey, JSON.stringify(data));
+  try {
+    localStorage.setItem(userKey, JSON.stringify(data));
+  } catch (e) {
+    console.warn('[Store] Escrita no localStorage bloqueada ou falhou:', e);
+  }
 }
 
 // ===== Firebase Helper =====
@@ -139,39 +147,57 @@ function getInvoicesReceivedSync() {
   return read(KEYS.invoicesReceived);
 }
 
-async function addItemToInvoice(invoiceId, newItem) {
+async function addInvoiceReceived(invoice) {
+  // Obter lista atual
   let list = await getInvoicesReceived();
-  const index = list.findIndex(inv => inv.id === invoiceId);
-  if (index === -1) return null;
-
-  if (!Array.isArray(list[index].items)) {
-    list[index].items = [];
+  if (!list || !Array.isArray(list)) {
+    list = [];
   }
 
-  list[index].items.push({
-    descripcion: newItem.descripcion ?? "",
-    cantidad: Number(newItem.cantidad ?? 0),
-    precioUnitario: Number(newItem.precioUnitario ?? 0),
-    tipoIVA: Number(newItem.tipoIVA ?? 0),
-    subtotalLinea: Number(newItem.subtotalLinea ?? 0)
-  });
+  // Campos Veri*Factu
+  const verifactuFields = {
+    series: invoice.series ?? "R",
+    supplierNif: invoice.supplierNif ?? "",
+    verifactuHash: invoice.verifactuHash ?? "",
+    previousHash: invoice.previousHash ?? "",
+    verifactuTimestamp: invoice.verifactuTimestamp ?? "",
+    verifactuRegistered: invoice.verifactuRegistered ?? false,
+    verifactuStatus: invoice.verifactuStatus ?? "draft"
+  };
 
-  list[index].totalAmount = list[index].items.reduce((sum, i) => sum + (i.subtotalLinea ?? 0), 0);
-
+const item = {
+    id: uid(),
+    invoiceNumber: invoice.invoiceNumber ?? "",
+    invoiceDate: invoice.invoiceDate ?? "",
+    supplier: invoice.supplier ?? "",
+    supplierNif: invoice.supplierNif ?? "",
+    amount: Number(invoice.amount ?? 0),
+    ivaRate: Number(invoice.ivaRate ?? 0),
+    ivaAmount: Number(invoice.ivaAmount ?? 0),
+    totalAmount: Number(invoice.totalAmount ?? 0),
+    state: invoice.state ?? "Pendiente",
+    description: invoice.description ?? "",
+    paymentMethod: invoice.paymentMethod ?? null,  // efectivo|tarjeta|transferencia|recibo|cheque|paypal  
+    paymentDate: invoice.paymentDate ?? null,     // YYYY-MM-DD
+    createdAt: new Date().toISOString(),
+    ...verifactuFields
+  };
+  
+  list.push(item);
+  
+  // Salvar no localStorage
   write(KEYS.invoicesReceived, list);
-
+  
+  // Salvar no Firebase se disponível
   if (isFirebaseReady()) {
     try {
-      await window.FirebaseSync.updateInFirebaseAndLocalStorage('invoicesReceived', invoiceId, {
-        items: list[index].items,
-        totalAmount: list[index].totalAmount
-      });
+      await window.FirebaseSync.saveToFirebaseAndLocalStorage('invoicesReceived', item);
     } catch (e) {
-      console.warn('[Store] Erro ao atualizar invoice received no Firebase:', e);
+      console.warn('[Store] Erro ao salvar invoice received no Firebase:', e);
     }
   }
-
-  return list[index];
+  
+  return item;
 }
 
 async function deleteInvoiceReceived(id) {
@@ -677,7 +703,11 @@ function setupRealtimeListeners() {
       var userId = getCurrentUserId();
       var baseKey = 'upsen_' + collection.toLowerCase();
       var userKey = userId ? baseKey + '_' + userId : baseKey;
-      localStorage.setItem(userKey, JSON.stringify(e.detail.data));
+      try {
+        localStorage.setItem(userKey, JSON.stringify(e.detail.data));
+      } catch(err) {
+        console.warn('Erro ao salvar sync no localStorage:', err);
+      }
       
       // Disparar evento específico para a página renderizar novamente
       window.dispatchEvent(new CustomEvent('dataUpdated-' + collection));
