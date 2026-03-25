@@ -316,55 +316,28 @@
 </head>
 
 <body>
-    <div class="d-flex">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <i class="fas fa-chart-line"></i>FactuFácil
-            </div>
-            <ul class="sidebar-menu">
-                <li>
-                    <a href="../frontPage/frontPage.html" class="sidebar-link">
-                        <i class="fas fa-tachometer-alt"></i>Panel de control
-                    </a>
-                </li>
-                <li class="active">
-                    <a href="../expense/expense.html" class="sidebar-link">
-                        <i class="fas fa-file-invoice-dollar"></i>Gastos
-                    </a>
-                </li>
-                <li>
-                    <a href="../Invoice-issued/invoice-issued.html" class="sidebar-link">
-                        <i class="fas fa-file-export"></i>Facturas emitidas
-                    </a>
-                </li>
-                <li>
-                    <a href="../Invoice_received/Invoice_received.html" class="sidebar-link">
-                        <i class="fas fa-file-import"></i>Facturas recibidas
-                    </a>
-                </li>
-                <li>
-                    <a href="../budgetPage/budget.html" class="sidebar-link">
-                        <i class="fas fa-calculator"></i>Presupuestos
-                    </a>
-                </li>
-                <li>
-                    <a href="../profile/profile.html" class="sidebar-link">
-                        <i class="fas fa-user"></i>Perfil
-                    </a>
-                </li>
-                <li>
-                    <a href="../profile/settings.html" class="sidebar-link">
-                        <i class="fas fa-cog"></i>Configuración
-                    </a>
-                </li>
-                <li style="border-top: 1px solid var(--border); margin-top: 10px; padding-top: 10px;">
-                    <a href="javascript:void(0)" class="sidebar-link" onclick="confirmLogout()" style="color: var(--danger);">
-                        <i class="fas fa-sign-out-alt"></i>Cerrar sesión
-                    </a>
-                </li>
-            </ul>
-        </aside>
+    <div class="container-fluid p-0">
+  <div class="row m-0">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <i class="fas fa-chart-line"></i> FactuFácil
+      </div>
+      <ul class="sidebar-menu">
+        <li><a href="frontPage.html" class="sidebar-link"><i class="fas fa-tachometer-alt"></i> Panel de control</a></li>
+        <li class="active"><a href="../expense/expense.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar"></i> Gastos</a></li>
+        <li><a href="../Invoice-issued/invoice-issued.html" class="sidebar-link"><i class="fas fa-file-export"></i> Facturas emitidas</a></li>
+        <li><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link"><i class="fas fa-file-import"></i> Facturas recibidas</a></li>
+        <li><a href="../budgetPage/budget.html" class="sidebar-link"><i class="fas fa-calculator"></i> Presupuestos</a></li>
+        <li><a href="../profile/profile.html" class="sidebar-link"><i class="fas fa-user"></i> Perfil</a></li>
+        <li><a href="../profile/settings.html" class="sidebar-link"><i class="fas fa-cog"></i> Configuración</a></li>
+        <li style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 10px;">
+          <a href="javascript:void(0)" class="sidebar-link" onclick="confirmLogout()" style="color: var(--danger);">
+            <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+          </a>
+        </li>
+      </ul>
+    </aside>
 
         <!-- Main Content -->
         <main class="main-content">
