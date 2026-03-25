@@ -147,144 +147,56 @@
 
         .page-title i { color: var(--metric3-text); }
 
-        /* BUTTONS */
-        .btn { border-radius: 8px; padding: 8px 16px; font-weight: 500; font-size: 0.9rem; transition: all 0.2s; border: none; }
+       /* BUTTONS */
+.btn { border-radius: 6px; padding: 8px 16px; font-weight: 500; font-size: 0.9rem; transition: all 0.2s; border: 1px solid var(--btn-sec-border); }
+.btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); border-color: var(--btn-primary-bg); }
+.btn-primary:hover { opacity: 0.9; color: var(--btn-primary-text); transform: translateY(-1px); }
+.btn-secondary { background: var(--btn-sec-bg); color: var(--btn-sec-text); border: 1px solid var(--btn-sec-border); }
+.btn-secondary:hover { background: var(--border); color: var(--text); transform: translateY(-1px); }
+.btn-success { background: #E9F5F2; color: #2D7D6A; border: 1px solid #2D7D6A; }
+.btn-success:hover { background: #2D7D6A; color: #ffffff; transform: translateY(-1px); }
+.btn-info { background: var(--metric3-bg); color: var(--metric3-text); border: 1px solid var(--metric3-text); }
+.btn-info:hover { background: var(--metric3-text); color: #ffffff; transform: translateY(-1px); }
+.btn-danger { background: var(--danger); color: #ffffff; border-color: var(--danger); }
+.btn-danger:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-outline-secondary { background: transparent; border: 1px solid var(--btn-sec-border); color: var(--btn-sec-text); }
+.btn-outline-secondary:hover { background: var(--border); color: var(--text); }
+.action-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
 
-        .btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); }
-        .btn-primary:hover { opacity: 0.9; color: var(--btn-primary-text); transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.15); }
+/* SUMMARY CARDS */
+.summary-card { background: #FFF2E5; border-radius: 12px; padding: 24px; border: 1px; height: 100%; position: relative; transition: transform 0.2s ease; }
+.summary-card:hover { transform: translateY(-2px); }
+.summary-card.orange { background: #FFF2E5; }
+.summary-card.red { background: #FEEAEA; }
+.summary-card.blue { background: #E8F4FD; }
+.summary-card.purple { background: #F1EBFB; }
+.summary-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; position: absolute; top: 16px; right: 16px; font-size: 1em; }
+.summary-icon.blue { background: #CCE4F7; color: #0D47A1; }
+.summary-icon.purple { background: #c29de4; color: #611f87; }
+.summary-icon.orange { background: #FFDCC5; color: #A85315; }
+.summary-icon.red { background: #F9D5D5; color: #C62828; }
+.summary-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.summary-card.orange h3, .summary-card.orange .summary-value, .summary-card.orange .summary-sublabel { color: #A85315; }
+.summary-card.red h3, .summary-card.red .summary-value, .summary-card.red .summary-sublabel { color: #C62828; }
+.summary-card.blue h3, .summary-card.blue .summary-value, .summary-card.blue .summary-sublabel { color: #0D47A1; }
+.summary-card.purple h3, .summary-card.purple .summary-value, .summary-card.purple .summary-sublabel { color: #4527A0; }
+.summary-value { font-size: 28px; font-weight: 700; color: var(--text); margin: 0 0 4px 0; }
+.summary-sublabel { font-size: 12px; font-weight: 400; color: inherit; }
 
-        .btn-secondary { background: var(--btn-sec-bg); color: var(--btn-sec-text); border: 1px solid var(--btn-sec-border); }
-        .btn-secondary:hover { background: var(--border); color: var(--text); transform: translateY(-1px); }
+/* FORMS */
+.form-control, .form-select { border-radius: 6px; padding: 10px 14px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); transition: all 0.2s; }
+.form-control:focus, .form-select:focus { border-color: var(--btn-primary-bg); box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.1); background: var(--card-bg); color: var(--text); }
+.form-label { font-weight: 500; color: var(--text); margin-bottom: 6px; }
 
-        .btn-success { background: var(--metric1-bg); color: var(--metric1-text); border: 1px solid var(--metric1-text); }
-        .btn-success:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.1); }
-
-        .btn-info { background: var(--metric3-bg); color: var(--metric3-text); border: 1px solid var(--metric3-text); }
-        .btn-info:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.1); }
-
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-danger:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.15); }
-
-        .btn-outline-secondary {
-            background: transparent;
-            color: var(--btn-sec-text);
-            border: 1px solid var(--btn-sec-border);
-        }
-        .btn-outline-secondary:hover {
-            background: var(--border);
-            color: var(--text);
-        }
-
-        .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-
-        .dark-toggle-btn {
-            background: var(--btn-sec-bg);
-            border: 1px solid var(--btn-sec-border);
-            color: var(--btn-sec-text);
-            border-radius: 8px;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 1.1em;
-        }
-        .dark-toggle-btn:hover { background: var(--border); color: var(--text); }
-
-        /* MODERN CARDS */
-        .modern-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 25px;
-            border: 1px solid var(--border);
-            transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
-        }
-
-        .modern-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgb(0,0,0,0.08); }
-        body.dark .modern-card:hover { box-shadow: 0 10px 25px rgb(0,0,0,0.3); }
-
-        /* KPI METRIC CARDS */
-        .kpi-card {
-            border-radius: 12px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            border: 1px solid var(--border);
-            transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
-            cursor: pointer;
-        }
-
-        .kpi-card:hover { transform: translateY(-6px); box-shadow: 0 10px 25px rgb(0,0,0,0.12); }
-        body.dark .kpi-card:hover { box-shadow: 0 10px 25px rgb(0,0,0,0.4); }
-
-        .kpi-header { display: flex; justify-content: space-between; align-items: flex-start; }
-
-        .kpi-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2em;
-        }
-
-        .kpi-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; opacity: 0.9; }
-        .kpi-value { font-size: 24px; font-weight: 700; margin-bottom: 4px; margin-top: 8px; }
-        .kpi-subtitle { font-size: 13px; opacity: 0.8; }
-
-        /* FORMS */
-        .form-control, .form-select {
-            border-radius: 8px;
-            padding: 12px 15px;
-            border: 1px solid var(--border);
-            background: var(--card-bg);
-            color: var(--text);
-            transition: all 0.2s;
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: var(--metric3-text);
-            box-shadow: 0 0 0 3px rgb(9, 88, 178, 0.1);
-            background: var(--card-bg);
-            color: var(--text);
-        }
-
-        .form-label { color: var(--text); font-weight: 500; margin-bottom: 8px; }
-
-        /* TABLE */
-        .table { color: var(--text); border-color: var(--border); margin-bottom: 0; }
-        .table th {
-            background: transparent;
-            color: var(--text);
-            font-weight: 600;
-            border-bottom: 2px solid var(--border);
-            padding: 12px 8px;
-            font-size: 0.85rem;
-            white-space: nowrap;
-        }
-        .table td {
-            background: transparent;
-            color: var(--text);
-            border-bottom: 1px solid var(--border);
-            vertical-align: middle;
-            padding: 12px 8px;
-            font-size: 0.9rem;
-            white-space: nowrap;
-        }
-
-        .table tbody tr { transition: all 0.2s ease; }
-        .table tbody tr:hover { transform: translateY(-2px); background: rgb(0,0,0,0.02); box-shadow: 0 4px 10px rgb(0,0,0,0.05); }
-        body.dark .table tbody tr:hover { background: rgb(255,255,255,0.03); box-shadow: 0 4px 10px rgb(0,0,0,0.2); }
-
-        .badge { padding: 6px 12px; border-radius: 8px; font-weight: 500; }
-        .badge-success, .badge-pagada { background: var(--metric1-bg); color: var(--metric1-text); }
-        .badge-warning, .badge-pendiente { background: var(--metric2-bg); color: var(--metric2-text); }
-        .badge-danger, .badge-vencida { background: var(--danger-bg); color: var(--danger-text); }
+/* TABLE STYLES */
+.table { color: var(--text); border-color: var(--border); margin-bottom: 0; }
+.table th { background: transparent; color: var(--text); font-weight: 600; border-bottom: 2px solid var(--border); padding: 12px 15px; }
+.table td { background: transparent; color: var(--text); border-bottom: 1px solid var(--border); vertical-align: middle; padding: 12px 15px; }
+.table tbody tr { transition: all 0.2s ease; }
+.table tbody tr:hover { background: rgba(0,0,0,0.02); }
+table { width: 100%; border-collapse: collapse; }
+th:first-child { border-radius: 8px 0 0 0; }
+th:last-child { border-radius: 0 8px 0 0; }
 
         /* SECTION TITLE */
         .section-title {
@@ -411,64 +323,40 @@
             </div>
 
             <!-- KPI Cards -->
-            <div class="row mb-4">
-                <div class="col-md-3 mb-3">
-                    <div class="kpi-card" style="background: var(--metric2-bg); color: var(--metric2-text);">
-                        <div class="kpi-header">
-                            <div>
-                                <div class="kpi-title">Pendientes</div>
-                                <h2 class="kpi-value" id="pendingTotal">€0,00</h2>
-                                <div class="kpi-subtitle">Por cobrar</div>
-                            </div>
-                            <div class="kpi-icon" style="background: rgb(255,255,255,0.2);">
-                                <i class="fas fa-clock"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="kpi-card" style="background: var(--danger-bg); color: var(--danger-text);">
-                        <div class="kpi-header">
-                            <div>
-                                <div class="kpi-title">Vencidas</div>
-                                <h2 class="kpi-value" id="overdueTotal">€0,00</h2>
-                                <div class="kpi-subtitle">Requieren atención</div>
-                            </div>
-                            <div class="kpi-icon" style="background: rgb(255,255,255,0.2);">
-                                <i class="fas fa-exclamation-triangle"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="kpi-card" style="background: var(--metric3-bg); color: var(--metric3-text);">
-                        <div class="kpi-header">
-                            <div>
-                                <div class="kpi-title">Creadas este mes</div>
-                                <h2 class="kpi-value" id="monthlyCount">0</h2>
-                                <div class="kpi-subtitle">Facturas</div>
-                            </div>
-                            <div class="kpi-icon" style="background: rgb(255,255,255,0.2);">
-                                <i class="fas fa-calendar-check"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="kpi-card" style="background: var(--metric4-bg); color: var(--metric4-text);">
-                        <div class="kpi-header">
-                            <div>
-                                <div class="kpi-title">Promedio</div>
-                                <h2 class="kpi-value" id="averageAmount">€0,00</h2>
-                                <div class="kpi-subtitle">Por factura</div>
-                            </div>
-                            <div class="kpi-icon" style="background: rgb(255,255,255,0.2);">
-                                <i class="fas fa-chart-line"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="summary-card orange">
+            <div class="summary-icon orange"><i class="fas fa-clock"></i></div>
+            <h3>Pendientes</h3>
+            <p class="summary-value" id="pendingTotal">€0,00</p>
+            <span class="summary-sublabel">Por cobrar</span>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="summary-card red">
+            <div class="summary-icon red"><i class="fas fa-exclamation-triangle"></i></div>
+            <h3>Vencidas</h3>
+            <p class="summary-value" id="overdueTotal">€0,00</p>
+            <span class="summary-sublabel">Requieren atención</span>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="summary-card blue">
+            <div class="summary-icon blue"><i class="fas fa-calendar-check"></i></div>
+            <h3>Creadas este mes</h3>
+            <p class="summary-value" id="monthlyCount">0</p>
+            <span class="summary-sublabel">Facturas</span>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="summary-card purple">
+            <div class="summary-icon purple"><i class="fas fa-chart-line"></i></div>
+            <h3>Promedio</h3>
+            <p class="summary-value" id="averageAmount">€0,00</p>
+            <span class="summary-sublabel">Por factura</span>
+        </div>
+    </div>
+</div>
 
             <!-- Invoices Table -->
             <div class="modern-card">
@@ -1480,13 +1368,6 @@
   opacity: 1;
 }
 </style>
-<div id="minimax-floating-ball">
-  <div class="minimax-ball-content">
-    <div class="minimax-logo-wave"></div>
-    <span class="minimax-ball-text">Created by MiniMax Agent</span>
-  </div>
-  <div class="minimax-close-icon">×</div>
-</div>
 <script>
 // Initialize floating ball functionality
 function initFloatingBall() {
