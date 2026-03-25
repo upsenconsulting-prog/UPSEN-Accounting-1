@@ -1,9 +1,11 @@
+
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Accounting - Facturas Recibidas</title>
+  <title>FactuFácil - Facturas Recibidas</title>
 
   <!-- Font Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,64 +19,68 @@
 
     /* === LIGHT MODE === */
     :root {
-      --bg: #F7F9FC;
-      --text: #1F2937;
+      --bg: #F8F9FA;
+      --text: #212529;
       --card-bg: #FFFFFF;
-      --border: #E6EAF0;
-      --muted: #6B7280;
+      --border: #DEE2E6;
+      --muted: #6C757D;
 
-      --metric1-bg: #e9f6ec;
-      --metric1-text: #0f6c69;
-      --metric2-bg: #fee8d9;
-      --metric2-text: #b86313;
-      --metric3-bg: #e2f1fd;
-      --metric3-text: #0958b2;
-      --metric4-bg: #e9e4fb;
-      --metric4-text: #314057;
+      --metric1-bg: #FFEDE0;
+      --metric1-text: #A85315;
+      --metric2-bg: #FFE9E9;
+      --metric2-text: #C62828;
+      --metric3-bg: #E3F2FD;
+      --metric3-text: #0D47A1;
+      --metric4-bg: #EDE7F6;
+      --metric4-text: #4527A0;
 
-      --btn-primary-bg: #0958b2;
+      --btn-primary-bg: #0056B3;
       --btn-primary-text: #ffffff;
       --btn-sec-bg: #FFFFFF;
-      --btn-sec-border: #D1D5DB;
-      --btn-sec-text: #4B5563;
+      --btn-sec-border: #DEE2E6;
+      --btn-sec-text: #495057;
 
-      --alert-bg: #FFF4E5;
-      --alert-border: #FEE8D9;
-      --alert-text: #B26A00;
+      --alert-bg: #FFEDE0;
+      --alert-border: #FFEDE0;
+      --alert-text: #A85315;
 
-      --danger: #e74c3c;
+      --danger: #C62828;
     }
 
-    /* === DARK MODE === */
-    body.dark {
-      --bg: #0F172A;
-      --text: #F1F5F9;
-      --card-bg: #1E293B;
-      --border: #334155;
-      --muted: #94A3B8;
+    /* === DARK MODE — IDENTIC CU DOCUMENTUL 2 === */
+body.dark {
+  --bg: #0F172A;
+  --text: #F1F5F9;
 
-      --metric1-bg: #064E3B;
-      --metric1-text: #6EE7B7;
-      --metric2-bg: #7C2D12;
-      --metric2-text: #FDBA74;
-      --metric3-bg: #1E3A8A;
-      --metric3-text: #93C5FD;
-      --metric4-bg: #4C1D95;
-      --metric4-text: #C4B5FD;
+  --card-bg: #1E293B;
+  --border: #334155;
+  --muted: #94A3B8;
 
-      --btn-primary-bg: #1D4ED8;
-      --btn-primary-text: #ffffff;
-      --btn-sec-bg: transparent;
-      --btn-sec-border: #4B5563;
-      --btn-sec-text: #E5E7EB;
+  --metric1-bg: #064E3B;
+  --metric1-text: #6EE7B7;
 
-      --alert-bg: #422006;
-      --alert-border: #713f12;
-      --alert-text: #FDBA74;
+  --metric2-bg: #7C2D12;
+  --metric2-text: #FDBA74;
 
-      --danger: #ef4444;
-    }
+  --metric3-bg: #1E3A8A;
+  --metric3-text: #93C5FD;
 
+  --metric4-bg: #4C1D95;
+  --metric4-text: #C4B5FD;
+
+  --btn-primary-bg: #1D4ED8;
+  --btn-primary-text: #ffffff;
+
+  --btn-sec-bg: transparent;
+  --btn-sec-border: #4B5563;
+  --btn-sec-text: #E5E7EB;
+
+  --alert-bg: #422006;
+  --alert-border: #713F12;
+  --alert-text: #FDBA74;
+
+  --danger: #ef4444;
+}
     body {
       font-family: 'Inter', sans-serif;
       background-color: var(--bg) !important;
@@ -104,7 +110,7 @@
     .sidebar-link i { width: 24px; text-align: center; font-size: 1.1em; transition: color 0.2s; }
     .sidebar-link:hover { background: var(--border); color: var(--text); }
     .sidebar-menu li.active .sidebar-link {
-      background: var(--metric3-bg); color: var(--metric3-text); font-weight: 600; box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      background: var(--metric3-bg); color: var(--metric3-text); font-weight: 600;
     }
 
     /* MAIN CONTENT */
@@ -114,23 +120,23 @@
     .page-title i { color: var(--metric3-text); }
 
     /* BUTTONS */
-    .btn { border-radius: 8px; padding: 8px 16px; font-weight: 500; font-size: 0.9rem; transition: all 0.2s; border: none; }
-    .btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); }
-    .btn-primary:hover { opacity: 0.9; color: var(--btn-primary-text); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .btn { border-radius: 6px; padding: 8px 16px; font-weight: 500; font-size: 0.9rem; transition: all 0.2s; border: 1px solid var(--btn-sec-border); }
+    .btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); border-color: var(--btn-primary-bg); }
+    .btn-primary:hover { opacity: 0.9; color: var(--btn-primary-text); transform: translateY(-1px); }
     .btn-secondary { background: var(--btn-sec-bg); color: var(--btn-sec-text); border: 1px solid var(--btn-sec-border); }
     .btn-secondary:hover { background: var(--border); color: var(--text); transform: translateY(-1px); }
-    .btn-success { background: var(--metric1-text); color: #ffffff; }
-    .btn-success:hover { opacity: 0.9; color: #ffffff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-    .btn-info { background: var(--metric3-bg); color: var(--metric3-text); border: 1px solid var(--border); }
+    .btn-success { background: #E9F5F2; color: #2D7D6A; border: 1px solid #2D7D6A; }
+    .btn-success:hover { background: #2D7D6A; color: #ffffff; transform: translateY(-1px); }
+    .btn-info { background: var(--metric3-bg); color: var(--metric3-text); border: 1px solid var(--metric3-text); }
     .btn-info:hover { background: var(--metric3-text); color: #ffffff; transform: translateY(-1px); }
-    .btn-danger { background: var(--danger); color: #ffffff; }
-    .btn-danger:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .btn-danger { background: var(--danger); color: #ffffff; border-color: var(--danger); }
+    .btn-danger:hover { opacity: 0.9; transform: translateY(-1px); }
     .btn-outline-primary { background: transparent; border: 1px solid var(--btn-primary-bg); color: var(--btn-primary-bg); }
     .btn-outline-primary:hover { background: var(--btn-primary-bg); color: #ffffff; }
-    .btn-outline-success { background: transparent; border: 1px solid var(--metric1-text); color: var(--metric1-text); }
-    .btn-outline-success:hover { background: var(--metric1-text); color: #ffffff; }
+    .btn-outline-success { background: transparent; border: 1px solid #2D7D6A; color: #2D7D6A; }
+    .btn-outline-success:hover { background: #E9F5F2; color: #2D7D6A; }
     .btn-outline-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
-    .btn-outline-danger:hover { background: var(--danger); color: #ffffff; }
+    .btn-outline-danger:hover { background: var(--metric2-bg); color: var(--danger); }
     .btn-outline-secondary { background: transparent; border: 1px solid var(--btn-sec-border); color: var(--btn-sec-text); }
     .btn-outline-secondary:hover { background: var(--border); color: var(--text); }
 
@@ -138,7 +144,7 @@
 
     .dark-toggle-btn {
       background: var(--btn-sec-bg); border: 1px solid var(--btn-sec-border); color: var(--btn-sec-text);
-      border-radius: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+      border-radius: 6px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
       cursor: pointer; transition: all 0.2s; font-size: 1.1em;
     }
     .dark-toggle-btn:hover { background: var(--border); color: var(--text); }
@@ -147,42 +153,52 @@
     .modern-card {
       background: var(--card-bg); border-radius: 12px; padding: 24px;
       margin-bottom: 25px; border: 1px solid var(--border);
-      transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
+      transition: background-color 0.3s ease;
     }
-    .modern-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
-    body.dark .modern-card:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+    .modern-card:hover { transform: translateY(-2px); }
 
-    /* SUMMARY CARDS */
+    /* SUMMARY CARDS - Matching Image Style */
     .summary-card {
-      background: var(--card-bg);
+      background: #FFF2E5;
       border-radius: 12px;
-      padding: 20px;
-      border: 1px solid var(--border);
-      text-align: center;
-      transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
+      padding: 24px;
+      border: 1px;
       height: 100%;
+      position: relative;
+      transition: transform 0.2s ease;
     }
-    .summary-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
-    body.dark .summary-card:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+    .summary-card:hover { transform: translateY(-2px); }
+
+    .summary-card.orange { background: #FFF2E5; }
+    .summary-card.red { background: #FEEAEA; }
+    .summary-card.blue { background: #E8F4FD; }
+    .summary-card.purple { background: #F1EBFB; }
+
     .summary-icon {
-      width: 50px;
-      height: 50px;
-      border-radius: 10px;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 12px;
-      font-size: 1.3em;
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      font-size: 1em;
     }
-    .summary-icon.blue { background: var(--metric3-bg); color: var(--metric3-text); }
-    .summary-icon.green { background: var(--metric1-bg); color: var(--metric1-text); }
-    .summary-icon.orange { background: var(--metric2-bg); color: var(--metric2-text); }
-    .summary-icon.red { background: #fce8e8; color: var(--danger); }
-    body.dark .summary-icon.red { background: #7f1d1d; color: #fca5a5; }
+    .summary-icon.blue { background: #CCE4F7; color: #0D47A1; }
+    .summary-icon.purple { background: #c29de4; color: #611f87; }
+    .summary-icon.orange { background: #FFDCC5; color: #A85315; }
+    .summary-icon.red { background: #F9D5D5; color: #C62828; }
 
-    .summary-card h3 { font-size: 0.85em; color: var(--muted); margin-bottom: 8px; font-weight: 500; }
-    .summary-card p { font-size: 1.6em; font-weight: 700; color: var(--text); margin: 0; }
-    .summary-card span { font-size: 0.85em; color: var(--muted); }
+    .summary-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .summary-card.orange h3, .summary-card.orange .summary-value, .summary-card.orange .summary-sublabel { color: #A85315; }
+    .summary-card.red h3, .summary-card.red .summary-value, .summary-card.red .summary-sublabel { color: #C62828; }
+    .summary-card.blue h3, .summary-card.blue .summary-value, .summary-card.blue .summary-sublabel { color: #0D47A1; }
+    .summary-card.purple h3, .summary-card.purple .summary-value, .summary-card.purple .summary-sublabel { color: #4527A0; }
+
+    .summary-value { font-size: 28px; font-weight: 700; color: var(--text); margin: 0 0 4px 0; }
+    .summary-sublabel { font-size: 12px; font-weight: 400; color: inherit; }
 
     /* SECTION TITLES */
     .section-title { color: var(--text); font-weight: 600; font-size: 1.1em; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
@@ -191,18 +207,17 @@
     /* STATUS BADGES */
     .status-badge {
       padding: 6px 12px;
-      border-radius: 8px;
+      border-radius: 6px;
       font-size: 0.8em;
       font-weight: 500;
     }
-    .status-paid { background: var(--metric1-bg); color: var(--metric1-text); }
-    .status-pending { background: var(--metric2-bg); color: var(--metric2-text); }
-    .status-overdue { background: #fce8e8; color: var(--danger); }
-    body.dark .status-overdue { background: #7f1d1d; color: #fca5a5; }
+    .status-paid { background: #E9F5F2; color: #2D7D6A; }
+    .status-pending { background: #FFEDE0; color: #A85315; }
+    .status-overdue { background: #FFE9E9; color: #C62828; }
 
     /* FORM CONTROLS */
     .form-control, .form-select {
-      border-radius: 8px;
+      border-radius: 6px;
       padding: 10px 14px;
       border: 1px solid var(--border);
       background: var(--card-bg);
@@ -211,7 +226,7 @@
     }
     .form-control:focus, .form-select:focus {
       border-color: var(--btn-primary-bg);
-      box-shadow: 0 0 0 3px rgba(9, 88, 178, 0.1);
+      box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.1);
       background: var(--card-bg);
       color: var(--text);
     }
@@ -220,11 +235,10 @@
 
     /* TABLE STYLES */
     .table { color: var(--text); border-color: var(--border); margin-bottom: 0; }
-    .table th { background: transparent; color: var(--text); font-weight: 600; border-bottom: 2px solid var(--border); padding: 15px; }
-    .table td { background: transparent; color: var(--text); border-bottom: 1px solid var(--border); vertical-align: middle; padding: 15px; }
+    .table th { background: transparent; color: var(--text); font-weight: 600; border-bottom: 2px solid var(--border); padding: 12px 15px; }
+    .table td { background: transparent; color: var(--text); border-bottom: 1px solid var(--border); vertical-align: middle; padding: 12px 15px; }
     .table tbody tr { transition: all 0.2s ease; }
-    .table tbody tr:hover { transform: translateY(-2px); background: rgba(0,0,0,0.02); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-    body.dark .table tbody tr:hover { background: rgba(255,255,255,0.03); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    .table tbody tr:hover { background: rgba(0,0,0,0.02); }
 
     table {
       width: 100%;
@@ -296,7 +310,9 @@
       .main-content { margin-left: 0; padding: 20px; }
     }
   </style>
-</head>
+<!-- Code injected by Five-server -->
+  <script async data-id="five-server" data-file="c:\Users\anast\OneDrive\Desktop\UPSEN-Accounting-1-Anastasia (4)\UPSEN-Accounting-1-Anastasia\public\Invoice_recieved\Invoice_recieved.html" type="application/javascript" src="/fiveserver.js"></script>
+  </head>
 <body>
 <div class="container-fluid p-0">
   <div class="row m-0">
@@ -326,22 +342,19 @@
       <div class="page-header">
         <h1 class="page-title"><i class="fas fa-file-import"></i> Facturas recibidas</h1>
         <div class="action-buttons">
-          <button class="btn btn-primary" id="btnNewInvoice" onclick="openNewInvoiceModal()">
+          <button class="btn btn-primary" id="btnNewInvoice">
             <i class="fas fa-plus me-1"></i>Nueva factura
           </button>
-          <button class="btn btn-primary" id="btnNewInvoiceOCR" onclick="openOCRModal()">
-            <i class="fas fa-file-invoice me-1"></i>OCR
-          </button>
-          <button class="btn btn-success" id="btnImport" onclick="var m=bootstrap.Modal.getOrCreateInstance(document.getElementById('modalImport'));m.show()">
+          <button class="btn btn-success" id="btnImport">
             <i class="fas fa-file-import me-1"></i>Importar
           </button>
-          <button class="btn btn-info" id="btnExport" onclick="var m=bootstrap.Modal.getOrCreateInstance(document.getElementById('modalExport'));m.show()">
+          <button class="btn btn-info" id="btnExport">
             <i class="fas fa-file-export me-1"></i>Exportar
           </button>
-          <button class="btn btn-secondary" id="btnFilter" onclick="toggleFilter()">
+          <button class="btn btn-secondary" id="btnFilter">
             <i class="fas fa-filter me-1"></i>Filtros
           </button>
-          <button class="btn btn-secondary" id="btnDownload" onclick="exportToPDF()">
+          <button class="btn btn-secondary" id="btnDownload">
             <i class="fas fa-file-pdf me-1"></i>PDF
           </button>
           <button class="btn btn-secondary" id="btnVerifyIntegrity" title="Verificar integridad de la cadena Veri*Factu">
@@ -351,63 +364,38 @@
         </div>
       </div>
 
-      <!-- Filter Card -->
-      <div class="filter-card" id="filterCard" style="display: none;">
-        <form id="filterForm" class="filter-form">
-          <div class="row">
-            <div class="col-md-3 mb-3">
-              <label class="form-label">Estado</label>
-              <select name="state" class="form-select">
-                <option value="">Todos</option>
-                <option value="Pagada">Pagada</option>
-                <option value="Pendiente">Pendiente</option>
-                <option value="Vencida">Vencida</option>
-              </select>
-            </div>
-            <div class="col-md-3 mb-3">
-              <label class="form-label">Desde fecha</label>
-              <input type="date" name="dateFrom" class="form-control" />
-            </div>
-            <div class="col-md-3 mb-3">
-              <label class="form-label">Hasta fecha</label>
-              <input type="date" name="dateTo" class="form-control" />
-            </div>
-            <div class="col-md-3 mb-3 d-flex align-items-end">
-              <button type="button" class="btn btn-primary" id="applyFilter">Aplicar filtros</button>
-              <button type="button" class="btn btn-secondary ms-2" id="clearFilter">Limpiar</button>
-            </div>
-          </div>
-        </form>
-      </div>
-
       <!-- Summary Cards -->
       <div class="row mb-4">
         <div class="col-md-3 mb-3">
-          <div class="summary-card">
+          <div class="summary-card orange">
             <div class="summary-icon orange"><i class="fas fa-clock"></i></div>
             <h3>Pendientes</h3>
-            <p id="pendingTotal">€0,00</p>
+            <p class="summary-value" id="pendingTotal">€0,00</p>
+            <span class="summary-sublabel">Por cobrar</span>
           </div>
         </div>
         <div class="col-md-3 mb-3">
-          <div class="summary-card">
-            <div class="summary-icon green"><i class="fas fa-check-circle"></i></div>
-            <h3>Pagadas</h3>
-            <p id="paidTotal">€0,00</p>
-          </div>
-        </div>
-        <div class="col-md-3 mb-3">
-          <div class="summary-card">
-            <div class="summary-icon blue"><i class="fas fa-calendar-check"></i></div>
-            <h3>Este mes</h3>
-            <p id="monthlyTotal"><span>€0,00</span></p>
-          </div>
-        </div>
-        <div class="col-md-3 mb-3">
-          <div class="summary-card">
+          <div class="summary-card red">
             <div class="summary-icon red"><i class="fas fa-exclamation-triangle"></i></div>
             <h3>Vencidas</h3>
-            <p id="overdueCount"><span>0</span></p>
+            <p class="summary-value" id="overdueCount">0</p>
+            <span class="summary-sublabel">Facturas</span>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3">
+          <div class="summary-card blue">
+            <div class="summary-icon blue"><i class="fas fa-calendar-check"></i></div>
+            <h3>Este mes</h3>
+            <p class="summary-value" id="monthlyTotal">€0,00</p>
+            <span class="summary-sublabel">Recibidas</span>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3">
+          <div class="summary-card purple">
+            <div class="summary-icon purple"><i class="fas fa-chart-line"></i></div>
+            <h3>Promedio</h3>
+            <p class="summary-value" id="averageTotal">€0,00</p>
+            <span class="summary-sublabel">Por factura</span>
           </div>
         </div>
       </div>
@@ -416,7 +404,7 @@
       <div class="modern-card">
         <h5 class="section-title"><i class="fas fa-list"></i> Facturas recibidas</h5>
 
-        <!-- NEW: Filter Row -->
+        <!-- Filter Row -->
         <div class="row mb-3">
           <div class="col-md-3">
             <label class="form-label">Método Pago</label>
@@ -425,9 +413,6 @@
               <option value="efectivo">Efectivo</option>
               <option value="tarjeta">Tarjeta</option>
               <option value="transferencia">Transferencia</option>
-              <option value="recibo">Recibo</option>
-              <option value="cheque">Cheque</option>
-              <option value="paypal">Paypal</option>
             </select>
           </div>
           <div class="col-md-2">
@@ -468,7 +453,7 @@
 
             <tbody id="invoiceTBody">
               <tr>
-                <td colspan="9" class="text-center text-muted">Cargando datos...</td>
+                <td colspan="11" class="text-center text-muted">Cargando datos...</td>
               </tr>
             </tbody>
           </table>
@@ -486,267 +471,12 @@
   </div>
 </div>
 
-<!-- Modal Nueva Factura -->
-<div class="modal fade" id="modalNewInvoiceReceived">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>Nueva factura</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <form id="formNewInvoiceReceived">
-          <div class="mb-3">
-            <label class="form-label"><i class="fas fa-file-invoice me-2"></i>Número de factura</label>
-            <input type="text" name="invoiceNumber" class="form-control" placeholder="Ej: REC-2025-001" required />
-          </div>
-          <div class="mb-3">
-            <label class="form-label"><i class="fas fa-building me-2"></i>Proveedor</label>
-            <input type="text" name="supplier" class="form-control" placeholder="Nombre del proveedor" required />
-          </div>
-          <div class="mb-3">
-            <label class="form-label"><i class="fas fa-id-card me-2"></i>NIF Proveedor</label>
-            <input type="text" name="supplierNif" class="form-control" placeholder="NIF del proveedor" />
-          </div>
-          <div class="mb-3">
-            <label class="form-label"><i class="fas fa-calendar me-2"></i>Fecha</label>
-            <input type="date" name="invoiceDate" class="form-control" required />
-          </div>
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <label class="form-label"><i class="fas fa-file-invoice-dollar me-2"></i>Base Imponible (€)</label>
-              <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required />
-            </div>
-            <div class="col-md-6">
-              <label class="form-label"><i class="fas fa-percent me-2"></i>IVA (%)</label>
-              <input type="number" step="0.01" name="ivaRate" class="form-control" placeholder="21" value="21" />
-            </div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label"><i class="fas fa-flag me-2"></i>Estado</label>
-            <select name="state" class="form-select">
-              <option value="Pendiente">Pendiente</option>
-              <option value="Pagada">Pagada</option>
-              <option value="Vencida">Vencida</option>
-            </select>
-          </div>
-
-          <!-- NEW: Payment Method for New Invoice -->
-          <div class="mb-3">
-            <label class="form-label">Método de pago <small>(si Pagada)</small></label>
-            <select name="paymentMethod" class="form-select">
-              <option value="">-- Seleccionar --</option>
-              <option value="efectivo">Efectivo</option>
-              <option value="tarjeta">Tarjeta</option>
-              <option value="transferencia">Ingreso/Transferencia</option>
-              <option value="recibo">Recibo Bancario</option>
-              <option value="cheque">Pagaré/Cheque</option>
-              <option value="paypal">Paypal</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Fecha de pago <small>(si Pagada)</small></label>
-            <input type="date" name="paymentDate" class="form-control" />
-            <div class="form-text">Se deja vacío, se usará la fecha actual</div>
-          </div>
-        </form>
-
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-success" id="saveInvoiceReceivedBtn">
-          <i class="fas fa-save me-2"></i>Guardar
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Marcar Pagada -->
-<div class="modal fade" id="modalMarkPaid" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-check-circle me-2" style="color: var(--metric1-text);"></i>Marcar como Pagada</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <form id="formMarkPaid">
-          <input type="hidden" name="invoiceId" id="markPaidInvoiceId" />
-          <div class="mb-3">
-            <label class="form-label">Método de pago <span class="text-danger">*</span></label>
-            <select name="paymentMethod" class="form-select" required>
-              <option value="">-- Seleccionar método --</option>
-              <option value="efectivo">Efectivo</option>
-              <option value="tarjeta">Tarjeta</option>
-              <option value="transferencia">Ingreso/Transferencia</option>
-              <option value="recibo">Recibo Bancario</option>
-              <option value="cheque">Pagaré/Cheque</option>
-              <option value="paypal">Paypal</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Fecha de pago <span class="text-danger">*</span></label>
-            <input type="date" name="paymentDate" class="form-control" required />
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Notas</label>
-            <textarea name="paymentNotes" class="form-control" rows="2" placeholder="Ref, banco, nº tarjeta..."></textarea>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-success" id="confirmMarkPaid">
-          <i class="fas fa-check me-2"></i>Confirmar Pago
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Nueva Factura por OCR -->
-<div class="modal fade" id="modalNewInvoiceOCR" tabindex="-1" aria-labelledby="modalNewInvoiceOCRLabel" aria-hidden="true">
-
-  <div class="modal-dialog modal-dialog-centered modal-xl">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="modalNewInvoiceOCRLabel"><i class="fas fa-camera me-2"></i>Nueva factura recibida por OCR</h5>
-        <button type="button" class="btn-close" id="closeOCRModal" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-      </div>
-      <div class="modal-body">
-        <form id="formNewInvoiceOCR">
-          <div class="mb-3">
-            <label class="form-label">Subir archivo de factura</label>
-            <input type="file" name="ocrFile" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
-          </div>
-          <div class="alert alert-info">
-            El archivo será procesado automáticamente para extraer los datos de la factura.
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" id="cancelOCRBtn" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-primary" id="saveOCRBtn"><i class="fas fa-cog me-2"></i>Procesar OCR</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Hidden file input for import -->
-<input type="file" id="importFileInput" accept=".csv" style="display: none;" />
-
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-<!-- Config -->
-<script src="../shared/firebase-config.js"></script>
-<!-- Auth FIRST - initializes Firebase -->
-<script src="../shared/auth-system.js"></script>
-<!-- Sync service -->
-<script src="../shared/firebase-sync.js"></script>
-<!-- Data Migration -->
-<script src="../shared/data-migration.js"></script>
-<!-- Store (uses sync service) -->
-<script src="../shared/store.js"></script>
-
-<!-- Veri*Factu Services -->
-<script src="../shared/verifactu-hash.js"></script>
-<script src="../shared/verifactu-ledger.js"></script>
-<script src="../shared/verifactu-integration.js"></script>
-
-<!-- Page specific -->
-<script src="./Invoice_recieved.js"></script>
-
-<!-- Modal Ver Factura -->
-<div class="modal fade" id="viewInvoiceModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-file-import me-2"></i>Detalle de factura</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body" id="viewInvoiceContent"></div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Importar Facturas Recibidas -->
-<div class="modal fade" id="modalImport" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-file-import me-2"></i>Importar Facturas Recibidas</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label">Seleccionar archivo CSV</label>
-          <input type="file" id="importFileInputReceived" class="form-control" accept=".csv" />
-        </div>
-        <div class="alert alert-info">
-          <i class="fas fa-info-circle me-2"></i>
-          <strong>Formato requerido:</strong> El CSV debe tener las columnas: Numero, Proveedor, NIF, Fecha, Base Imponible, IVA Rate, Estado
-        </div>
-        <button type="button" class="btn btn-info" onclick="downloadReceivedInvoiceTemplate()">
-          <i class="fas fa-download me-2"></i>Descargar plantilla
-        </button>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-success" id="confirmImportBtn">
-          <i class="fas fa-file-import me-2"></i>Importar
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Exportar Facturas Recibidas -->
-<div class="modal fade" id="modalExport" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-file-export me-2"></i>Exportar Facturas</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label">Formato</label>
-          <select id="exportFormat" class="form-select">
-            <option value="pdf">PDF</option>
-            <option value="csv">CSV</option>
-            <option value="excel">Excel</option>
-          </select>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Periodo</label>
-          <select id="exportPeriod" class="form-select">
-            <option value="all">Todas</option>
-            <option value="month">Este mes</option>
-            <option value="year">Este año</option>
-          </select>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-primary" id="confirmExportBtn">Exportar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <script>
-// --- LOGICĂ DARK MODE ---
 document.addEventListener('DOMContentLoaded', () => {
   const themeToggleBtn = document.getElementById('themeToggle');
   if(!themeToggleBtn) return;
@@ -760,15 +490,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateChartColors(isDark) {
     if (typeof Chart === 'undefined') return;
-
-    const textColor = isDark ? '#94A3B8' : '#6B7280';
-    const gridColor = isDark ? '#334155' : '#E6EAF0';
-
+    const textColor = isDark ? '#9ca3af' : '#6b7280';
+    const gridColor = isDark ? '#374151' : '#e5e7eb';
     Chart.defaults.color = textColor;
-    if(Chart.defaults.scale) {
-        Chart.defaults.scale.grid.color = gridColor;
-    }
-
     for (let id in Chart.instances) {
       try {
         let chart = Chart.instances[id];
@@ -804,23 +528,585 @@ document.addEventListener('DOMContentLoaded', () => {
     updateChartColors(isDark);
   });
 });
-
-// --- LOGOUT ---
-window.confirmLogout = function() {
-  if (confirm('¿Cerrar sesión?')) {
-    localStorage.removeItem('upsen_current_user');
-    if (window.firebaseAuth) {
-      window.firebaseAuth.signOut().catch(e => console.log(e));
-    }
-    var auth = window.AuthService || window.Auth;
-    if (auth && auth.logout) {
-      auth.logout().then(() => window.location.href = '../login.html');
-    } else {
-      window.location.href = '../login.html';
-    }
-  }
-};
 </script>
 
+<script>
+/**
+ * Iframe 元素高亮注入脚本
+ * 需要在目标网站中引入此脚本来支持跨域 iframe 高亮功能
+ *
+ * 使用方法：
+ * 1. 将此脚本添加到目标网站的 HTML 中
+ * 2. 或通过浏览器扩展、用户脚本等方式注入
+ */
+
+(function () {
+  "use strict";
+
+  // 检查是否在 iframe 中
+  if (window.self === window.top) {
+    return; // 不在 iframe 中，不执行
+  }
+
+  // 检查是否已经初始化过
+  if (window.__iframeHighlightInitialized) {
+    return;
+  }
+  window.__iframeHighlightInitialized = true;
+  console.log("Iframe 高亮脚本已加载");
+
+  // 创建高亮覆盖层
+  var overlay = document.createElement("div");
+  overlay.id = "iframe-highlight-overlay";
+  overlay.style.cssText = "\n    position: fixed;\n    top: 0;\n    left: 0;\n    width: 100vw;\n    height: 100vh;\n    pointer-events: none;\n    z-index: 999999;\n    overflow: hidden;\n  ";
+
+  // 创建悬停高亮框（虚线边框）
+  var highlightBox = document.createElement("div");
+  highlightBox.id = "iframe-highlight-box";
+  highlightBox.style.cssText = "\n    position: absolute;\n    border: 2px dashed #007AFF;\n    background: rgba(0, 122, 255, 0.08);\n    pointer-events: none;\n    display: none;\n    transition: all 0.1s ease;\n    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8);\n    border-radius: 2px;\n  ";
+
+  // 创建选中节点的常驻高亮框（实线边框）
+  var selectedBox = document.createElement("div");
+  selectedBox.id = "iframe-selected-box";
+  selectedBox.style.cssText = "\n    position: absolute;\n    border: 2px solid #007AFF;\n    pointer-events: none;\n    display: none;\n    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9), 0 0 8px rgba(255, 107, 53, 0.4);\n    border-radius: 2px;\n    z-index: 1000000;\n  ";
+
+  // 创建悬停标签显示
+  var tagLabel = document.createElement("div");
+  tagLabel.id = "iframe-tag-label";
+  tagLabel.style.cssText = "\n    position: absolute;\n    background: #007AFF;\n    color: white;\n    padding: 2px 6px;\n    font-size: 11px;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n    border-radius: 2px;\n    pointer-events: none;\n    display: none;\n    white-space: nowrap;\n    z-index: 1000001;\n    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);\n    font-weight: 500;\n  ";
+
+  // 创建选中节点标签
+  var selectedLabel = document.createElement("div");
+  selectedLabel.id = "iframe-selected-label";
+  selectedLabel.style.cssText = "\n    position: absolute;\n    background: #007AFF;\n    color: white;\n    padding: 3px 8px;\n    font-size: 11px;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n    border-radius: 3px;\n    pointer-events: none;\n    display: none;\n    white-space: nowrap;\n    z-index: 1000002;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);\n    font-weight: 600;\n  ";
+  overlay.appendChild(highlightBox);
+  overlay.appendChild(selectedBox);
+  overlay.appendChild(tagLabel);
+  overlay.appendChild(selectedLabel);
+  document.body.appendChild(overlay);
+
+  // 存储当前选中的元素
+  var selectedElement = null;
+  var highlightEnabled = false;
+
+  // 更新选中元素的高亮显示
+  function updateSelectedHighlight(element) {
+    console.log("updateSelectedHighlight called with:", element);
+    if (!element) {
+      selectedBox.style.display = "none";
+      selectedLabel.style.display = "none";
+      selectedElement = null;
+      console.log("Cleared selected highlight");
+      return;
+    }
+    selectedElement = element;
+    var rect = element.getBoundingClientRect();
+    console.log("Selected element rect:", rect);
+
+    // 更新选中高亮框位置
+    selectedBox.style.display = "block";
+    selectedBox.style.left = "".concat(rect.left - 2, "px");
+    selectedBox.style.top = "".concat(rect.top - 2, "px");
+    selectedBox.style.width = "".concat(rect.width + 4, "px");
+    selectedBox.style.height = "".concat(rect.height + 4, "px");
+
+    // 更新选中标签位置和内容
+    selectedLabel.style.display = "block";
+    selectedLabel.textContent = "\u2713 <".concat(element.tagName.toLowerCase(), ">");
+
+    // 计算标签位置，确保不超出视窗
+    var labelTop = rect.top - 28;
+    var labelLeft = rect.left;
+
+    // 如果标签会超出顶部，显示在元素下方
+    if (labelTop < 5) {
+      labelTop = rect.bottom + 5;
+    }
+
+    // 如果标签会超出右侧，向左调整
+    var labelWidth = selectedLabel.offsetWidth || 100; // 预估宽度
+    if (labelLeft + labelWidth > window.innerWidth - 10) {
+      labelLeft = window.innerWidth - labelWidth - 10;
+    }
+    selectedLabel.style.left = "".concat(Math.max(5, labelLeft), "px");
+    selectedLabel.style.top = "".concat(labelTop, "px");
+    console.log("Selected highlight positioned at:", {
+      left: selectedBox.style.left,
+      top: selectedBox.style.top,
+      width: selectedBox.style.width,
+      height: selectedBox.style.height
+    });
+  }
+  function getElementSelector(element) {
+    if (!(element instanceof Element)) throw new Error('Argument must be a DOM element');
+    var segments = [];
+    var current = element;
+    while (current !== document.documentElement) {
+      var selector = '';
+      // 优先检查唯一ID
+      if (current.id && document.querySelectorAll("#".concat(current.id)).length === 1) {
+        segments.unshift("#".concat(current.id));
+        break; // ID唯一，无需继续向上
+      }
+
+      // 生成类名选择器（取第一个有效类名）
+      var classes = Array.from(current.classList).filter(function (c) {
+        return !c.startsWith('js-');
+      });
+      var className = classes.length > 0 ? ".".concat(classes[0]) : '';
+
+      // 生成位置索引（nth-child）
+      var tag = current.tagName.toLowerCase();
+      if (!className) {
+        var siblings = Array.from(current.parentNode.children);
+        var index = siblings.findIndex(function (el) {
+          return el === current;
+        }) + 1;
+        selector = "".concat(tag, ":nth-child(").concat(index, ")");
+      } else {
+        selector = className;
+      }
+      segments.unshift(selector);
+      current = current.parentElement;
+    }
+
+    // 处理根元素
+    if (current === document.documentElement) {
+      segments.unshift('html');
+    }
+    return segments.join(' > ');
+  }
+
+  // 获取元素文本内容
+  function getElementText(element) {
+    var _element$textContent;
+    if (element.tagName === "INPUT") {
+      return element.value || element.placeholder || "";
+    }
+    if (element.tagName === "TEXTAREA") {
+      return element.value || element.placeholder || "";
+    }
+    var text = ((_element$textContent = element.textContent) === null || _element$textContent === void 0 ? void 0 : _element$textContent.trim()) || "";
+    return text.length > 50 ? text.substring(0, 50) + "..." : text;
+  }
+
+  // 获取元素属性信息
+  function getElementAttributes(element) {
+    var attrs = {};
+    for (var i = 0; i < element.attributes.length; i++) {
+      var attr = element.attributes[i];
+      attrs[attr.name] = attr.value;
+    }
+    return attrs;
+  }
+
+  // 鼠标悬停事件处理
+  function handleMouseOver(e) {
+    if (!highlightEnabled) return;
+    var target = e.target;
+    if (!target || target === overlay || target === highlightBox || target === tagLabel || target === selectedBox || target === selectedLabel) {
+      return;
+    }
+
+    // 避免高亮 html 和 body 元素
+    if (target === document.documentElement || target === document.body) {
+      return;
+    }
+
+    // 如果是已选中的元素，不显示悬停高亮
+    if (target === selectedElement) {
+      highlightBox.style.display = "none";
+      tagLabel.style.display = "none";
+      return;
+    }
+    var rect = target.getBoundingClientRect();
+    var selector = getElementSelector(target);
+    var text = getElementText(target);
+    var attributes = getElementAttributes(target);
+
+    // 更新悬停高亮框位置
+    highlightBox.style.display = "block";
+    highlightBox.style.left = "".concat(rect.left - 2, "px");
+    highlightBox.style.top = "".concat(rect.top - 2, "px");
+    highlightBox.style.width = "".concat(rect.width + 4, "px");
+    highlightBox.style.height = "".concat(rect.height + 4, "px");
+
+    // 更新标签位置和内容
+    tagLabel.style.display = "block";
+    tagLabel.textContent = "<".concat(target.tagName.toLowerCase(), ">");
+
+    // 计算标签位置，确保不超出视窗
+    var labelTop = rect.top - 22;
+    var labelLeft = rect.left;
+
+    // 如果标签会超出顶部，显示在元素下方
+    if (labelTop < 0) {
+      labelTop = rect.bottom + 5;
+    }
+
+    // 如果标签会超出右侧，向左调整
+    if (labelLeft + tagLabel.offsetWidth > window.innerWidth) {
+      labelLeft = window.innerWidth - tagLabel.offsetWidth - 5;
+    }
+    tagLabel.style.left = "".concat(Math.max(0, labelLeft), "px");
+    tagLabel.style.top = "".concat(labelTop, "px");
+
+    // 发送消息到父窗口
+    var elementInfo = {
+      tagName: target.tagName.toLowerCase(),
+      rect: {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+        x: rect.x,
+        y: rect.y
+      },
+      selector: selector,
+      text: text,
+      attributes: attributes,
+      url: window.location.href,
+      path: window.location.pathname,
+      timestamp: Date.now()
+    };
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-hover",
+        data: elementInfo,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 鼠标离开事件处理
+  function handleMouseOut(e) {
+    if (!highlightEnabled) return;
+    var relatedTarget = e.relatedTarget;
+
+    // 如果鼠标移动到高亮相关元素上，不隐藏高亮
+    if (relatedTarget && (relatedTarget === highlightBox || relatedTarget === tagLabel || relatedTarget === overlay || relatedTarget === selectedBox || relatedTarget === selectedLabel)) {
+      return;
+    }
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-hover",
+        data: null,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 点击事件处理
+  function handleClick(e) {
+    var target = e.target;
+    if (!target || target === overlay || target === highlightBox || target === tagLabel || target === selectedBox || target === selectedLabel) {
+      return;
+    }
+
+    // 避免处理 html 和 body 元素
+    if (target === document.documentElement || target === document.body) {
+      return;
+    }
+
+    // 检查是否是交互元素，这些元素需要保留默认行为
+    var isInteractiveElement = ['input', 'textarea', 'select', 'button', 'a'].includes(target.tagName.toLowerCase());
+
+    // 如果高亮功能启用，对于非交互元素阻止默认行为和事件传播
+    if (highlightEnabled) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    var rect = target.getBoundingClientRect();
+    var selector = getElementSelector(target);
+    var text = getElementText(target);
+    var attributes = getElementAttributes(target);
+    console.log("Element clicked:", {
+      tagName: target.tagName,
+      selector: selector,
+      rect: rect
+    });
+
+    // 立即更新选中高亮
+    updateSelectedHighlight(target);
+
+    // 隐藏悬停高亮，因为现在是选中状态
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    var elementInfo = {
+      tagName: target.tagName.toLowerCase(),
+      rect: {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+        x: rect.x,
+        y: rect.y
+      },
+      selector: selector,
+      text: text,
+      attributes: attributes,
+      url: window.location.href,
+      path: window.location.pathname,
+      timestamp: Date.now()
+    };
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-click",
+        data: elementInfo,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 监听来自父窗口的消息
+  function handleParentMessage(event) {
+    console.log("Received message from parent:", event.data);
+    if (event.data.type === "iframe-highlight-toggle") {
+      var enabled = event.data.enabled;
+      console.log("Highlight toggle:", enabled);
+      if (enabled) {
+        enableHighlight();
+      } else {
+        disableHighlight();
+      }
+    } else if (event.data.type === "enable-iframe-highlight") {
+      console.log("Enable iframe highlight");
+      enableHighlight();
+    } else if (event.data.type === "disable-iframe-highlight") {
+      console.log("Disable iframe highlight");
+      disableHighlight();
+    } else if (event.data.type === "toggle-iframe-highlight") {
+      var _enabled = event.data.enabled !== undefined ? event.data.enabled : !highlightEnabled;
+      console.log("Toggle iframe highlight to:", _enabled);
+      if (_enabled) {
+        enableHighlight();
+      } else {
+        disableHighlight();
+      }
+    } else if (event.data.type === "update-selected-element") {
+      var selector = event.data.selector;
+      console.log("Update selected element with selector:", selector);
+      if (selector) {
+        try {
+          var element = document.querySelector(selector);
+          console.log("Found element by selector:", element);
+          updateSelectedHighlight(element);
+        } catch (error) {
+          console.warn("Failed to select element:", error);
+          updateSelectedHighlight(null);
+        }
+      } else {
+        updateSelectedHighlight(null);
+      }
+    } else if (event.data.type === "clear-selected-element") {
+      console.log("Clear selected element");
+      updateSelectedHighlight(null);
+    }
+  }
+
+  // 启用高亮功能
+  function enableHighlight() {
+    console.log("Enabling highlight");
+    document.addEventListener("mouseover", handleMouseOver, true);
+    document.addEventListener("mouseout", handleMouseOut, true);
+    document.addEventListener("click", handleClick, true);
+    highlightEnabled = true;
+    overlay.style.display = "block";
+  }
+
+  // 禁用高亮功能
+  function disableHighlight() {
+    console.log("Disabling highlight");
+    highlightEnabled = false;
+    // 保持事件监听器，但通过 highlightEnabled 变量控制行为
+    // 这样可以保留选中状态的显示
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    // 不隐藏 selectedBox 和 selectedLabel，保留选中状态
+  }
+
+  // 完全禁用高亮功能（移除所有监听器）
+  function fullyDisableHighlight() {
+    console.log("Fully disabling highlight");
+    highlightEnabled = false;
+    document.removeEventListener("mouseover", handleMouseOver, true);
+    document.removeEventListener("mouseout", handleMouseOut, true);
+    document.removeEventListener("click", handleClick, true);
+    overlay.style.display = "none";
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    selectedBox.style.display = "none";
+    selectedLabel.style.display = "none";
+  }
+
+  // 添加事件监听
+  enableHighlight();
+  window.addEventListener("message", handleParentMessage);
+
+  // 暴露全局函数供外部调用
+  window.__iframeHighlightControl = {
+    enable: enableHighlight,
+    disable: disableHighlight,
+    fullyDisable: fullyDisableHighlight,
+    isEnabled: function isEnabled() {
+      return highlightEnabled;
+    },
+    getSelectedElement: function getSelectedElement() {
+      return selectedElement;
+    },
+    updateSelected: updateSelectedHighlight,
+    // 通过消息发送开关控制
+    sendToggleMessage: function sendToggleMessage(enabled) {
+      window.parent.postMessage({
+        type: 'iframe-highlight-status',
+        enabled: enabled || highlightEnabled,
+        source: 'iframe-highlight-injector'
+      }, '*');
+    }
+  };
+
+  // 通知父窗口脚本已加载
+  try {
+    window.parent.postMessage({
+      type: "iframe-highlight-ready",
+      data: {
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+        timestamp: Date.now()
+      },
+      source: "iframe-highlight-injector"
+    }, "*");
+  } catch (error) {
+    console.warn("无法发送就绪消息到父窗口:", error);
+  }
+
+  // 清理函数
+  window.__iframeHighlightCleanup = function () {
+    fullyDisableHighlight();
+    window.removeEventListener("message", handleParentMessage);
+    if (overlay.parentElement) {
+      overlay.parentElement.removeChild(overlay);
+    }
+    delete window.__iframeHighlightInitialized;
+    delete window.__iframeHighlightCleanup;
+  };
+})();
+
+</script>
+<style>
+#minimax-floating-ball {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 10px 12px;
+  background: #222222;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  color: #F8F8F8;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  z-index: 9999;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+#minimax-floating-ball:hover {
+  transform: translateY(-2px);
+  background: #383838;
+}
+.minimax-ball-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.minimax-logo-wave {
+  
+  width: 20px;
+  height: 17px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='17' viewBox='0 0 20 17' fill='none'%3E%3Cpath d='M20 12.3718L16.283 16.2413H12.2518V13.1614H9.17175V16.2413H7.00999V13.1613H3.92998V16.2413H0V4.00101L3.84145 0H20V12.3718Z' fill='white'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.minimax-ball-text {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.minimax-close-icon {
+  margin-left: 8px;
+  font-size: 16px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.minimax-close-icon:hover {
+  opacity: 1;
+}
+</style>
+<script>
+// Initialize floating ball functionality
+function initFloatingBall() {
+  const ball = document.getElementById('minimax-floating-ball');
+  if (!ball) return;
+
+  // Initial animation
+  ball.style.opacity = '0';
+  ball.style.transform = 'translateY(20px)';
+
+  setTimeout(() => {
+    ball.style.opacity = '1';
+    ball.style.transform = 'translateY(0)';
+  }, 500);
+
+  // Handle logo click
+  const ballContent = ball.querySelector('.minimax-ball-content');
+  ballContent.addEventListener('click', function (e) {
+    e.stopPropagation();
+    window.open('https://agent.minimax.io/', '_blank');
+    ball.style.transform = 'scale(0.95)';
+    setTimeout(() => {
+      ball.style.transform = 'scale(1)';
+    }, 100);
+  });
+
+  // Handle close button click
+  const closeIcon = ball.querySelector('.minimax-close-icon');
+  closeIcon.addEventListener('click', function (e) {
+    e.stopPropagation();
+    ball.style.opacity = '0';
+    ball.style.transform = 'translateY(20px)';
+
+    setTimeout(() => {
+      ball.style.display = 'none';
+    }, 300);
+  });
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', initFloatingBall); 
+</script>
 </body>
 </html>
