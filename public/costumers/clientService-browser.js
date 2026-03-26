@@ -5,23 +5,28 @@
   // This is for Firebase v9 modular, exposed as compat globals via shared config
 
 // Firebase compat mode - initialize if not done
-if (typeof firebase === 'undefined' || !firebase.apps.length) {
+if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length === 0 && window.FIREBASE_CONFIG) {
   firebase.initializeApp(window.FIREBASE_CONFIG);
 }
-const firestore = firebase.firestore();
-const dbCollection = collection;
-const db = firestore;
 
-  if (!db) {
-    console.error('Firestore db not available. Ensure shared/firebase-config.js is loaded.');
-    window.ClientService = null;
-    return;
-  }
+const getDb = () => window.firebaseDb || (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0 ? firebase.firestore() : null);
+
+  const getUserCollection = () => {
+    const db = getDb();
+    if (!db) throw new Error("Firestore no disponible");
+    const user = firebase.auth().currentUser;
+    if (!user) throw new Error("Usuario no autenticado");
+    return db.collection("companies").doc(user.uid).collection("clients");
+  };
+
+  const getFieldValue = () => {
+    return (typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore.FieldValue : null;
+  };
 
   // Validation functions
-  window.ClientService = {
-    validateNifNie: (value) => /^[0-9]{8}[A-Z]$/i.test(value) || /^[XYZ][0-9]{7}[A-Z]$/i.test(value),
-    validateEmail: (email) => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email),
+  window.ClientService = { 
+    validateNifNie: (value) => /^(?:[0-9]{8}[A-Z]|[XYZ][0-9]{7}[A-Z]|[ABCDEFGHJNPQRSW][0-9]{7}[0-9A-J])$/i.test(value),
+    validateEmail: (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
 
     async createClient(clientData) {
       try {
@@ -32,7 +37,10 @@ const db = firestore;
           return { success: false, message: 'Email inválido' };
         }
 
-        const docRef = await addDoc(collection(db, "clients"), { ...clientData, fecha_creacion: serverTimestamp() });
+        const docRef = await getUserCollection().add({ 
+          ...clientData, 
+          fecha_creacion: getFieldValue() ? getFieldValue().serverTimestamp() : new Date().toISOString()
+        });
         console.log("Cliente creado con ID:", docRef.id);
         return { success: true };
       } catch (error) {
@@ -43,7 +51,7 @@ const db = firestore;
 
     async getClients() {
       try {
-        const snapshot = await getDocs(collection(db, "clients"));
+        const snapshot = await getUserCollection().get();
         return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       } catch (error) {
         console.error("Error al leer clientes:", error);
@@ -60,8 +68,7 @@ const db = firestore;
           return { success: false, message: 'Email inválido' };
         }
 
-        const clientRef = doc(db, "clients", id);
-        await updateDoc(clientRef, { ...clientData });
+        await getUserCollection().doc(id).update({ ...clientData });
         console.log("Cliente editado:", id);
         return { success: true };
       } catch (error) {
@@ -72,14 +79,14 @@ const db = firestore;
 
     async deleteClient(id) {
       try {
-        const invoicesRef = collection(db, "invoices");
-        const q = query(invoicesRef, where("clientId", "==", id));
-        const snapshot = await getDocs(q);
+        const user = firebase.auth().currentUser;
+        const invoicesRef = getDb().collection("companies").doc(user.uid).collection("invoices");
+        const snapshot = await invoicesRef.where("clientId", "==", id).get();
+        
         if (!snapshot.empty) {
           return { success: false, message: 'No se puede eliminar cliente con facturas asociadas' };
         }
-
-        await deleteDoc(doc(db, "clients", id));
+        await getUserCollection().doc(id).delete();
         console.log("Cliente eliminado:", id);
         return { success: true };
       } catch (error) {
@@ -91,4 +98,3 @@ const db = firestore;
 
   console.log('ClientService loaded as window.ClientService');
 })();
-

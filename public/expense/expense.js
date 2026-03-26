@@ -416,8 +416,8 @@ async function saveExpense() {
   // Get values using direct ID access for reliability
   var dateInput = document.getElementById('expenseDate') || form.querySelector('input[name="date"]');
   var categoryInput = document.getElementById('expenseCategory') || form.querySelector('input[name="category"]');
-  var amountInput = document.getElementById('expenseAmount') || form.querySelector('input[name="amount"]');
-  var ivaRateInput = document.getElementById('expenseIvaRate') || form.querySelector('select[name="ivaRate"]') || form.querySelector('input[name="ivaRate"]');
+  var amountInput = document.getElementById('expenseBase');
+  var ivaRateInput = document.getElementById('expenseIVA');
   var notesInput = document.getElementById('expenseNotes') || form.querySelector('input[name="notes"]');
   var supplierNameInput = document.getElementById('expenseSupplierName') || form.querySelector('input[name="supplierName"]');
   var supplierNifInput = document.getElementById('expenseSupplierNif') || form.querySelector('input[name="supplierNif"]');
@@ -492,14 +492,35 @@ function openNewExpenseModal() {
   }
 }
 
+// Função para calcular o total em tempo real no formulário
+function setupRealTimeCalculations() {
+  const baseInput = $('expenseBase');
+  const ivaSelect = $('expenseIVA');
+  const totalInput = $('expenseTotal');
+
+  const update = () => {
+    const base = parseFloat(baseInput.value) || 0;
+    const iva = parseFloat(ivaSelect.value) || 0;
+    const total = base + (base * (iva / 100));
+    totalInput.value = total.toFixed(2) + " EUR";
+  };
+
+  if (baseInput && ivaSelect) {
+    baseInput.addEventListener('input', update);
+    ivaSelect.addEventListener('change', update);
+  }
+}
+
 // ========== INICIALIZAR ==========
 document.addEventListener("DOMContentLoaded", function() {
-  markActivePage();
+  if (typeof markActivePage === 'function') markActivePage();
 
   // Função auxiliar para esperar Auth
   function waitForAuth(callback) {
+    if (window.firebaseAuth && window.firebaseAuth.currentUser) return callback();
+    
     var checkCount = 0;
-    var maxChecks = 50; // 5 segundos
+    var maxChecks = 100; // 10 segundos
     
     function check() {
       checkCount++;
@@ -551,6 +572,8 @@ document.addEventListener("DOMContentLoaded", function() {
 function initPage() {
     console.log('Inicializando expense page...');
     
+    setupRealTimeCalculations();
+
     // Anexar Listeners (Garante que funcionem mesmo se não estiverem no HTML)
     var btnNew = document.getElementById('btnNewExpense') || document.getElementById('newExpenseBtn');
     if (btnNew) btnNew.addEventListener('click', openNewExpenseModal);
