@@ -263,86 +263,114 @@ function updateInvoiceReceived(id, updates) {
   }
 }
 
-async function renderSummaryCards() {
-  var list = getAllInvoicesReceived();
-  var now = new Date();
-  var pendingTotal = 0;
-  var paidTotal = 0;
-  var monthlyTotal = 0;
-  var overdueCount = 0;
-  
-  for (var i = 0; i < list.length; i++) {
-    var inv = list[i];
-    var amount = Number(inv.amount || 0);
-    
-    if (inv.state === 'Pendiente') {
-      pendingTotal += amount;
-      
-      if (inv.invoiceDate) {
-        var invoiceDate = new Date(inv.invoiceDate);
-        var dueDate = new Date(invoiceDate);
-        dueDate.setDate(dueDate.getDate() + 30);
-        if (dueDate < now) {
-          overdueCount++;
-        }
-      }
-    } else if (inv.state === 'Pagada') {
-      paidTotal += amount;
-    }
-    
-    if (inv.invoiceDate) {
-      var parts = inv.invoiceDate.split('-');
-      if (parts.length >= 2) {
-        var year = parseInt(parts[0]);
-        var month = parseInt(parts[1]) - 1;
-        if (year === now.getFullYear() && month === now.getMonth()) {
-          monthlyTotal += amount;
-        }
-      }
-    }
-  }
-  
-  if ($('pendingTotal')) $('pendingTotal').textContent = moneyEUR(pendingTotal);
-  if ($('paidTotal')) $('paidTotal').textContent = moneyEUR(paidTotal);
-  if ($('monthlyTotal')) $('monthlyTotal').textContent = moneyEUR(monthlyTotal);
-  if ($('overdueCount')) $('overdueCount').textContent = overdueCount;
-  
-  for (var i = 0; i < list.length; i++) {
-    var inv = list[i];
-    var amount = Number(inv.amount || 0);
-    
-    if (inv.state === 'Pendiente') {
-      pendingTotal += amount;
-      
-      if (inv.invoiceDate) {
-        var invoiceDate = new Date(inv.invoiceDate);
-        var dueDate = new Date(invoiceDate);
-        dueDate.setDate(dueDate.getDate() + 30);
-        if (dueDate < now) {
-          overdueCount++;
-        }
-      }
-    } else if (inv.state === 'Pagada') {
-      paidTotal += amount;
-    }
-    
-    if (inv.invoiceDate) {
-      var parts = inv.invoiceDate.split('-');
-      if (parts.length >= 2) {
-        var year = parseInt(parts[0]);
-        var month = parseInt(parts[1]) - 1;
-        if (year === now.getFullYear() && month === now.getMonth()) {
-          monthlyTotal += amount;
-        }
+// =====================
+// BACKEND CALCULATION ENGINE (RECEIVED INVOICES)
+// =====================
+
+function computeReceivedTotals(list) {
+  const now = new Date();
+  let totals = {
+    totalExpenses: 0,
+    totalPaid: 0,
+    totalPending: 0,
+    totalOverdue: 0,
+    overdueCount: 0,
+    ivaTotal: 0,
+    monthlyTotal: 0,
+    monthlyCount: 0,
+    averageExpense: 0
+  };
+
+  list.forEach(inv => {
+    const amount = Number(inv.totalAmount || inv.amount || 0);
+    const iva = Number(inv.ivaAmount || 0);
+    const date = new Date(inv.invoiceDate);
+
+    totals.totalExpenses += amount;
+    totals.ivaTotal += iva;
+
+    if (inv.state === 'Pagada') {
+      totals.totalPaid += amount;
+    } else if (inv.state === 'Pendiente') {
+      totals.totalPending += amount;
+
+      // Overdue logic
+      const due = new Date(inv.invoiceDate);
+      due.setDate(due.getDate() + 30);
+      if (due < now) {
+        totals.totalOverdue += amount;
+        totals.overdueCount++;
       }
     }
-  }
-  
-  if ($('pendingTotal')) $('pendingTotal').textContent = moneyEUR(pendingTotal);
-  if ($('paidTotal')) $('paidTotal').textContent = moneyEUR(paidTotal);
-  if ($('monthlyTotal')) $('monthlyTotal').textContent = moneyEUR(monthlyTotal);
-  if ($('overdueCount')) $('overdueCount').textContent = overdueCount;
+
+    // Monthly totals
+    if (date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) {
+      totals.monthlyTotal += amount;
+      totals.monthlyCount++;
+    }
+  });
+
+  totals.averageExpense = list.length ? totals.totalExpenses / list.length : 0;
+
+  return totals;
 }
+
+function computeReceivedYTD(list) {
+  const now = new Date();
+  const year = now.getFullYear();
+
+  let ytd = {
+    ytdExpenses: 0,
+    ytdIVA: 0,
+    ytdPaid: 0,
+    ytdPending: 0
+  };
+
+  list.forEach(inv => {
+    if (!inv.invoiceDate) return;
+    const date = new Date(inv.invoiceDate);
+    if (date.getFullYear() !== year) return;
+
+    const amount = Number(inv.totalAmount || inv.amount || 0);
+    const iva = Number(inv.ivaAmount || 0);
+
+    ytd.ytdExpenses += amount;
+    ytd.ytdIVA += iva;
+
+    if (inv.state === 'Pagada') ytd.ytdPaid += amount;
+    else ytd.ytdPending += amount;
+  });
+
+  return ytd;
+}
+
+function computeReceivedPaymentMethods(list) {
+  const totals = {
+    efectivo: 0,
+    tarjeta: 0,
+    transferencia: 0,
+    recibo: 0,
+    cheque: 0,
+    paypal: 0
+  };
+
+  list.forEach(inv => {
+    if (inv.state === 'Pagada' && inv.paymentMethod && totals[inv.paymentMethod] !== undefined) {
+      totals[inv.paymentMethod] += Number(inv.totalAmount || inv.amount || 0);
+    }
+  });
+
+  return totals;
+}
+
+function computeAllReceivedStats(list) {
+  return {
+    totals: computeReceivedTotals(list),
+    ytd: computeReceivedYTD(list),
+    paymentMethods: computeReceivedPaymentMethods(list)
+  };
+}
+
 
 async function renderChart() {
   var chartContainer = document.getElementById('receivedChartCanvas');

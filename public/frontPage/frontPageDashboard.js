@@ -14,19 +14,6 @@ var expensesChart = null;
 var forecastChart = null;
 var paymentsForecastChart = null;
 
-// ========== MARK ACTIVE PAGE ==========
-function markActivePage() {
-  var currentPage = window.location.href;
-  var links = document.querySelectorAll('.sidebar-link');
-  
-  for (var i = 0; i < links.length; i++) {
-    links[i].parentElement.classList.remove('active');
-    if (links[i].href === currentPage) {
-      links[i].parentElement.classList.add('active');
-    }
-  }
-}
-
 // ========== OBTENER USER ID ==========
 function getUserId() {
   // First check Firebase Auth directly (this always works)
@@ -275,10 +262,10 @@ function getTopExpenseCategory(year, month) {
   
   var topCat = keys[0];
   var maxVal = 0;
-  for (var i = 0; i < keys.length; i++) {
-    if (categoryTotals[keys[i]] > maxVal) {
-      maxVal = categoryTotals[keys[i]];
-      topCat = keys[i];
+  for (var j = 0; j < keys.length; j++) {
+    if (categoryTotals[keys[j]] > maxVal) {
+      maxVal = categoryTotals[keys[j]];
+      topCat = keys[j];
     }
   }
   return topCat;
@@ -352,6 +339,112 @@ function renderDashboardKPIs() {
   if ($('kpi-expenses-total')) $('kpi-expenses-total').textContent = formatEUR(totalExpenses);
   if ($('kpi-expenses-count')) $('kpi-expenses-count').textContent = String(countExpenses);
   if ($('kpi-expenses-category')) $('kpi-expenses-category').textContent = topCategory || '-';
+}
+
+// ========== COMBINED METRICS ==========
+function computeDashboardStats() {
+  var issued = getUserInvoicesIssued();
+  var received = getUserInvoicesReceived();
+  var expenses = getUserExpenses();
+
+  var now = new Date();
+  var currentYear = now.getFullYear();
+  var currentMonth = now.getMonth();
+
+  var stats = {
+    totalIncome: 0,
+    totalExpenses: 0,
+    netProfit: 0,
+
+    ivaRepercutido: 0,
+    ivaSoportado: 0,
+    ivaToPay: 0,
+
+    ytdIncome: 0,
+    ytdExpenses: 0,
+    ytdProfit: 0,
+
+    monthlyIncome: 0,
+    monthlyExpenses: 0,
+    monthlyProfit: 0
+  };
+
+  // Issued invoices (income)
+  for (var i = 0; i < issued.length; i++) {
+    var inv = issued[i];
+    var amount = Number(inv.amount || 0);
+    var iva = Number(inv.ivaAmount || 0);
+
+    stats.totalIncome += amount;
+    stats.ivaRepercutido += iva;
+
+    if (inv.invoiceDate) {
+      var parts = inv.invoiceDate.split('-').map(Number);
+      var y = parts[0];
+      var m = parts[1];
+
+      if (y === currentYear) {
+        stats.ytdIncome += amount;
+      }
+      if (y === currentYear && m - 1 === currentMonth) {
+        stats.monthlyIncome += amount;
+      }
+    }
+  }
+
+  // Received invoices (IVA soportado only)
+  for (var j = 0; j < received.length; j++) {
+    var rinv = received[j];
+    stats.ivaSoportado += Number(rinv.ivaAmount || 0);
+  }
+
+  // Expenses (costs + IVA soportado)
+  for (var k = 0; k < expenses.length; k++) {
+    var exp = expenses[k];
+    var total = Number(exp.totalAmount || exp.amount || 0);
+    var eiva = Number(exp.ivaAmount || 0);
+
+    stats.totalExpenses += total;
+    stats.ivaSoportado += eiva;
+
+    if (exp.date) {
+      var eparts = exp.date.split('-').map(Number);
+      var ey = eparts[0];
+      var em = eparts[1];
+
+      if (ey === currentYear) {
+        stats.ytdExpenses += total;
+      }
+      if (ey === currentYear && em - 1 === currentMonth) {
+        stats.monthlyExpenses += total;
+      }
+    }
+  }
+
+  // Combined metrics
+  stats.netProfit = stats.totalIncome - stats.totalExpenses;
+  stats.ytdProfit = stats.ytdIncome - stats.ytdExpenses;
+  stats.monthlyProfit = stats.monthlyIncome - stats.monthlyExpenses;
+
+  stats.ivaToPay = stats.ivaRepercutido - stats.ivaSoportado;
+
+  return stats;
+}
+
+function renderCombinedKPIs() {
+  var stats = computeDashboardStats();
+
+  if ($('kpi-total-income')) $('kpi-total-income').textContent = formatEUR(stats.totalIncome);
+  if ($('kpi-total-expenses')) $('kpi-total-expenses').textContent = formatEUR(stats.totalExpenses);
+  if ($('kpi-net-profit')) $('kpi-net-profit').textContent = formatEUR(stats.netProfit);
+
+  if ($('kpi-iva-repercutido')) $('kpi-iva-repercutido').textContent = formatEUR(stats.ivaRepercutido);
+  if ($('kpi-iva-soportado')) $('kpi-iva-soportado').textContent = formatEUR(stats.ivaSoportado);
+  if ($('kpi-iva-topay')) $('kpi-iva-topay').textContent = formatEUR(stats.ivaToPay);
+
+  if ($('kpi-ytd-income')) $('kpi-ytd-income').textContent = formatEUR(stats.ytdIncome);
+  if ($('kpi-ytd-expenses')) $('kpi-ytd-expenses').textContent = formatEUR(stats.ytdExpenses);
+  if ($('kpi-ytd-profit')) $('kpi-ytd-profit').textContent = formatEUR(stats.ytdProfit);
 }
 
 // ========== CHARTS ==========
@@ -430,22 +523,14 @@ function renderForecastChart() {
 
   var recentMonths = historicalData.slice(-3);
   var sum = 0;
-  for (var i = 0; i < recentMonths.length; i++) sum += recentMonths[i];
+  for (var k = 0; k < recentMonths.length; k++) sum += recentMonths[k];
   var average = recentMonths.length > 0 ? sum / recentMonths.length : 0;
-
-  var forecastDataExtended = historicalData.slice();
-  for (var i = 1; i <= 3; i++) {
-    var date = new Date(currentYear, currentMonth + i, 1);
-    var monthName = date.toLocaleString('es-ES', { month: 'short' });
-    labels.push(monthName);
-    forecastDataExtended.push(average);
-  }
 
   var historicalDataset = historicalData.slice();
   historicalDataset.push(null, null, null);
   
   var forecastDataset = [null, null, null];
-  for (var i = 0; i < 3; i++) forecastDataset.push(average);
+  for (var l = 0; l < 3; l++) forecastDataset.push(average);
 
   if (forecastChart) {
     forecastChart.destroy();
@@ -597,6 +682,86 @@ function renderPaymentsForecastChart() {
   });
 }
 
+// NEW: Cashflow chart (Ingresos vs Gastos vs Beneficio)
+function renderCashflowChart() {
+  var canvas = $('cashflowChart');
+  if (!canvas) return;
+
+  var ctx = canvas.getContext('2d');
+  var issued = getUserInvoicesIssued();
+  var expenses = getUserExpenses();
+
+  var now = new Date();
+  var labels = [];
+  var incomeData = [];
+  var expenseData = [];
+  var profitData = [];
+
+  for (var i = 11; i >= 0; i--) {
+    var date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    var y = date.getFullYear();
+    var m = date.getMonth();
+
+    labels.push(date.toLocaleString('es-ES', { month: 'short' }));
+
+    var income = 0;
+    var cost = 0;
+
+    for (var j = 0; j < issued.length; j++) {
+      var inv = issued[j];
+      if (!inv.invoiceDate) continue;
+      var partsInv = inv.invoiceDate.split('-').map(Number);
+      var iy = partsInv[0];
+      var im = partsInv[1];
+      if (iy === y && im - 1 === m) income += Number(inv.amount || 0);
+    }
+
+    for (var k = 0; k < expenses.length; k++) {
+      var exp = expenses[k];
+      if (!exp.date) continue;
+      var partsExp = exp.date.split('-').map(Number);
+      var ey = partsExp[0];
+      var em = partsExp[1];
+      if (ey === y && em - 1 === m) cost += Number(exp.totalAmount || exp.amount || 0);
+    }
+
+    incomeData.push(income);
+    expenseData.push(cost);
+    profitData.push(income - cost);
+  }
+
+  if (dashboardChart) dashboardChart.destroy();
+
+  dashboardChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: 'Ingresos', data: incomeData, backgroundColor: '#2ecc71' },
+        { label: 'Gastos', data: expenseData, backgroundColor: '#e74c3c' },
+        { label: 'Beneficio', data: profitData, type: 'line', borderColor: '#3498db', borderWidth: 3, fill: false }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false
+    }
+  });
+}
+
+// ========== MARK ACTIVE PAGE ==========
+function markActivePage() {
+  var currentPage = window.location.href;
+  var links = document.querySelectorAll('.sidebar-link');
+  
+  for (var i = 0; i < links.length; i++) {
+    links[i].parentElement.classList.remove('active');
+    if (links[i].href === currentPage) {
+      links[i].parentElement.classList.add('active');
+    }
+  }
+}
+
 // ========== MODAL ==========
 function showNewDocumentModal() {
   var modal = $('modalNewDocument');
@@ -654,14 +819,14 @@ function initDashboard() {
   } else {
     // Try to get from localStorage directly
     try {
-      var session = localStorage.getItem('upsen_current_user');
-      if (session) {
-        var data = JSON.parse(session);
-        if (data && data.user) {
-          userId = data.user.uid || data.user.id || 'unknown';
+      var session2 = localStorage.getItem('upsen_current_user');
+      if (session2) {
+        var data2 = JSON.parse(session2);
+        if (data2 && data2.user) {
+          userId = data2.user.uid || data2.user.id || 'unknown';
         }
       }
-    } catch (e) {}
+    } catch (e2) {}
   }
   
   console.log('UserID para dados:', userId);
@@ -669,15 +834,13 @@ function initDashboard() {
   // Trigger Firebase sync if user is logged in and Firebase is ready
   if (userId && userId !== 'unknown' && window.FirebaseSync && window.FirebaseSync.syncAllToLocalStorage) {
     console.log('Iniciando sincronização Firebase...');
-    // MODIFICADO: Agora passa os resultados do sync para loadDashboardData
     window.FirebaseSync.syncAllToLocalStorage().then(function(syncResults) {
       console.log('Sincronização concluída!', syncResults);
-      // Passar os resultados da sincronização (dados do Firebase) para loadDashboardData
       loadDashboardData(userId, syncResults);
       renderDashboardContent();
     }).catch(function(err) {
       console.warn('Erro na sincronização:', err);
-      loadDashboardData(userId, null); // Fallback para localStorage
+      loadDashboardData(userId, null);
       renderDashboardContent();
     });
   } else {
@@ -688,10 +851,7 @@ function initDashboard() {
 }
 
 // Load data from localStorage after sync
-// MODIFICADO: Agora usa os dados retornados pelo syncAllToLocalStorage diretamente
-// em vez de chamar as funções sync novamente (que liam do localStorage)
 function loadDashboardData(userId, syncResults) {
-  // Se temos resultados da sincronização (dados do Firebase), usar esses
   if (syncResults) {
     if (syncResults.expenses) {
       window._dashboardExpenses = syncResults.expenses;
@@ -714,7 +874,6 @@ function loadDashboardData(userId, syncResults) {
       window._dashboardInvoicesReceived = [];
     }
   } else {
-    // Fallback: se não há resultados do sync, usar store.js (localStorage)
     if (window.getExpensesSync) {
       window._dashboardExpenses = window.getExpensesSync() || [];
       console.log('Expenses carregados do store.js (fallback):', window._dashboardExpenses.length);
@@ -740,19 +899,24 @@ function loadDashboardData(userId, syncResults) {
     }
   }
   
-  console.log('Dados carregados - Expenses:', window._dashboardExpenses.length, 'Invoices Issued:', window._dashboardInvoicesIssued.length, 'Invoices Received:', window._dashboardInvoicesReceived.length);
+  console.log(
+    'Dados carregados - Expenses:',
+    window._dashboardExpenses.length,
+    'Invoices Issued:',
+    window._dashboardInvoicesIssued.length,
+    'Invoices Received:',
+    window._dashboardInvoicesReceived.length
+  );
 }
 
 // Render dashboard with loaded data
 function renderDashboardContent() {
-  var now = new Date();
-  var y = now.getFullYear();
-  var m = now.getMonth();
-
-  renderDashboardKPIs();
+  renderDashboardKPIs();      // existing monthly KPIs
+  renderCombinedKPIs();       // NEW combined KPIs
   renderExpensesChart();
   renderForecastChart();
   renderPaymentsForecastChart();
+  renderCashflowChart();      // NEW cashflow chart
 
   var newDocBtn = $('newDocumentBtn');
   if (newDocBtn) {
@@ -818,14 +982,12 @@ function checkAuthAndInit() {
     }
   } catch (e) {}
   
-  // Se temos utilizador do Firebase ou sessão local, inicializar
   if (firebaseUser || hasLocalSession) {
     console.log('Auth ready, initializing dashboard');
     initDashboard();
     return;
   }
   
-  // Se não temos AuthService ainda, esperar mais
   if (!auth || typeof auth.isLoggedIn !== 'function') {
     if (authCheckCount < maxAuthChecks) {
       console.log('Waiting for Auth... (attempt ' + authCheckCount + ')');
@@ -837,7 +999,6 @@ function checkAuthAndInit() {
     return;
   }
   
-  // Tentar com AuthService
   var user = auth.getCurrentUser();
   
   if (user) {
@@ -856,9 +1017,7 @@ function checkAuthAndInit() {
 }
 
 // Iniciar com um pequeno atraso para garantir que todos os scripts estão carregados
-// Usar o novo sistema waitForAuth do auth-system.js
 setTimeout(function() {
-  // Primeiro verificar se store.js está disponível
   function checkAndInit() {
     if (window.getExpensesSync && window.getInvoicesIssuedSync && window.getInvoicesReceivedSync) {
       console.log('Store.js disponível, inicializando dashboard...');
@@ -871,4 +1030,5 @@ setTimeout(function() {
   
   checkAndInit();
 }, 1000);
+
 console.log('frontPageDashboard.js carregado');

@@ -182,150 +182,96 @@ function handleFileImport(event) {
 
 // ========== RENDER FUNCTIONS ==========
 function renderSummaryCards() {
-  var list = getUserExpenses();
-  var now = new Date();
-  var currentMonth = now.getMonth();
-  var currentYear = now.getFullYear();
-  
-  var monthlyTotal = 0;
-  var monthlyIVA = 0;
-  var categoryTotals = {};
-  var lastExpense = null;
-  
-  for (var i = 0; i < list.length; i++) {
-    var exp = list[i];
-    
-    if (exp.date) {
-      var parts = exp.date.split('-');
-      if (parts.length >= 2) {
-        var year = parseInt(parts[0]);
-        var month = parseInt(parts[1]) - 1;
-        if (year === currentYear && month === currentMonth) {
-          monthlyTotal += Number(exp.totalAmount || exp.amount || 0);
-          monthlyIVA += Number(exp.ivaAmount || 0);
+    const stats = computeExpenseStats();
+
+    $("monthlyTotal").textContent = moneyEUR(stats.monthlyTotal);
+    $("monthlyIVA").textContent = moneyEUR(stats.monthlyIVA);
+
+    $("totalExpenses").textContent = moneyEUR(stats.totalExpenses);
+    $("totalIVA").textContent = moneyEUR(stats.totalIVA);
+
+    $("ytdExpenses").textContent = moneyEUR(stats.ytdExpenses);
+    $("ytdIVA").textContent = moneyEUR(stats.ytdIVA);
+
+    // Top category
+    const topCategoryEl = $("topCategory");
+    if (topCategoryEl) {
+        const entries = Object.entries(stats.categoryTotals);
+        if (entries.length === 0) {
+            topCategoryEl.textContent = "Sin datos";
+        } else {
+            const [cat] = entries.sort((a, b) => b[1] - a[1])[0];
+            topCategoryEl.textContent = cat;
         }
-      }
     }
-    
-    var cat = exp.category || "Sin categoría";
-    categoryTotals[cat] = (categoryTotals[cat] || 0) + Number(exp.amount || 0);
-    
-    if (!lastExpense || (exp.date && exp.date > lastExpense.date)) {
-      lastExpense = exp;
-    }
-  }
-  
-  var monthlyTotalEl = $("monthlyTotal");
-  if (monthlyTotalEl) {
-    monthlyTotalEl.textContent = moneyEUR(monthlyTotal);
-  }
-  
-  var monthlyIVAEl = $("monthlyIVA");
-  if (monthlyIVAEl) {
-    monthlyIVAEl.textContent = moneyEUR(monthlyIVA);
-  }
-  
-  var topCategoryEl = $("topCategory");
-  if (topCategoryEl) {
-    var keys = Object.keys(categoryTotals);
-    if (keys.length > 0) {
-      var topCat = keys[0];
-      var topVal = categoryTotals[keys[0]];
-      for (var k = 0; k < keys.length; k++) {
-        if (categoryTotals[keys[k]] > topVal) {
-          topCat = keys[k];
-          topVal = categoryTotals[keys[k]];
+
+    // Last expense
+    const lastExpenseEl = $("lastExpense");
+    if (lastExpenseEl) {
+        if (!stats.lastExpense) {
+            lastExpenseEl.textContent = "Sin gastos";
+        } else {
+            lastExpenseEl.textContent =
+                `${stats.lastExpense.date} - ${stats.lastExpense.category}`;
         }
-      }
-      var topCatSpan = topCategoryEl.querySelector('span');
-      if (topCatSpan) {
-        topCatSpan.textContent = topCat;
-      } else {
-        topCategoryEl.textContent = topCat;
-      }
-    } else {
-      var topCatSpan = topCategoryEl.querySelector('span');
-      if (topCatSpan) {
-        topCatSpan.textContent = "Sin datos";
-      } else {
-        topCategoryEl.textContent = "Sin datos";
-      }
     }
-  }
-  
-  var lastExpenseEl = $("lastExpense");
-  if (lastExpenseEl) {
-    if (lastExpense) {
-      var lastExpenseSpan = lastExpenseEl.querySelector('span');
-      if (lastExpenseSpan) {
-        lastExpenseSpan.innerHTML = lastExpense.date + ' - ' + lastExpense.category;
-      } else {
-        lastExpenseEl.innerHTML = lastExpense.date + ' - ' + lastExpense.category;
-      }
-    } else {
-      var lastExpenseSpan = lastExpenseEl.querySelector('span');
-      if (lastExpenseSpan) {
-        lastExpenseSpan.textContent = "Sin gastos";
-      } else {
-        lastExpenseEl.textContent = "Sin gastos";
-      }
-    }
-  }
 }
+
 
 function renderChart() {
-  var chartContainer = document.getElementById('expenseChartCanvas');
-  if (!chartContainer) return;
+    const canvas = document.getElementById('expenseChartCanvas');
+    if (!canvas) return;
 
-  var list = getUserExpenses();
-  var categoryTotals = {};
-  
-  for (var i = 0; i < list.length; i++) {
-    var exp = list[i];
-    var cat = exp.category || "Sin categoría";
-    categoryTotals[cat] = (categoryTotals[cat] || 0) + Number(exp.amount || 0);
-  }
+    // Use the new calculation engine
+    const stats = computeExpenseStats();
+    const categoryTotals = stats.categoryTotals;
 
-  var labels = Object.keys(categoryTotals);
-  var data = Object.values(categoryTotals);
+    const labels = Object.keys(categoryTotals);
+    const data = Object.values(categoryTotals);
 
-  var ctx = chartContainer.getContext('2d');
+    const ctx = canvas.getContext('2d');
 
-  if (expenseChart) {
-    expenseChart.destroy();
-  }
-
-  expenseChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: labels.length ? labels : ['Sem dados'],
-      datasets: [{
-        label: 'Gastos por categoría',
-        data: data.length ? data : [0],
-        backgroundColor: [
-          '#2a4d9c', '#3a6cd6', '#1abc9c', '#e74c3c', '#f39c12',
-          '#9b59b6', '#3498db', '#1abc9c', '#e67e22', '#34495e'
-        ],
-        borderWidth: 0
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: {
-            callback: function(value) { return 'EUR ' + value; }
-          }
-        }
-      }
+    // Destroy previous chart instance if it exists
+    if (expenseChart) {
+        try { expenseChart.destroy(); } catch (e) {}
     }
-  });
+
+    // Fallback if no data
+    const finalLabels = labels.length ? labels : ['Sin datos'];
+    const finalData = data.length ? data : [0];
+
+    expenseChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: finalLabels,
+            datasets: [{
+                label: 'Gastos por categoría',
+                data: finalData,
+                backgroundColor: [
+                    '#2a4d9c', '#3a6cd6', '#1abc9c', '#e74c3c', '#f39c12',
+                    '#9b59b6', '#3498db', '#1abc9c', '#e67e22', '#34495e'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: value => 'EUR ' + value
+                    }
+                }
+            }
+        }
+    });
 }
+
 
 function renderExpenses() {
   var tbody = $("expenseTBody");

@@ -424,10 +424,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const m = now.getMonth();
 
   // Render KPIs and Charts
-  renderDashboardKPIs();
+  renderDashboardKPIs();      // existing monthly KPIs
+  renderCombinedKPIs();       // NEW combined KPIs
   renderDashboardChart();
   renderForecastChart();
+  renderCashflowChart();      // NEW cashflow chart
   renderExpenseForecastChart();
+
 
   // New document button
   const newDocBtn = $("newDocumentBtn");
