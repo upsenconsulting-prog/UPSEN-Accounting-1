@@ -342,6 +342,49 @@
   margin-bottom: 30px;
   gap: 15px;
 }
+.last-items-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 20px;
+}
+
+.card-header h3 {
+  font-size: 16px;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+
+.last-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.last-items-table th {
+  text-align: left;
+  color: var(--muted);
+  font-weight: 500;
+  padding-bottom: 8px;
+}
+
+.last-items-table td {
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+  color: var(--text);
+}
+
+.last-items-table tr:hover {
+  background: var(--border);
+  cursor: pointer;
+}
+
+.empty-state {
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--muted);
+}
         }
 
         .login-container { display: none; }
@@ -489,6 +532,30 @@
                 <div class="chart-container">
                     <canvas id="expenseChartCanvas"></canvas>
                 </div>
+            </div>
+
+            <!-- Last 5 Invoices -->
+            <div class="last-items-card">
+                <div class="card-header">
+                    <h3>Last 5 Invoices</h3>
+                </div>
+                <table class="last-items-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Client</th>
+                            <th>Date</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="last-items-body">
+                        <!-- Rows inserted dynamically -->
+                    </tbody>
+                </table>
+                <p id="empty-state" class="empty-state" style="display:none;">
+                    No invoices yet
+                </p>
             </div>
         </main>
     </div>
@@ -822,22 +889,50 @@
                 }
             });
 
-            // Refresh Button
-            document.getElementById('refreshBtn').addEventListener('click', function() {
-                location.reload();
-            });
+            // Last 5 Invoices functionality
+            const items = [
+                { number: "INV-001", client: "John Doe", date: "2026-03-20", total: "120.00€", status: "Paid" },
+                { number: "INV-002", client: "Maria Lopez", date: "2026-03-18", total: "75.50€", status: "Pending" },
+                { number: "INV-003", client: "ACME SL", date: "2026-03-15", total: "300.00€", status: "Paid" },
+                { number: "INV-004", client: "Carlos Ruiz", date: "2026-03-10", total: "50.00€", status: "Draft" },
+                { number: "INV-005", client: "Laura Pérez", date: "2026-03-05", total: "220.00€", status: "Paid" }
+            ];
 
-            // Sidebar links
-            document.querySelectorAll('.sidebar-link').forEach(function(link) {
-                link.addEventListener('click', function(e) {
-                    var href = this.getAttribute('href');
-                    if (href.startsWith('#') || href.startsWith('javascript')) {
-                        return;
-                    }
-                    e.preventDefault();
-                    window.location.href = href;
+            const invoiceTbody = document.getElementById("last-items-body");
+            const emptyState = document.getElementById("empty-state");
+
+            function renderItems(data) {
+                invoiceTbody.innerHTML = "";
+
+                if (data.length === 0) {
+                    emptyState.style.display = "block";
+                    return;
+                }
+
+                emptyState.style.display = "none";
+
+                data.slice(0, 5).forEach(item => {
+                    const row = document.createElement("tr");
+
+                    row.innerHTML = `
+                        <td>${item.number}</td>
+                        <td>${item.client}</td>
+                        <td>${item.date}</td>
+                        <td>${item.total}</td>
+                        <td>${item.status}</td>
+                    `;
+
+                    row.addEventListener("click", () => {
+                        console.log("Open item:", item.number);
+                        // later → navigate to detail page
+                    });
+
+                    invoiceTbody.appendChild(row);
                 });
-            });
+            }
+
+            // Render the invoices on page load
+            renderItems(items);
         });
     </script>
 </body>
