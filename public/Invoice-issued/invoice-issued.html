@@ -246,6 +246,149 @@ th:last-child { border-radius: 0 8px 0 0; }
             .table td { padding: 8px 4px !important; font-size: 0.85rem; }
             .btn-sm { padding: 4px 6px !important; font-size: 0.7rem !important; margin: 0 1px; }
         }
+        .invoice-card {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.invoice-card .form-group {
+  margin-bottom: 16px;
+}
+
+.invoice-card label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.invoice-card input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.invoice-card input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.1);
+}
+
+.invoice-card .row {
+  display: flex;
+  gap: 10px;
+}
+
+.invoice-card .row .form-group {
+  flex: 1;
+}
+
+.invoice-card .currency {
+  position: relative;
+}
+
+.invoice-card .currency span {
+  position: absolute;
+  left: 10px;
+  top: 34px;
+  color: #9ca3af;
+}
+
+.invoice-card .currency input {
+  padding-left: 26px;
+}
+
+.invoice-card .total-field {
+  font-weight: 600;
+  background: #f9fafb;
+}
+.client-search {
+  margin-bottom: 15px;
+}
+
+.client-search input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.client-search input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.1);
+}
+
+.client-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.client-table th,
+.client-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.client-table tr:hover {
+  background: #f9fafb;
+}
+
+.no-results {
+  margin-top: 10px;
+  color: #9ca3af;
+  font-size: 14px;
+}
+.last-items-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 20px;
+}
+
+.card-header h3 {
+  font-size: 16px;
+  margin-bottom: 12px;
+  color: #111827;
+}
+
+.last-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.last-items-table th {
+  text-align: left;
+  color: #6b7280;
+  font-weight: 500;
+  padding-bottom: 8px;
+}
+
+.last-items-table td {
+  padding: 10px 0;
+  border-top: 1px solid #f3f4f6;
+}
+
+.last-items-table tr:hover {
+  background: #f9fafb;
+  cursor: pointer;
+}
+
+.empty-state {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #9ca3af;
+}
     </style>
 </head>
 
@@ -357,6 +500,67 @@ th:last-child { border-radius: 0 8px 0 0; }
         </div>
     </div>
 </div>
+<div class="client-search">
+  <input 
+    type="text" 
+    id="client-search-input" 
+    placeholder="🔍 Search client by name, VAT or email..."
+  >
+</div>
+
+
+<p id="no-results" class="no-results" style="display:none;">
+  No clients found
+</p>
+<div class="invoice-card">
+
+  <div class="form-group currency">
+    <label>Base Amount</label>
+    <span>€</span>
+    <input type="number" id="base" step="0.01" placeholder="0.00">
+  </div>
+
+  <div class="row">
+    <div class="form-group">
+      <label>VAT (%)</label>
+      <input type="number" id="vat" value="21">
+    </div>
+
+    <div class="form-group currency">
+      <label>Total</label>
+      <span>€</span>
+      <input type="text" id="total" readonly value="0.00" class="total-field">
+    </div>
+  </div>
+
+</div>
+<div class="last-items-card">
+
+  <div class="card-header">
+    <h3>Last 5 Invoices</h3>
+  </div>
+
+  <table class="last-items-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Client</th>
+        <th>Date</th>
+        <th>Total</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="last-items-body">
+      <!-- Rows inserted dynamically -->
+    </tbody>
+  </table>
+
+  <p id="empty-state" class="empty-state" style="display:none;">
+    No invoices yet
+  </p>
+
+</div>
+</div>
 
             <!-- Invoices Table -->
             <div class="modern-card">
@@ -368,12 +572,12 @@ th:last-child { border-radius: 0 8px 0 0; }
                         <label class="form-label">Método Pago</label>
                         <select id="paymentFilter" class="form-select">
                             <option value="todas">Todas</option>
-                            <option value="efectivo">💵 Efectivo</option>
-                            <option value="tarjeta">💳 Tarjeta</option>
-                            <option value="transferencia">🏦 Transferencia</option>
-                            <option value="recibo">📄 Recibo</option>
-                            <option value="cheque">✉️ Cheque</option>
-                            <option value="paypal">💸 Paypal</option>
+                            <option value="efectivo">Efectivo</option>
+                            <option value="tarjeta">Tarjeta</option>
+                            <option value="transferencia">Transferencia</option>
+                            <option value="recibo">Recibo</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="paypal">Paypal</option>
                         </select>
                     </div>
                     <div class="col-md-2">
@@ -542,12 +746,12 @@ th:last-child { border-radius: 0 8px 0 0; }
                             <label class="form-label">Método de pago <span style="color: var(--danger);">*</span></label>
                             <select name="paymentMethod" class="form-select" required>
                                 <option value="">-- Seleccionar método --</option>
-                                <option value="efectivo">💵 Efectivo</option>
-                                <option value="tarjeta">💳 Tarjeta</option>
-                                <option value="transferencia">🏦 Ingreso/Transferencia</option>
-                                <option value="recibo">📄 Recibo Bancario</option>
-                                <option value="cheque">✉️ Pagaré/Cheque</option>
-                                <option value="paypal">💸 Paypal</option>
+                                <option value="efectivo"> Efectivo</option>
+                                <option value="tarjeta">Tarjeta</option>
+                                <option value="transferencia">Ingreso/Transferencia</option>
+                                <option value="recibo">Recibo Bancario</option>
+                                <option value="cheque">Pagaré/Cheque</option>
+                                <option value="paypal">Paypal</option>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -833,15 +1037,6 @@ th:last-child { border-radius: 0 8px 0 0; }
     </script>
 
 <script>
-/**
- * Iframe 元素高亮注入脚本
- * 需要在目标网站中引入此脚本来支持跨域 iframe 高亮功能
- *
- * 使用方法：
- * 1. 将此脚本添加到目标网站的 HTML 中
- * 2. 或通过浏览器扩展、用户脚本等方式注入
- */
-
 (function () {
   "use strict";
 
@@ -1307,108 +1502,101 @@ th:last-child { border-radius: 0 8px 0 0; }
 })();
 
 </script>
-<style>
-#minimax-floating-ball {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  padding: 10px 12px;
-  background: #222222;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  color: #F8F8F8;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  z-index: 9999;
-  transition: all 0.3s ease;
-  overflow: hidden;
-  cursor: pointer;
-}
-
-#minimax-floating-ball:hover {
-  transform: translateY(-2px);
-  background: #383838;
-}
-.minimax-ball-content {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.minimax-logo-wave {
-  
-  width: 20px;
-  height: 17px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='17' viewBox='0 0 20 17' fill='none'%3E%3Cpath d='M20 12.3718L16.283 16.2413H12.2518V13.1614H9.17175V16.2413H7.00999V13.1613H3.92998V16.2413H0V4.00101L3.84145 0H20V12.3718Z' fill='white'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: center;
-}
-
-.minimax-ball-text {
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.minimax-close-icon {
-  margin-left: 8px;
-  font-size: 16px;
-  width: 18px;
-  height: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  cursor: pointer;
-  opacity: 0.7;
-  transition: opacity 0.2s ease;
-}
-
-.minimax-close-icon:hover {
-  opacity: 1;
-}
-</style>
 <script>
-// Initialize floating ball functionality
-function initFloatingBall() {
-  const ball = document.getElementById('minimax-floating-ball');
-  if (!ball) return;
+  const baseInput = document.getElementById("base");
+  const vatInput = document.getElementById("vat");
+  const totalInput = document.getElementById("total");
 
-  // Initial animation
-  ball.style.opacity = '0';
-  ball.style.transform = 'translateY(20px)';
+  function updateTotal() {
+    const base = parseFloat(baseInput.value) || 0;
+    const vat = parseFloat(vatInput.value) || 0;
 
-  setTimeout(() => {
-    ball.style.opacity = '1';
-    ball.style.transform = 'translateY(0)';
-  }, 500);
+    const total = base + (base * vat / 100);
+    totalInput.value = total.toFixed(2);
+  }
 
-  // Handle logo click
-  const ballContent = ball.querySelector('.minimax-ball-content');
-  ballContent.addEventListener('click', function (e) {
-    e.stopPropagation();
-    window.open('https://agent.minimax.io/', '_blank');
-    ball.style.transform = 'scale(0.95)';
-    setTimeout(() => {
-      ball.style.transform = 'scale(1)';
-    }, 100);
-  });
+  baseInput.addEventListener("input", updateTotal);
+  vatInput.addEventListener("input", updateTotal);
+</script>
+<script>
+  const searchInput = document.getElementById("client-search-input");
+  const table = document.getElementById("client-table");
+  const rows = table.querySelectorAll("tbody tr");
+  const noResults = document.getElementById("no-results");
 
-  // Handle close button click
-  const closeIcon = ball.querySelector('.minimax-close-icon');
-  closeIcon.addEventListener('click', function (e) {
-    e.stopPropagation();
-    ball.style.opacity = '0';
-    ball.style.transform = 'translateY(20px)';
+  function debounce(func, delay) {
+    let timeout;
+    return function () {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, arguments), delay);
+    };
+  }
 
-    setTimeout(() => {
-      ball.style.display = 'none';
-    }, 300);
-  });
-}
+  function filterClients() {
+    const query = searchInput.value.toLowerCase();
+    let visibleCount = 0;
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', initFloatingBall); 
+    rows.forEach(row => {
+      const text = row.innerText.toLowerCase();
+
+      if (text.includes(query)) {
+        row.style.display = "";
+        visibleCount++;
+      } else {
+        row.style.display = "none";
+      }
+    });
+
+    noResults.style.display = visibleCount === 0 ? "block" : "none";
+  }
+
+  const debouncedFilter = debounce(filterClients, 300);
+
+  searchInput.addEventListener("input", debouncedFilter);
+</script>
+<script>
+  const items = [
+    { number: "INV-001", client: "John Doe", date: "2026-03-20", total: "120.00€", status: "Paid" },
+    { number: "INV-002", client: "Maria Lopez", date: "2026-03-18", total: "75.50€", status: "Pending" },
+    { number: "INV-003", client: "ACME SL", date: "2026-03-15", total: "300.00€", status: "Paid" },
+    { number: "INV-004", client: "Carlos Ruiz", date: "2026-03-10", total: "50.00€", status: "Draft" },
+    { number: "INV-005", client: "Laura Pérez", date: "2026-03-05", total: "220.00€", status: "Paid" }
+  ];
+
+  const tbody = document.getElementById("last-items-body");
+  const emptyState = document.getElementById("empty-state");
+
+  function renderItems(data) {
+    tbody.innerHTML = "";
+
+    if (data.length === 0) {
+      emptyState.style.display = "block";
+      return;
+    }
+
+    emptyState.style.display = "none";
+
+    data.slice(0, 5).forEach(item => {
+      const row = document.createElement("tr");
+
+      row.innerHTML = `
+        <td>${item.number}</td>
+        <td>${item.client}</td>
+        <td>${item.date}</td>
+        <td>${item.total}</td>
+        <td>${item.status}</td>
+      `;
+
+      row.addEventListener("click", () => {
+        console.log("Open item:", item.number);
+        // later → navigate to detail page
+      });
+
+      tbody.appendChild(row);
+    });
+  }
+
+  renderItems(items);
 </script>
 </body>
 </html>
