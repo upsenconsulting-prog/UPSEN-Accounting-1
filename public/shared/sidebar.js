@@ -183,25 +183,18 @@
       </li>
 
       <!-- D. Facturación (ACCORDION) -->
-      <li class="sidebar-header-sm">Facturación</li>
-      <li class="sidebar-parent" id="facturacionParent">
-        <a href="javascript:void(0)" class="sidebar-link toggle-submenu">
-          <i class="fas fa-file-invoice-dollar"></i> Facturación
-          <i class="fas fa-chevron-right sidebar-parent-arrow"></i>
-        </a>
-        <ul class="sidebar-menu sidebar-submenu">
-          <li data-page="invoice-issued.html">
-            <a href="${pathPrefix}Invoice-issued/invoice-issued.html" class="sidebar-link">
-              <i class="fas fa-file-export"></i> Facturas emitidas
-            </a>
-          </li>
-          <li data-page="budget.html">
-            <a href="${pathPrefix}budgetPage/budget.html" class="sidebar-link">
-              <i class="fas fa-file-contract"></i> Presupuestos
-            </a>
-          </li>
-        </ul>
-      </li>
+      <li data-page="invoice-issued.html">
+  <a href="${pathPrefix}Invoice-issued/invoice-issued.html" class="sidebar-link">
+    <i class="fas fa-file-export"></i> Facturas emitidas
+  </a>
+</li>
+
+<li data-page="budget.html">
+  <a href="${pathPrefix}budgetPage/budget.html" class="sidebar-link">
+    <i class="fas fa-file-contract"></i> Presupuestos
+  </a>
+</li>
+
       <li data-page="Invoice_recieved.html">
         <a href="${pathPrefix}Invoice_recieved/Invoice_recieved.html" class="sidebar-link">
           <i class="fas fa-file-import"></i> Facturas recibidas
