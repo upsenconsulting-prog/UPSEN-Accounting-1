@@ -219,37 +219,188 @@ body.dark .modal-header .btn-close { filter: invert(1); }
           </div>
 
           <h4 class="section-title mt-4"><i class="fas fa-list"></i> Articulos</h4>
-          <div class="table-responsive border rounded mb-3">
-            <table class="table mb-0" id="itemsTable">
-              <thead>
-                <tr>
-                  <th>Descripcion</th>
-                  <th>Cantidad</th>
-                  <th>Precio</th>
-                  <th class="text-end">Total</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="itemsTbody">
-                <tr>
-                  <td><input type="text" class="form-control desc" placeholder="Producto/Servicio"></td>
-                  <td><input type="number" class="form-control qty" value="1" min="1" oninput="updateTotals()"></td>
-                  <td><input type="number" class="form-control unit" value="0.00" step="0.01" oninput="updateTotals()"></td>
-                  <td class="text-end fw-bold">0.00 EUR</td>
-                  <td><button type="button" class="btn text-danger remove-btn"><i class="fas fa-trash"></i></button></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+
+<div class="table-responsive border rounded mb-3">
+  <table class="table mb-0" id="itemsTable">
+    <thead>
+      <tr>
+        <th>Descripcion</th>
+        <th>Cantidad</th>
+        <th>Precio</th>
+        <th>IVA</th>
+        <th class="text-end">Total</th>
+        <th></th>
+      </tr>
+    </thead>
+
+    <tbody id="itemsTbody">
+      <tr class="item-row">
+        <td><input type="text" class="form-control desc" placeholder="Producto/Servicio"></td>
+
+        <td><input type="number" class="form-control qty" value="1" min="1"></td>
+
+        <td><input type="number" class="form-control unit" value="0.00" step="0.01"></td>
+
+        <td>
+          <select class="form-control iva-select">
+            <option value="0">0%</option>
+            <option value="4">4%</option>
+            <option value="10">10%</option>
+            <option value="21" selected>21%</option>
+          </select>
+        </td>
+
+        <td class="text-end fw-bold total-cell">0.00 EUR</td>
+
+        <td>
+          <button type="button" class="btn text-danger remove-btn">
+            <i class="fas fa-trash"></i>
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="text-end">
+  <p class="mb-1">Base imponible: <span id="base">0.00</span> EUR</p>
+  <p class="mb-1">IVA: <span id="iva">0.00</span> EUR</p>
+  <h5>Total: <span id="total">0.00</span> EUR</h5>
+</div>
+
+<script>
+const tbody = document.getElementById("itemsTbody");
+
+/* ✅ Event delegation corect (funcționează pentru toate rândurile) */
+tbody.addEventListener("input", updateTotals);
+tbody.addEventListener("change", updateTotals);
+
+/* ✅ Ștergere rând */
+tbody.addEventListener("click", function(e) {
+  if (e.target.closest(".remove-btn")) {
+    e.target.closest("tr").remove();
+    updateTotals();
+  }
+});
+
+function updateTotals() {
+  const rows = document.querySelectorAll(".item-row");
+
+  let base = 0;
+  let totalIVA = 0;
+
+  rows.forEach(row => {
+    const qtyInput = row.querySelector(".qty");
+    const priceInput = row.querySelector(".unit");
+    const ivaSelect = row.querySelector(".iva-select");
+    const totalCell = row.querySelector(".total-cell");
+
+    if (!qtyInput || !priceInput || !ivaSelect || !totalCell) return;
+
+    const qty = parseFloat(qtyInput.value) || 0;
+    const price = parseFloat(priceInput.value) || 0;
+    const ivaPercent = parseFloat(ivaSelect.value) || 0;
+
+    const lineBase = qty * price;
+    const ivaAmount = lineBase * (ivaPercent / 100);
+    const lineTotal = lineBase + ivaAmount;
+
+    totalCell.innerText = lineTotal.toFixed(2) + " EUR";
+
+    base += lineBase;
+    totalIVA += ivaAmount;
+  });
+
+  const final = base + totalIVA;
+
+  document.getElementById("base").innerText = base.toFixed(2);
+  document.getElementById("iva").innerText = totalIVA.toFixed(2);
+  document.getElementById("total").innerText = final.toFixed(2);
+}
+
+document.addEventListener("DOMContentLoaded", updateTotals);
+document.addEventListener("DOMContentLoaded", function () {
+
+  const addBtn = document.getElementById("addItem");
+
+  if (!addBtn) {
+    console.error("Butonul addItem nu există în DOM");
+    return;
+  }
+
+  addBtn.addEventListener("click", function () {
+    const tbody = document.getElementById("itemsTbody");
+
+    const row = document.createElement("tr");
+    row.classList.add("item-row");
+
+    row.innerHTML = `
+      <td><input type="text" class="form-control desc"></td>
+      <td><input type="number" class="form-control qty" value="1" min="1"></td>
+      <td><input type="number" class="form-control unit" value="0.00" step="0.01"></td>
+      <td>
+        <select class="form-control iva-select">
+          <option value="0">0%</option>
+          <option value="4">4%</option>
+          <option value="10">10%</option>
+          <option value="21" selected>21%</option>
+        </select>
+      </td>
+      <td class="text-end fw-bold total-cell">0.00 EUR</td>
+      <td>
+        <button type="button" class="btn text-danger remove-btn">
+          <i class="fas fa-trash"></i>
+        </button>
+      </td>
+    `;
+
+    tbody.appendChild(row);
+
+    row.querySelectorAll("input, select").forEach(el => {
+      el.addEventListener("input", updateTotals);
+      el.addEventListener("change", updateTotals);
+    });
+
+    updateTotals();
+  });
+
+});
+document.getElementById("addItem").addEventListener("click", function () {
+  const tbody = document.getElementById("itemsTbody");
+
+  const row = document.createElement("tr");
+  row.classList.add("item-row");
+
+  row.innerHTML = `
+    <td><input type="text" class="form-control desc" placeholder="Producto/Servicio"></td>
+    <td><input type="number" class="form-control qty" value="1" min="1"></td>
+    <td><input type="number" class="form-control unit" value="0.00" step="0.01"></td>
+    <td>
+      <select class="form-control iva-select">
+        <option value="0">0%</option>
+        <option value="4">4%</option>
+        <option value="10">10%</option>
+        <option value="21" selected>21%</option>
+      </select>
+    </td>
+    <td class="text-end fw-bold total-cell">0.00 EUR</td>
+    <td>
+      <button type="button" class="btn text-danger remove-btn">
+        <i class="fas fa-trash"></i>
+      </button>
+    </td>
+  `;
+
+  tbody.appendChild(row);
+  updateTotals();
+});
+</script>
           
           <button type="button" class="btn btn-secondary btn-sm mb-4" id="addItem">
             <i class="fas fa-plus me-2"></i>Añadir artículo
           </button>
 
-          <div class="mt-4 text-end">
-            <h3 id="grandTotal" class="mb-3">Total: 0.00 EUR</h3>
-            <button type="button" class="btn btn-primary" id="saveBtn">Guardar presupuesto</button>
-          </div>
+          
         </form>
       </div>
 
@@ -311,6 +462,7 @@ body.dark .modal-header .btn-close { filter: invert(1); }
   </div>
 </div>
 
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <!-- Firebase SDK (Compat) -->
@@ -324,7 +476,7 @@ body.dark .modal-header .btn-close { filter: invert(1); }
 <script src="../shared/firebase-sync.js"></script>
 <script src="../shared/store.js"></script>
 <script src="../shared/sidebar.js"></script>
-<script src="script.js"></script>
+
 
 <script>
 /**
