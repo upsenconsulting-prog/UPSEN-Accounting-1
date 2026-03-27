@@ -47,7 +47,7 @@ function loadExpensesFromFirebase(userId) {
   }
 }
 
-function saveUserExpense(expense) {
+function saveUserExpense(expense, silentRender) {
   // NÃO criar ID aqui - deixar store.js criar o ID
   // Passar os dados diretamente para store.js
   var expenseData = {
@@ -65,12 +65,13 @@ function saveUserExpense(expense) {
   
   // Usar store.js - função assíncrona que salva no Firebase E localStorage
   if (window.addExpense) {
-    window.addExpense(expenseData).then(function() {
-      renderExpenses();
-      renderChart();
-      renderSummaryCards();
-    }).catch(function(err) {
-      console.error('Erro ao salvar despesa:', err);
+    return window.addExpense(expenseData).then(function(res) {
+      if (!silentRender) {
+        renderExpenses();
+        renderChart();
+        renderSummaryCards();
+      }
+      return res;
     });
   } else {
     console.error('store.js não disponível');
@@ -88,7 +89,7 @@ function deleteUserExpense(id) {
 }
 
 // ========== IMPORTAR DADOS EM MASSA ==========
-function importExpensesFromCSV(csvContent) {
+async function importExpensesFromCSV(csvContent) {
   var lines = csvContent.split('\n');
   if (lines.length < 2) {
     alert('CSV vazio ou sem dados.');
@@ -97,6 +98,7 @@ function importExpensesFromCSV(csvContent) {
   
   var headers = lines[0].split(',').map(function(h) { return h.trim().toLowerCase().replace(/"/g, ''); });
   var importedCount = 0;
+  var promises = [];
   
   for (var i = 1; i < lines.length; i++) {
     var line = lines[i].trim();
@@ -134,11 +136,13 @@ function importExpensesFromCSV(csvContent) {
     }
     
     if (expense.date && expense.amount) {
-      saveUserExpense(expense);
+      // Passar true para não renderizar a cada item
+      promises.push(saveUserExpense(expense, true));
       importedCount++;
     }
   }
   
+  await Promise.all(promises);
   return importedCount;
 }
 
@@ -147,12 +151,13 @@ function handleFileImport(event) {
   if (!file) return;
   
   var reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = async function(e) {
     var content = e.target.result;
     var count = 0;
     
     if (file.name.endsWith('.csv')) {
-      count = importExpensesFromCSV(content);
+      // Agora aguarda a importação
+      count = await importExpensesFromCSV(content);
     } else if (file.name.endsWith('.xls') || file.name.endsWith('.xlsx')) {
       alert('Para Excel, por favor converta para CSV primeiro.');
     } else {
@@ -401,7 +406,7 @@ window.viewExpense = function(id) {
   }
 };
 
-function saveExpense() {
+async function saveExpense() {
   var form = $("formNewExpense");
   if (!form) {
     console.error('Form not found');
@@ -411,8 +416,8 @@ function saveExpense() {
   // Get values using direct ID access for reliability
   var dateInput = document.getElementById('expenseDate') || form.querySelector('input[name="date"]');
   var categoryInput = document.getElementById('expenseCategory') || form.querySelector('input[name="category"]');
-  var amountInput = document.getElementById('expenseAmount') || form.querySelector('input[name="amount"]');
-  var ivaRateInput = document.getElementById('expenseIvaRate') || form.querySelector('select[name="ivaRate"]') || form.querySelector('input[name="ivaRate"]');
+  var amountInput = document.getElementById('expenseBase');
+  var ivaRateInput = document.getElementById('expenseIVA');
   var notesInput = document.getElementById('expenseNotes') || form.querySelector('input[name="notes"]');
   var supplierNameInput = document.getElementById('expenseSupplierName') || form.querySelector('input[name="supplierName"]');
   var supplierNifInput = document.getElementById('expenseSupplierNif') || form.querySelector('input[name="supplierNif"]');
@@ -439,7 +444,7 @@ function saveExpense() {
   var ivaAmount = baseImponible * (ivaRateNum / 100);
   var totalAmount = baseImponible + ivaAmount;
 
-  saveUserExpense({ 
+  await saveUserExpense({ 
     date: date, 
     category: category, 
     amount: baseImponible, 
@@ -487,29 +492,76 @@ function openNewExpenseModal() {
   }
 }
 
+// Função para calcular o total em tempo real no formulário
+function setupRealTimeCalculations() {
+  const baseInput = $('expenseBase');
+  const ivaSelect = $('expenseIVA');
+  const totalInput = $('expenseTotal');
+
+  const update = () => {
+    const base = parseFloat(baseInput.value) || 0;
+    const iva = parseFloat(ivaSelect.value) || 0;
+    const total = base + (base * (iva / 100));
+    totalInput.value = total.toFixed(2) + " EUR";
+  };
+
+  if (baseInput && ivaSelect) {
+    baseInput.addEventListener('input', update);
+    ivaSelect.addEventListener('change', update);
+  }
+}
+
 // ========== INICIALIZAR ==========
 document.addEventListener("DOMContentLoaded", function() {
-  markActivePage();
-  
-  function checkAndInit() {
-    if (window.getExpensesSync && window.FirebaseSync) {
-      console.log('store.js disponível, inicializando expense page...');
+  if (typeof markActivePage === 'function') markActivePage();
+
+  // Função auxiliar para esperar Auth
+  function waitForAuth(callback) {
+    if (window.firebaseAuth && window.firebaseAuth.currentUser) return callback();
+    
+    var checkCount = 0;
+    var maxChecks = 100; // 10 segundos
+    
+    function check() {
+      checkCount++;
+      // Verifica se Firebase Auth está pronto e tem usuário
+      var firebaseUser = window.firebaseAuth && window.firebaseAuth.currentUser;
+      // OU se AuthService tem usuário
+      var authUser = window.AuthService && window.AuthService.getCurrentUser();
       
-      // Primeiro sincronizar dados do Firebase
-      if (window.FirebaseSync.syncAllToLocalStorage) {
-        console.log('Sincronizando dados do Firebase...');
-        window.FirebaseSync.syncAllToLocalStorage().then(function() {
-          console.log('Sincronização concluída!');
-          initPage();
-        }).catch(function(err) {
-          console.warn('Erro na sincronização:', err);
-          initPage();
-        });
+      if (firebaseUser || authUser) {
+        callback();
+      } else if (checkCount < maxChecks) {
+        setTimeout(check, 100);
       } else {
-        initPage();
+        // Timeout - talvez redirecionar ou apenas tentar carregar o que der
+        console.log('Auth timeout, tentando inicializar mesmo assim...');
+        callback();
       }
+    }
+    check();
+  }
+
+  function checkAndInit() {
+    // Verifica se store.js está carregado
+    if (window.getExpensesSync) {
+      console.log('store.js disponível, aguardando auth...');
+      
+      waitForAuth(function() {
+        // Sincronizar dados do Firebase se possível
+        if (window.FirebaseSync && window.FirebaseSync.syncAllToLocalStorage) {
+          console.log('Sincronizando dados do Firebase...');
+          window.FirebaseSync.syncAllToLocalStorage().then(function() {
+            initPage();
+          }).catch(function(err) {
+            console.warn('Erro na sincronização:', err);
+            initPage();
+          });
+        } else {
+          initPage();
+        }
+      });
     } else {
-      console.log('Aguardando store.js...');
       setTimeout(checkAndInit, 500);
     }
   }
@@ -520,12 +572,47 @@ document.addEventListener("DOMContentLoaded", function() {
 function initPage() {
     console.log('Inicializando expense page...');
     
-    // Os listeners dos botões estão no expense.html para evitar duplicação
-    // - newExpenseBtn
-    // - saveExpenseBtn
-    // - refreshBtn
-    // - btnImport / confirmImportBtn
-    // - btnExport / confirmExportBtn
+    setupRealTimeCalculations();
+
+    // Anexar Listeners (Garante que funcionem mesmo se não estiverem no HTML)
+    var btnNew = document.getElementById('btnNewExpense') || document.getElementById('newExpenseBtn');
+    if (btnNew) btnNew.addEventListener('click', openNewExpenseModal);
+
+    var btnSave = document.getElementById('saveExpenseBtn');
+    if (btnSave) {
+      // Remove listeners antigos clonando o botão para evitar duplicação
+      var newBtn = btnSave.cloneNode(true);
+      btnSave.parentNode.replaceChild(newBtn, btnSave);
+      newBtn.addEventListener('click', saveExpense);
+    }
+
+    var btnImport = document.getElementById('btnImport');
+    if (btnImport) {
+      btnImport.addEventListener('click', function() {
+        var modal = new bootstrap.Modal(document.getElementById('modalImport'));
+        modal.show();
+      });
+    }
+
+    var btnConfirmImport = document.getElementById('confirmImportBtn');
+    if (btnConfirmImport) {
+      btnConfirmImport.addEventListener('click', function() {
+        var fileInput = document.getElementById('importFile');
+        if (fileInput) handleFileImport({ target: fileInput });
+        // Fechar modal
+        var modalEl = document.getElementById('modalImport');
+        var modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+      });
+    }
+
+    var btnExport = document.getElementById('btnExport');
+    if (btnExport) {
+      btnExport.addEventListener('click', function() {
+        var format = prompt("Formato (pdf, csv, excel):", "pdf");
+        if (format) exportExpenses(format.toLowerCase());
+      });
+    }
     
     // Apenas renderizar os dados iniciais
     renderExpenses();
@@ -693,4 +780,3 @@ function downloadExpenseTemplate() {
   link.click();
   alert('Template descargado! Use este formato para importar dados.');
 }
-

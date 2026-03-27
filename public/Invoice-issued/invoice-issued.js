@@ -77,9 +77,10 @@ function getAllInvoicesIssued() {
   return getUserInvoicesIssued();
 }
 
-// ========== GUARDAR FACTURA - Versão corrigida ==========
-function addInvoiceIssued(invoice) {
-  console.log('addInvoiceIssued chamado:', invoice);
+// ========== GUARDAR FACTURA (Wrapper local) ==========
+// Renomeado para evitar conflito com window.addInvoiceIssued do store.js
+function processInvoiceIssued(invoice) {
+  console.log('processInvoiceIssued chamado:', invoice);
   
   // Calcular IVA
   var baseImponible = Number(invoice.amount || 0);
@@ -104,9 +105,16 @@ function addInvoiceIssued(invoice) {
   };
   
   // Se store.js estiver disponível, usar ele (salva no Firebase + localStorage)
-  if (window.addInvoiceIssued && typeof window.addInvoiceIssued === 'function' && window.addInvoiceIssued !== addInvoiceIssued) {
+  if (window.addInvoiceIssued && typeof window.addInvoiceIssued === 'function') {
     console.log('Usando store.js para salvar no Firebase...');
-    return window.addInvoiceIssued(newInvoice);
+    // store.js retorna uma promise
+    window.addInvoiceIssued(newInvoice).then(() => {
+        // Renderizar após sucesso
+        if (typeof renderInvoices === 'function') renderInvoices();
+        if (typeof renderChart === 'function') renderChart();
+        if (typeof renderSummaryCards === 'function') renderSummaryCards();
+    });
+    return newInvoice;
   }
   
   // Fallback: salvar apenas localmente
@@ -114,7 +122,11 @@ function addInvoiceIssued(invoice) {
   var invoices = getUserInvoicesIssued();
   invoices.push(newInvoice);
   var key = 'upsen_invoices_issued_' + getUserId();
-  localStorage.setItem(key, JSON.stringify(invoices));
+  try {
+    localStorage.setItem(key, JSON.stringify(invoices));
+  } catch (e) {
+    console.error('Erro ao salvar localmente:', e);
+  }
   
   console.log('Fatura salva localmente:', newInvoice.invoiceNumber);
   
@@ -133,13 +145,13 @@ function deleteInvoiceIssued(id) {
   var invoices = getUserInvoicesIssued();
   var filtered = invoices.filter(function(inv) { return inv.id !== id; });
   var key = 'upsen_invoices_issued_' + getUserId();
-  localStorage.setItem(key, JSON.stringify(filtered));
+  try {
+    localStorage.setItem(key, JSON.stringify(filtered));
+  } catch (e) {}
   
-  // Tentar eliminar do Firebase
-  if (_storeDeleteInvoiceIssued && _storeDeleteInvoiceIssued !== deleteInvoiceIssued) {
-    _storeDeleteInvoiceIssued(id).catch(function(err) {
-      console.warn('Erro ao eliminar do Firebase:', err);
-    });
+  // Tentar eliminar do Firebase usando store.js se disponível
+  if (window.deleteInvoiceIssued && typeof window.deleteInvoiceIssued === 'function') {
+    window.deleteInvoiceIssued(id).catch(err => console.warn(err));
   }
   
   renderInvoices();
@@ -153,7 +165,9 @@ function updateInvoiceIssued(id, updates) {
     if (invoices[i].id === id) {
       invoices[i] = Object.assign({}, invoices[i], updates);
       var key = 'upsen_invoices_issued_' + getUserId();
-      localStorage.setItem(key, JSON.stringify(invoices));
+      try {
+        localStorage.setItem(key, JSON.stringify(invoices));
+      } catch(e) {}
       break;
     }
   }
@@ -720,8 +734,8 @@ async function saveInvoiceIssued() {
       var fallbackFields = computeFallbackVeriFactuFields(invoiceData);
       Object.assign(invoiceData, fallbackFields);
       
-      console.log('💾 Chamando addInvoiceIssued com dados (fallback):', invoiceData);
-      addInvoiceIssued(invoiceData);
+      console.log('💾 Chamando processInvoiceIssued com dados (fallback):', invoiceData);
+      processInvoiceIssued(invoiceData);
       verifactuSuccess = false;
     }
   } else {
@@ -731,8 +745,8 @@ async function saveInvoiceIssued() {
     var fallbackFields = computeFallbackVeriFactuFields(invoiceData);
     Object.assign(invoiceData, fallbackFields);
     
-    console.log('💾 Chamando addInvoiceIssued com dados:', invoiceData);
-    addInvoiceIssued(invoiceData);
+    console.log('💾 Chamando processInvoiceIssued com dados:', invoiceData);
+    processInvoiceIssued(invoiceData);
   }
 
   // Close modal
@@ -1122,7 +1136,7 @@ function importInvoicesFromCSV(csvContent) {
     }
     
     if (invoice.invoiceNumber && invoice.customer && invoice.amount) {
-      addInvoiceIssued(invoice);
+      processInvoiceIssued(invoice);
       importedCount++;
     }
   }

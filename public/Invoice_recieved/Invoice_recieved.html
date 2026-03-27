@@ -1,755 +1,923 @@
- <!DOCTYPE html>
+
+
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Accounting - Facturas Recibidas</title>
+
+  <!-- Font Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  
   <style>
     * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #eef1f7; min-height: 100vh; }
-    
-    /* Sidebar Moderno */
-    .sidebar { 
-      width: 260px; 
-      background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%); 
-      color: white; 
-      height: 100vh; 
-      position: fixed; 
-      top: 0;
-      left: 0;
-      overflow-y: auto;
-      z-index: 1000;
-      box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+    /* === LIGHT MODE === */
+    :root {
+      --bg: #F7F9FC;
+      --text: #1F2937;
+      --card-bg: #FFFFFF;
+      --border: #E6EAF0;
+      --muted: #6B7280;
+      --metric1-bg: #e9f6ec;
+      --metric1-text: #0f6c69;
+      --metric2-bg: #fee8d9;
+      --metric2-text: #b86313;
+      --metric3-bg: #e2f1fd;
+      --metric3-text: #0958b2;
+      --metric4-bg: #e9e4fb;
+      --metric4-text: #314057;
+      --btn-primary-bg: #0958b2;
+      --btn-primary-text: #ffffff;
+      --btn-sec-bg: #FFFFFF;
+      --btn-sec-border: #D1D5DB;
+      --btn-sec-text: #4B5563;
+      --alert-bg: #FFF4E5;
+      --alert-border: #FEE8D9;
+      --alert-text: #B26A00;
+      --danger: #e74c3c;
+      --danger-bg: #fde8e8;
+      --danger-text: #c53030;
+      --success: #0f6c69;
     }
-    .sidebar-header { 
-      padding: 30px 20px; 
-      font-size: 1.6em; 
-      font-weight: bold; 
-      background: rgba(0,0,0,0.2); 
-      text-align: center; 
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
+    /* === DARK MODE === */
+    body.dark {
+      --bg: #0F172A;
+      --text: #F1F5F9;
+      --card-bg: #1E293B;
+      --border: #334155;
+      --muted: #94A3B8;
+      --metric1-bg: #064E3B;
+      --metric1-text: #6EE7B7;
+      --metric2-bg: #7C2D12;
+      --metric2-text: #FDBA74;
+      --metric3-bg: #1E3A8A;
+      --metric3-text: #93C5FD;
+      --metric4-bg: #4C1D95;
+      --metric4-text: #C4B5FD;
+      --btn-primary-bg: #1D4ED8;
+      --btn-primary-text: #ffffff;
+      --btn-sec-bg: transparent;
+      --btn-sec-border: #4B5563;
+      --btn-sec-text: #E5E7EB;
+      --alert-bg: #422006;
+      --alert-border: #713f12;
+      --alert-text: #FDBA74;
+      --danger: #ef4444;
+      --danger-bg: #7C2D12;
+      --danger-text: #FDBA74;
+      --success: #6EE7B7;
     }
-    .sidebar-header i { color: #1abc9c; }
-    .sidebar-menu { list-style: none; padding: 0; margin: 0; }
-    .sidebar-menu li { padding: 0; transition: all 0.3s; border-left: 4px solid transparent; }
-    .sidebar-menu li:hover { background: rgba(26, 188, 156, 0.15); border-left-color: #1abc9c; }
-    .sidebar-menu li.active { background: rgba(26, 188, 156, 0.2); border-left-color: #1abc9c; }
-    .sidebar-link { 
-      color: inherit; 
-      text-decoration: none; 
-      display: flex; 
-      align-items: center; 
-      gap: 12px; 
-      padding: 15px 20px;
-      transition: all 0.3s;
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      margin: 0;
     }
-    .sidebar-link:hover { color: #1abc9c; }
-    .sidebar-link i { width: 24px; text-align: center; color: rgba(255,255,255,0.7); transition: color 0.3s; }
-    .sidebar-menu li:hover i, .sidebar-menu li.active i { color: #1abc9c; }
-
-    .sidebar-header-sm {
-      padding: 15px 20px 5px 20px;
-      font-size: 0.75em;
-      font-weight: 700;
-      color: rgba(255,255,255,0.4);
-      text-transform: uppercase;
-      letter-spacing: 1px;
+    /* SIDEBAR */
+    .sidebar {
+      width: 260px; background: var(--card-bg); border-right: 1px solid var(--border);
+      color: var(--text); min-height: 100vh; position: fixed; z-index: 100;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
     }
-    
-    /* Main Content */
-    .main-content { margin-left: 260px; padding: 30px; min-height: 100vh; }
-    
-    /* Page Header */
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-    .page-title { font-size: 2em; font-weight: 700; color: #2c3e50; display: flex; align-items: center; gap: 15px; }
-    .page-title i { color: #1abc9c; }
-    
-    /* Cards Modernos */
-    .modern-card { 
-      background: white; 
-      border-radius: 16px; 
-      padding: 25px; 
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
-      margin-bottom: 25px; 
-      transition: all 0.3s;
-      border: 1px solid rgba(0,0,0,0.05);
+    .sidebar-header {
+      padding: 30px 20px; font-size: 1.4em; font-weight: 700; text-align: center;
+      border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: center; gap: 10px;
     }
-    .modern-card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
-    
-    /* Summary Cards */
+    .sidebar-header i { color: var(--metric3-text); }
+    .sidebar-menu { list-style: none; padding: 15px 0; margin: 0; }
+    .sidebar-menu li { padding: 0 15px; margin-bottom: 5px; }
+    .sidebar-link {
+      color: var(--muted); text-decoration: none; display: flex; align-items: center;
+      gap: 12px; padding: 12px 15px; border-radius: 8px; transition: all 0.2s ease; font-weight: 500;
+    }
+    .sidebar-link i { width: 24px; text-align: center; font-size: 1.1em; transition: color 0.2s; }
+    .sidebar-link:hover { background: var(--border); color: var(--text); }
+    .sidebar-menu li.active .sidebar-link {
+      background: var(--metric3-bg); color: var(--metric3-text); font-weight: 600; box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    /* MAIN CONTENT */
+    .main-content { margin-left: 260px; padding: 32px; min-height: 100vh; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+    .page-title { font-size: 1.8em; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 15px; margin: 0; }
+    .page-title i { color: var(--metric3-text); }
+    /* BUTTONS */
+    .btn { border-radius: 8px; padding: 8px 16px; font-weight: 500; font-size: 0.9rem; transition: all 0.2s; border: none; }
+    .btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); }
+    .btn-primary:hover { opacity: 0.9; color: var(--btn-primary-text); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .btn-secondary { background: var(--btn-sec-bg); color: var(--btn-sec-text); border: 1px solid var(--btn-sec-border); }
+    .btn-secondary:hover { background: var(--border); color: var(--text); transform: translateY(-1px); }
+    .btn-success { background: var(--metric1-bg); color: var(--metric1-text); border: 1px solid var(--metric1-text); }
+    .btn-success:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.1); }
+    .btn-info { background: var(--metric3-bg); color: var(--metric3-text); border: 1px solid var(--metric3-text); }
+    .btn-info:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.1); }
+    .btn-danger { background: var(--danger); color: #ffffff; }
+    .btn-danger:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .btn-outline-primary { background: transparent; border: 1px solid var(--btn-primary-bg); color: var(--btn-primary-bg); }
+    .btn-outline-primary:hover { background: var(--btn-primary-bg); color: #ffffff; }
+    .btn-outline-success { background: transparent; border: 1px solid var(--metric1-text); color: var(--metric1-text); }
+    .btn-outline-success:hover { background: var(--metric1-text); color: #ffffff; }
+    .btn-outline-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+    .btn-outline-danger:hover { background: var(--danger); color: #ffffff; }
+    .btn-outline-secondary { background: transparent; border: 1px solid var(--btn-sec-border); color: var(--btn-sec-text); }
+    .btn-outline-secondary:hover { background: var(--border); color: var(--text); }
+    .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+    .dark-toggle-btn {
+      background: var(--btn-sec-bg); border: 1px solid var(--btn-sec-border); color: var(--btn-sec-text);
+      border-radius: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.2s; font-size: 1.1em;
+    }
+    .dark-toggle-btn:hover { background: var(--border); color: var(--text); }
+    /* MODERN CARDS & ANIMATIONS */
+    .modern-card {
+      background: var(--card-bg); border-radius: 12px; padding: 24px;
+      margin-bottom: 25px; border: 1px solid var(--border);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
+    }
+    .modern-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
+    body.dark .modern-card:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+    /* SUMMARY CARDS */
     .summary-card {
-      background: white;
-      border-radius: 16px;
-      padding: 25px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid var(--border);
       text-align: center;
-      transition: all 0.3s;
-      border: 1px solid rgba(0,0,0,0.05);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
       height: 100%;
     }
-    .summary-card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
+    .summary-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
+    body.dark .summary-card:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
     .summary-icon {
-      width: 60px;
-      height: 60px;
-      border-radius: 16px;
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 15px;
-      font-size: 1.5em;
+      margin: 0 auto 12px;
+      font-size: 1.3em;
     }
-    .summary-icon.blue { background: linear-gradient(135deg, rgba(42, 77, 156, 0.15), rgba(58, 108, 214, 0.15)); color: #2a4d9c; }
-    .summary-icon.green { background: linear-gradient(135deg, rgba(26, 188, 156, 0.15), rgba(22, 160, 133, 0.15)); color: #1abc9c; }
-    .summary-icon.orange { background: linear-gradient(135deg, rgba(243, 156, 18, 0.15), rgba(230, 126, 34, 0.15)); color: #f39c12; }
-    .summary-icon.red { background: linear-gradient(135deg, rgba(231, 76, 60, 0.15), rgba(192, 57, 43, 0.15)); color: #e74c3c; }
-    
-    .summary-card h3 { font-size: 0.9em; color: #6c757d; margin-bottom: 10px; font-weight: 500; }
-    .summary-card p { font-size: 1.8em; font-weight: 700; color: #2c3e50; margin: 0; }
-    .summary-card span { font-size: 0.85em; color: #6c757d; }
-    
-    /* Section Titles */
-    .section-title { 
-      color: #2a4d9c; 
-      font-weight: 600; 
-      margin-bottom: 20px; 
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .section-title i { color: #1abc9c; }
-    
-    /* Status Badges */
+    .summary-icon.blue { background: var(--metric3-bg); color: var(--metric3-text); }
+    .summary-icon.green { background: var(--metric1-bg); color: var(--metric1-text); }
+    .summary-icon.orange { background: var(--metric2-bg); color: var(--metric2-text); }
+    .summary-icon.red { background: #fce8e8; color: var(--danger); }
+    body.dark .summary-icon.red { background: #7f1d1d; color: #fca5a5; }
+    .summary-card h3 { font-size: 0.85em; color: var(--muted); margin-bottom: 8px; font-weight: 500; }
+    .summary-card p { font-size: 1.6em; font-weight: 700; color: var(--text); margin: 0; }
+    .summary-card span { font-size: 0.85em; color: var(--muted); }
+    /* SECTION TITLES */
+    .section-title { color: var(--text); font-weight: 600; font-size: 1.1em; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .section-title i { color: var(--metric3-text); }
+    /* STATUS BADGES */
     .status-badge {
-      padding: 5px 12px;
-      border-radius: 20px;
+      padding: 6px 12px;
+      border-radius: 8px;
       font-size: 0.8em;
-      font-weight: 600;
+      font-weight: 500;
     }
-    .status-paid { background: linear-gradient(135deg, #1abc9c, #16a085); color: white; }
-    .status-pending { background: linear-gradient(135deg, #f39c12, #e67e22); color: white; }
-    .status-overdue { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
-    
-    /* Buttons */
-    .btn { border-radius: 8px; padding: 8px 16px; font-weight: 500; transition: all 0.3s; border: none; font-size: 0.9rem; }
-    .btn-primary { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); color: white; }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(42, 77, 156, 0.4); color: white; }
-    .btn-success { background: linear-gradient(135deg, #1abc9c, #16a085); color: white; }
-    .btn-success:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(26, 188, 156, 0.4); color: white; }
-    .btn-secondary { background: #e9ecef; border: none; color: #495057; }
-    .btn-secondary:hover { background: #dee2e6; transform: translateY(-2px); }
-    .btn-danger { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
-    .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4); color: white; }
-    .btn-outline-primary { background: transparent; border: 2px solid #2a4d9c; color: #2a4d9c; }
-    .btn-outline-primary:hover { background: #2a4d9c; color: white; }
-    .btn-outline-success { background: transparent; border: 2px solid #1abc9c; color: #1abc9c; }
-    .btn-outline-success:hover { background: #1abc9c; color: white; }
-    .btn-outline-danger { background: transparent; border: 2px solid #e74c3c; color: #e74c3c; }
-    .btn-outline-danger:hover { background: #e74c3c; color: white; }
-    
-    /* Form Controls */
+    .status-paid { background: var(--metric1-bg); color: var(--metric1-text); }
+    .status-pending { background: var(--metric2-bg); color: var(--metric2-text); }
+    .status-overdue { background: #fce8e8; color: var(--danger); }
+    body.dark .status-overdue { background: #7f1d1d; color: #fca5a5; }
+    /* FORM CONTROLS */
     .form-control, .form-select {
-      border-radius: 10px;
-      padding: 12px 15px;
-      border: 2px solid #e9ecef;
-      transition: all 0.3s;
+      border-radius: 8px;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      color: var(--text);
+      transition: all 0.2s;
     }
     .form-control:focus, .form-select:focus {
-      border-color: #2a4d9c;
-      box-shadow: 0 0 0 4px rgba(42, 77, 156, 0.1);
+      border-color: var(--btn-primary-bg);
+      box-shadow: 0 0 0 3px rgba(9, 88, 178, 0.1);
+      background: var(--card-bg);
+      color: var(--text);
     }
-    
-    /* Table Styles */
+    .form-label { font-weight: 500; color: var(--text); margin-bottom: 6px; }
+    .form-text { color: var(--muted); }
+    /* TABLE STYLES */
+    .table { color: var(--text); border-color: var(--border); margin-bottom: 0; }
+    .table th { background: transparent; color: var(--text); font-weight: 600; border-bottom: 2px solid var(--border); padding: 15px; }
+    .table td { background: transparent; color: var(--text); border-bottom: 1px solid var(--border); vertical-align: middle; padding: 15px; }
+    .table tbody tr { transition: all 0.2s ease; }
+    .table tbody tr:hover { transform: translateY(-2px); background: rgba(0,0,0,0.02); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    body.dark .table tbody tr:hover { background: rgba(255,255,255,0.03); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 15px;
     }
-    th { 
-      background: linear-gradient(135deg, #2a4d9c, #3a6cd6); 
-      color: white; 
-      font-weight: 600; 
-      padding: 15px; 
-      text-align: left;
-    }
-    th:first-child { border-radius: 10px 0 0 0; }
-    th:last-child { border-radius: 0 10px 0 0; }
-    td { padding: 15px; border-bottom: 1px solid #e9ecef; color: #2c3e50; }
-    tr:hover td { background: rgba(26, 188, 156, 0.05); }
-    
+    th:first-child { border-radius: 8px 0 0 0; }
+    th:last-child { border-radius: 0 8px 0 0; }
     .table-responsive {
       -webkit-overflow-scrolling: touch;
     }
-    
     @media (max-width: 992px) {
       table { font-size: 0.85rem; }
-      th { 
-        font-size: 0.8rem; 
-        padding: 8px 4px !important; 
+      th {
+        font-size: 0.8rem;
+        padding: 8px 4px !important;
       }
-      td { 
-        padding: 8px 4px !important; 
+      td {
+        padding: 8px 4px !important;
         font-size: 0.85rem;
       }
       .action-buttons { white-space: nowrap; }
-      .btn-sm { 
-        padding: 4px 6px !important; 
-        font-size: 0.7rem !important; 
+      .btn-sm {
+        padding: 4px 6px !important;
+        font-size: 0.7rem !important;
         margin: 0 1px;
       }
     }
-    
-    /* Modal */
-    .modal-content { border-radius: 16px; overflow: hidden; border: none; box-shadow: 0 15px 50px rgba(0,0,0,0.2); }
-    .modal-header { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); color: white; border: none; padding: 20px 25px; }
-    .modal-header .btn-close { filter: brightness(0) invert(1); }
-    .modal-body { padding: 25px; background: #f6f8fc; }
-    .modal-footer { padding: 20px 25px; border-top: 1px solid #e9ecef; background: #f6f8fc; }
-    
-    /* Chart Container */
+    /* MODAL */
+    .modal-content { background: var(--card-bg); color: var(--text); border: 1px solid var(--border); border-radius: 12px; }
+    .modal-header { border-bottom: 1px solid var(--border); padding: 20px; background: var(--card-bg); }
+    .modal-header .modal-title { font-weight: 600; }
+    .modal-header .btn-close { filter: brightness(0.5); }
+    body.dark .modal-header .btn-close { filter: invert(1); }
+    .modal-body { padding: 25px; background: var(--card-bg); }
+    .modal-footer { padding: 20px; border-top: 1px solid var(--border); background: var(--card-bg); }
+    /* CHART CONTAINER */
     .chart-container { position: relative; height: 300px; }
-    
-    /* Filter Card */
+    /* FILTER CARD */
     .filter-card {
-      background: white;
-      border-radius: 16px;
+      background: var(--card-bg);
+      border-radius: 12px;
       padding: 20px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      border: 1px solid var(--border);
       margin-bottom: 25px;
-      border: 1px solid rgba(0,0,0,0.05);
+      transition: background-color 0.3s ease;
     }
     .filter-form .form-label {
       font-weight: 500;
-      color: #495057;
+      color: var(--text);
       margin-bottom: 5px;
     }
-    
-    /* Sidebar User Info & Logout */
-    .user-info-sidebar {
-      position: absolute;
-      bottom: 60px;
-      left: 0;
-      right: 0;
-      background: rgba(0,0,0,0.2);
-      padding: 15px 20px;
+    /* ALERT */
+    .alert-info {
+      background: var(--metric3-bg);
+      border: 1px solid var(--border);
+      color: var(--metric3-text);
+      border-radius: 10px;
     }
-    .user-name-sidebar {
-      font-weight: 600;
-      font-size: 0.9em;
-      margin-bottom: 5px;
-    }
-    .user-email-sidebar {
-      font-size: 0.75em;
-      opacity: 0.7;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .btn-logout-sidebar {
-      width: calc(100% - 40px);
-      margin: 15px 20px;
-      margin-top: 10px;
-      background: rgba(231, 76, 60, 0.15);
-      color: #e74c3c;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 8px;
-      font-size: 0.85em;
-      cursor: pointer;
-      transition: all 0.3s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    .btn-logout-sidebar:hover {
-      background: #e74c3c;
-      color: white;
-    }
-    
-    /* Responsive */
+    /* RESPONSIVE */
     @media (max-width: 992px) {
-      .sidebar { position: relative; width: 100%; min-height: auto; }
-      .main-content { margin-left: 0; }
-      .user-info-sidebar { position: relative; bottom: auto; }
+      .sidebar { position: relative; width: 100%; min-height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+      .main-content { margin-left: 0; padding: 20px; }
     }
   </style>
 </head>
 <body>
-<div class="container-fluid p-0">
-  <div class="row m-0">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <i class="fas fa-chart-line"></i>Accounting
-      </div>
-      <ul class="sidebar-menu">
-        <!-- C. Panel de Control -->
-        <li><a href="../frontPage/frontPage.html" class="sidebar-link"><i class="fas fa-home"></i> Panel de Control</a></li>
+  <style>
+    /* MAIN CONTENT */
+    .main-content { margin-left: 260px; padding: 32px; min-height: 100vh; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+    .page-title { font-size: 1.8em; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 15px; margin: 0; }
+    .page-title i { color: var(--metric3-text); }
 
-        <!-- D. Facturación -->
-        <li class="sidebar-header-sm">Facturación</li>
-        <li><a href="../Invoice-issued/invoice-issued.html" class="sidebar-link"><i class="fas fa-file-export"></i> Emitidas (Facturas)</a></li>
-        <li><a href="../budgetPage/budget.html" class="sidebar-link"><i class="fas fa-file-contract"></i> Emitidas (Presupuestos)</a></li>
-        <li class="active"><a href="../Invoice_recieved/Invoice_recieved.html" class="sidebar-link"><i class="fas fa-file-import"></i> Recibidas (Facturas)</a></li>
-        <li><a href="../expense/expense.html" class="sidebar-link"><i class="fas fa-receipt"></i> Recibidas (Gastos)</a></li>
+    /* BUTTONS */
+    .btn { border-radius: 8px; padding: 8px 16px; font-weight: 500; font-size: 0.9rem; transition: all 0.2s; border: none; }
+    .btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); }
+    .btn-primary:hover { opacity: 0.9; color: var(--btn-primary-text); transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.15); }
+    .btn-secondary { background: var(--btn-sec-bg); color: var(--btn-sec-text); border: 1px solid var(--btn-sec-border); }
+    .btn-secondary:hover { background: var(--border); color: var(--text); transform: translateY(-1px); }
+    .btn-success { background: var(--metric1-bg); color: var(--metric1-text); border: 1px solid var(--metric1-text); }
+    .btn-success:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.1); }
+    .btn-info { background: var(--metric3-bg); color: var(--metric3-text); border: 1px solid var(--metric3-text); }
+    .btn-info:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.1); }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.15); }
+    .btn-outline-secondary {
+      background: transparent;
+      color: var(--btn-sec-text);
+      border: 1px solid var(--btn-sec-border);
+    }
+    .btn-outline-secondary:hover {
+      background: var(--border);
+      color: var(--text);
+    }
 
-        <!-- E. Contabilidad -->
-        <li class="sidebar-header-sm">Contabilidad</li>
-        <li><a href="#" class="sidebar-link" style="opacity:0.5"><i class="fas fa-book"></i> Libros Registro</a></li>
-        <li><a href="#" class="sidebar-link" style="opacity:0.5"><i class="fas fa-cash-register"></i> Caja y Tesorería</a></li>
+    .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 
-        <!-- F. Impuestos -->
-        <li class="sidebar-header-sm">Impuestos</li>
-        <li><a href="#" class="sidebar-link" style="opacity:0.5"><i class="fas fa-university"></i> Modelos IVA/IRPF</a></li>
-        <li><a href="#" class="sidebar-link" style="opacity:0.5"><i class="fas fa-qrcode"></i> Veri*Factu</a></li>
+    .dark-toggle-btn {
+      background: var(--btn-sec-bg);
+      border: 1px solid var(--btn-sec-border);
+      color: var(--btn-sec-text);
+      border-radius: 8px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 1.1em;
+    }
+    .dark-toggle-btn:hover { background: var(--border); color: var(--text); }
 
-        <!-- G. Gestión -->
-        <li class="sidebar-header-sm">Gestión</li>
-        <li><a href="../customers.html" class="sidebar-link"><i class="fas fa-users"></i> Clientes y Proveedores</a></li>
-        <li><a href="#" class="sidebar-link" style="opacity:0.5"><i class="fas fa-boxes"></i> Productos y Stock</a></li>
+    /* MODERN CARDS */
+    .modern-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 25px;
+      border: 1px solid var(--border);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
+    }
 
-        <!-- H. Configuración -->
-        <li class="sidebar-header-sm">Configuración</li>
-        <li><a href="../profile/profile.html" class="sidebar-link"><i class="fas fa-building"></i> Datos Empresa</a></li>
-        <li><a href="../profile/settings.html" class="sidebar-link"><i class="fas fa-cog"></i> Plantillas y Logos</a></li>
+    .modern-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgb(0,0,0,0.08); }
+    body.dark .modern-card:hover { box-shadow: 0 10px 25px rgb(0,0,0,0.3); }
 
-        <li style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 10px; padding-top: 10px;">
-          <a href="javascript:void(0)" class="sidebar-link" onclick="confirmLogout()" style="color: #e74c3c;">
-            <i class="fas fa-sign-out-alt"></i> Cerrar sesión
-          </a>
-        </li>
-      </ul>
-    </aside>
-    
-    <!-- Main Content -->
-    <main class="main-content col">
-      <div class="page-header">
-        <h1 class="page-title"><i class="fas fa-file-import"></i> Facturas recibidas</h1>
-        <div class="action-buttons" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-          <button class="btn btn-primary" id="btnNewInvoice" onclick="openNewInvoiceModal()">
-            <i class="fas fa-plus me-1"></i>Nueva factura
-          </button>
-          <button class="btn btn-primary" id="btnNewInvoiceOCR" onclick="openOCRModal()">
-            <i class="fas fa-file-invoice me-1"></i>OCR
-          </button>
-          <button class="btn btn-success" id="btnImport" onclick="var m=bootstrap.Modal.getOrCreateInstance(document.getElementById('modalImport'));m.show()">
-            <i class="fas fa-file-import me-1"></i>Importar
-          </button>
-          <button class="btn btn-info" id="btnExport" onclick="var m=bootstrap.Modal.getOrCreateInstance(document.getElementById('modalExport'));m.show()">
-            <i class="fas fa-file-export me-1"></i>Exportar
-          </button>
-          <button class="btn btn-secondary" id="btnFilter" onclick="toggleFilter()">
-            <i class="fas fa-filter me-1"></i>Filtros
-          </button>
-          <button class="btn btn-success" id="btnDownload" onclick="exportToPDF()">
-            <i class="fas fa-file-pdf me-1"></i>PDF
-          </button>
-          <button class="btn btn-info" id="btnVerifyIntegrity" title="Verificar integridad de la cadena Veri*Factu">
-            <i class="fas fa-shield-alt me-1"></i>Verificar Integridad
-          </button>
-        </div>
-      </div>
+    /* KPI METRIC CARDS */
+    .kpi-card {
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      border: 1px solid var(--border);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
+      cursor: pointer;
+    }
 
-      <!-- Filter Card -->
-      <div class="filter-card" id="filterCard" style="display: none;">
-        <form id="filterForm" class="filter-form">
-          <div class="row">
-            <div class="col-md-3 mb-3">
-              <label class="form-label">Estado</label>
-              <select name="state" class="form-select">
-                <option value="">Todos</option>
-                <option value="Pagada">Pagada</option>
-                <option value="Pendiente">Pendiente</option>
-                <option value="Vencida">Vencida</option>
-              </select>
-            </div>
-            <div class="col-md-3 mb-3">
-              <label class="form-label">Desde fecha</label>
-              <input type="date" name="dateFrom" class="form-control" />
-            </div>
-            <div class="col-md-3 mb-3">
-              <label class="form-label">Hasta fecha</label>
-              <input type="date" name="dateTo" class="form-control" />
-            </div>
-            <div class="col-md-3 mb-3 d-flex align-items-end">
-              <button type="button" class="btn btn-primary" id="applyFilter">Aplicar filtros</button>
-              <button type="button" class="btn btn-secondary ms-2" id="clearFilter">Limpiar</button>
-            </div>
-          </div>
-        </form>
-      </div>
+    .kpi-card:hover { transform: translateY(-6px); box-shadow: 0 10px 25px rgb(0,0,0,0.12); }
+    body.dark .kpi-card:hover { box-shadow: 0 10px 25px rgb(0,0,0,0.4); }
 
-      <!-- Summary Cards -->
-      <div class="row mb-4">
-        <div class="col-md-2 mb-3">
-          <div class="summary-card">
-            <div class="summary-icon orange"><i class="fas fa-clock"></i></div>
-            <h3>Pendientes</h3>
-            <p id="pendingTotal">€0,00</p>
-          </div>
-        </div>
-        <div class="col-md-2 mb-3">
-          <div class="summary-card">
-            <div class="summary-icon green"><i class="fas fa-check-circle"></i></div>
-            <h3>Pagadas</h3>
-            <p id="paidTotal">€0,00</p>
-          </div>
-        </div>
-        <div class="col-md-2 mb-3">
-          <div class="summary-card">
-            <div class="summary-icon blue"><i class="fas fa-calendar-check"></i></div>
-            <h3>Este mes</h3>
-            <p id="monthlyTotal"><span>€0,00</span></p>
-          </div>
-        </div>
-        <div class="col-md-2 mb-3">
-          <div class="summary-card">
-            <div class="summary-icon red"><i class="fas fa-exclamation-triangle"></i></div>
-            <h3>Vencidas</h3>
-            <p id="overdueCount"><span>0</span></p>
-          </div>
-        </div>
-      </div>
+    .kpi-header { display: flex; justify-content: space-between; align-items: flex-start; }
 
-      <!-- Table Card -->
-      <div class="modern-card">
-<h5 class="section-title"><i class="fas fa-list"></i> Facturas recibidas</h5>
-        
-        <!-- NEW: Filter Row -->
-        <div class="row mb-3">
-          <div class="col-md-3">
-            <label class="form-label">Método Pago</label>
-            <select id="paymentFilter" class="form-select">
-              <option value="todas">Todas</option>
-              <option value="efectivo">Efectivo</option>
-              <option value="tarjeta">Tarjeta</option>
-              <option value="transferencia">Transferencia</option>
-              <option value="recibo">Recibo</option>
-              <option value="cheque">Cheque</option>
-              <option value="paypal">Paypal</option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <label class="form-label">Período</label>
-            <select id="dateFilter" class="form-select">
-              <option value="todos">Todos</option>
-              <option value="mes">Este mes</option>
-              <option value="trimestre">Este trimestre</option>
-              <option value="ano">Este año</option>
-            </select>
-          </div>
-          <div class="col-md-5">
-            <label class="form-label">Buscar</label>
-            <input type="text" id="searchInput" class="form-control" placeholder="Número, proveedor, notas...">
-          </div>
-          <div class="col-md-2">
-            <label class="form-label">&nbsp;</label>
-            <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">Limpiar</button>
-          </div>
-        </div>
-        
-        <div class="table-responsive">
-          <table>
+    .kpi-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2em;
+    }
 
-            <thead>
-              <tr>
-                <th><i class="fas fa-hashtag me-1" title="Número"></i>#</th>
-                <th title="Proveedor">Prov.</th>
-                <th title="Fecha">Fecha</th>
-                <th title="Base Imponible">Base</th>
-                <th title="IVA %">IVA%</th>
-                <th title="IVA Amount">IVA</th>
-                <th title="Veri*Factu">Veri</th>
-                <th title="Total">Total</th>
-                <th title="Estado">Estado</th>
-                <th title="Método Pago">Pago</th>
-                <th>Acciones</th>
-            </thead>
+    .kpi-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; opacity: 0.9; }
+    .kpi-value { font-size: 24px; font-weight: 700; margin-bottom: 4px; margin-top: 8px; }
+    .kpi-subtitle { font-size: 13px; opacity: 0.8; }
 
-            <tbody id="invoiceTBody">
-              <tr>
-                <td colspan="9" class="text-center text-muted">Cargando datos...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+    /* FORMS */
+    .form-control, .form-select {
+      border-radius: 8px;
+      padding: 12px 15px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      color: var(--text);
+      transition: all 0.2s;
+    }
 
-      <!-- Chart Card -->
-      <div class="modern-card">
-        <h5 class="section-title"><i class="fas fa-chart-pie"></i> Distribución por proveedor</h5>
-        <div class="chart-container">
-          <canvas id="receivedChartCanvas"></canvas>
-        </div>
-      </div>
-    </main>
-  </div>
-</div>
+    .form-control:focus, .form-select:focus {
+      border-color: var(--metric3-text);
+      box-shadow: 0 0 0 3px rgb(9, 88, 178, 0.1);
+      background: var(--card-bg);
+      color: var(--text);
+    }
 
-<!-- Modal Nueva Factura -->
-<div class="modal fade" id="modalNewInvoiceReceived">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>Nueva factura</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <form id="formNewInvoiceReceived">
-          <div class="mb-3">
-            <label class="form-label"><i class="fas fa-file-invoice me-2"></i>Número de factura</label>
-            <input type="text" name="invoiceNumber" class="form-control" placeholder="Ej: REC-2025-001" required />
-          </div>
-          <div class="mb-3">
-            <label class="form-label"><i class="fas fa-building me-2"></i>Proveedor</label>
-            <input type="text" name="supplier" class="form-control" placeholder="Nombre del proveedor" required />
-          </div>
-          <div class="mb-3">
-            <label class="form-label"><i class="fas fa-id-card me-2"></i>NIF Proveedor</label>
-            <input type="text" name="supplierNif" class="form-control" placeholder="NIF del proveedor" />
-          </div>
-          <div class="mb-3">
-            <label class="form-label"><i class="fas fa-calendar me-2"></i>Fecha</label>
-            <input type="date" name="invoiceDate" class="form-control" required />
-          </div>
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <label class="form-label"><i class="fas fa-file-invoice-dollar me-2"></i>Base Imponible (€)</label>
-              <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required />
-            </div>
-            <div class="col-md-6">
-              <label class="form-label"><i class="fas fa-percent me-2"></i>IVA (%)</label>
-              <input type="number" step="0.01" name="ivaRate" class="form-control" placeholder="21" value="21" />
-            </div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label"><i class="fas fa-flag me-2"></i>Estado</label>
-            <select name="state" class="form-select">
-              <option value="Pendiente">Pendiente</option>
-              <option value="Pagada">Pagada</option>
-              <option value="Vencida">Vencida</option>
-            </select>
-          </div>
-          
-          <!-- NEW: Payment Method for New Invoice -->
-          <div class="mb-3">
-            <label class="form-label">Método de pago <small>(si Pagada)</small></label>
-            <select name="paymentMethod" class="form-select">
-              <option value="">-- Seleccionar --</option>
-              <option value="efectivo">Efectivo</option>
-              <option value="tarjeta">Tarjeta</option>
-              <option value="transferencia">Ingreso/Transferencia</option>
-              <option value="recibo">Recibo Bancario</option>
-              <option value="cheque">Pagaré/Cheque</option>
-              <option value="paypal">Paypal</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Fecha de pago <small>(si Pagada)</small></label>
-            <input type="date" name="paymentDate" class="form-control" />
-            <div class="form-text">Se deja vacío, se usará la fecha actual</div>
-          </div>
-        </form>
+    .form-label { color: var(--text); font-weight: 500; margin-bottom: 8px; }
 
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-success" id="saveInvoiceReceivedBtn">
-          <i class="fas fa-save me-2"></i>Guardar
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
+    /* TABLE */
+    .table { color: var(--text); border-color: var(--border); margin-bottom: 0; }
+    .table th {
+      background: transparent;
+      color: var(--text);
+      font-weight: 600;
+      border-bottom: 2px solid var(--border);
+      padding: 12px 8px;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+    .table td {
+      background: transparent;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+      padding: 12px 8px;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
 
-<!-- Modal Marcar Pagada -->
-<div class="modal fade" id="modalMarkPaid" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-check-circle me-2 text-success"></i>Marcar como Pagada</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <form id="formMarkPaid">
-          <input type="hidden" name="invoiceId" id="markPaidInvoiceId" />
-          <div class="mb-3">
-            <label class="form-label">Método de pago <span class="text-danger">*</span></label>
-            <select name="paymentMethod" class="form-select" required>
-              <option value="">-- Seleccionar método --</option>
-              <option value="efectivo">Efectivo</option>
-              <option value="tarjeta">Tarjeta</option>
-              <option value="transferencia">Ingreso/Transferencia</option>
-              <option value="recibo">Recibo Bancario</option>
-              <option value="cheque">Pagaré/Cheque</option>
-              <option value="paypal">Paypal</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Fecha de pago <span class="text-danger">*</span></label>
-            <input type="date" name="paymentDate" class="form-control" required />
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Notas</label>
-            <textarea name="paymentNotes" class="form-control" rows="2" placeholder="Ref, banco, nº tarjeta..."></textarea>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-success" id="confirmMarkPaid">
-          <i class="fas fa-check me-2"></i>Confirmar Pago
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
+    .table tbody tr { transition: all 0.2s ease; }
+    .table tbody tr:hover { transform: translateY(-2px); background: rgb(0,0,0,0.02); box-shadow: 0 4px 10px rgb(0,0,0,0.05); }
+    body.dark .table tbody tr:hover { background: rgb(255,255,255,0.03); box-shadow: 0 4px 10px rgb(0,0,0,0.2); }
 
-<!-- Modal Nueva Factura por OCR -->
-<div class="modal fade" id="modalNewInvoiceOCR" tabindex="-1" aria-labelledby="modalNewInvoiceOCRLabel" aria-hidden="true">
+    .badge { padding: 6px 12px; border-radius: 8px; font-weight: 500; }
+    .badge-success, .badge-pagada { background: var(--metric1-bg); color: var(--metric1-text); }
+    .badge-warning, .badge-pendiente { background: var(--metric2-bg); color: var(--metric2-text); }
+    .badge-danger, .badge-vencida { background: var(--danger-bg); color: var(--danger-text); }
 
-  <div class="modal-dialog modal-dialog-centered modal-xl">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="modalNewInvoiceOCRLabel"><i class="fas fa-camera me-2"></i>Nueva factura recibida por OCR</h5>
-        <button type="button" class="btn-close" id="closeOCRModal" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-      </div>
-      <div class="modal-body">
-        <form id="formNewInvoiceOCR">
-          <div class="mb-3">
-            <label class="form-label">Subir archivo de factura</label>
-            <input type="file" name="ocrFile" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
-          </div>
-          <div class="alert alert-info">
-            El archivo será procesado automáticamente para extraer los datos de la factura.
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" id="cancelOCRBtn" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-primary" id="saveOCRBtn"><i class="fas fa-cog me-2"></i>Procesar OCR</button>
-      </div>
-    </div>
-  </div>
-</div>
+    /* SECTION TITLE */
+    .section-title {
+      color: var(--text);
+      font-weight: 600;
+      font-size: 1.1em;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title i { color: var(--metric3-text); }
 
-<!-- Hidden file input for import -->
-<input type="file" id="importFileInput" accept=".csv" style="display: none;" />
+    /* MODAL */
+    .modal-content {
+      background: var(--card-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    .modal-header { border-bottom: 1px solid var(--border); padding: 20px; }
+    .modal-header .modal-title { font-weight: 600; }
+    .modal-header .btn-close { filter: brightness(0.5); }
+    body.dark .modal-header .btn-close { filter: invert(1); }
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-<!-- Config -->
-<script src="../shared/firebase-config.js"></script>
-<!-- Auth FIRST - initializes Firebase -->
-<script src="../shared/auth-system.js"></script>
-<!-- Sync service -->
-<script src="../shared/firebase-sync.js"></script>
-<!-- Data Migration -->
-<script src="../shared/data-migration.js"></script>
-<!-- Store (uses sync service) -->
-<script src="../shared/store.js"></script>
+    .modal-body { padding: 25px; }
+    .modal-footer { padding: 20px; border-top: 1px solid var(--border); }
 
-<!-- Veri*Factu Services -->
-<script src="../shared/verifactu-hash.js"></script>
-<script src="../shared/verifactu-ledger.js"></script>
-<script src="../shared/verifactu-integration.js"></script>
+    /* ALERT */
+    .alert {
+      background: var(--alert-bg);
+      border: 1px solid var(--alert-border);
+      color: var(--alert-text);
+      border-radius: 8px;
+    }
 
-<!-- Page specific -->
-<script src="./Invoice_recieved.js"></script>
+    /* CHART */
+    .chart-container { position: relative; height: 300px; margin-top: 20px; }
 
-<!-- Modal Ver Factura -->
-<div class="modal fade" id="viewInvoiceModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-file-import me-2"></i>Detalle de factura</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body" id="viewInvoiceContent"></div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-      </div>
-    </div>
-  </div>
-</div>
+    /* RESPONSIVE */
+    @media (max-width: 992px) {
+      .sidebar { position: relative; width: 100%; min-height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+      .main-content { margin-left: 0; padding: 20px; }
+      .table { font-size: 0.85rem; }
+      .table th { font-size: 0.8rem; padding: 8px 4px !important; }
+      .table td { padding: 8px 4px !important; font-size: 0.85rem; }
+      .btn-sm { padding: 4px 6px !important; font-size: 0.7rem !important; margin: 0 1px; }
+    }
+  </style>
+ <div class="container-fluid p-0">
+   <!-- Main Content -->
+     <main class="main-content">
+       <div class="page-header">
+         <h1 class="page-title"><i class="fas fa-file-import"></i> Facturas recibidas</h1>
+         <div class="action-buttons">
+           <button class="btn btn-primary" id="btnNewInvoice" onclick="openNewInvoiceModal()">
+             <i class="fas fa-plus me-1"></i>Nueva factura
+           </button>
+           <button class="btn btn-primary" id="btnNewInvoiceOCR" onclick="openOCRModal()">
+             <i class="fas fa-file-invoice me-1"></i>OCR
+           </button>
+           <button class="btn btn-success" id="btnImport" onclick="var m=bootstrap.Modal.getOrCreateInstance(document.getElementById('modalImport'));m.show()">
+             <i class="fas fa-file-import me-1"></i>Importar
+           </button>
+           <button class="btn btn-info" id="btnExport" onclick="var m=bootstrap.Modal.getOrCreateInstance(document.getElementById('modalExport'));m.show()">
+             <i class="fas fa-file-export me-1"></i>Exportar
+           </button>
+           <button class="btn btn-secondary" id="btnFilter" onclick="toggleFilter()">
+             <i class="fas fa-filter me-1"></i>Filtros
+           </button>
+           <button class="btn btn-secondary" id="btnDownload" onclick="exportToPDF()">
+             <i class="fas fa-file-pdf me-1"></i>PDF
+           </button>
+           <button class="btn btn-secondary" id="btnVerifyIntegrity" title="Verificar integridad de la cadena Veri*Factu">
+             <i class="fas fa-shield-alt me-1"></i>Verificar Integridad
+           </button>
+           <button class="dark-toggle-btn" id="themeToggle" title="Cambiar tema"><i class="fas fa-moon"></i></button>
+         </div>
+       </div>
 
-<!-- Modal Importar Facturas Recibidas -->
-<div class="modal fade" id="modalImport" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-file-import me-2"></i>Importar Facturas Recibidas</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label">Seleccionar archivo CSV</label>
-          <input type="file" id="importFileInputReceived" class="form-control" accept=".csv" />
-        </div>
-        <div class="alert alert-info">
-          <i class="fas fa-info-circle me-2"></i>
-          <strong>Formato requerido:</strong> El CSV debe tener las columnas: Numero, Proveedor, NIF, Fecha, Base Imponible, IVA Rate, Estado
-        </div>
-        <button type="button" class="btn btn-info" onclick="downloadReceivedInvoiceTemplate()">
-          <i class="fas fa-download me-2"></i>Descargar plantilla
-        </button> 
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-success" id="confirmImportBtn">
-          <i class="fas fa-file-import me-2"></i>Importar
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
+       <!-- Filter Card -->
+       <div class="filter-card" id="filterCard" style="display: none;">
+         <form id="filterForm" class="filter-form">
+           <div class="row">
+             <div class="col-md-3 mb-3">
+               <label class="form-label">Estado</label>
+               <select name="state" class="form-select">
+                 <option value="">Todos</option>
+                 <option value="Pagada">Pagada</option>
+                 <option value="Pendiente">Pendiente</option>
+                 <option value="Vencida">Vencida</option>
+               </select>
+             </div>
+             <div class="col-md-3 mb-3">
+               <label class="form-label">Desde fecha</label>
+               <input type="date" name="dateFrom" class="form-control" />
+             </div>
+             <div class="col-md-3 mb-3">
+               <label class="form-label">Hasta fecha</label>
+               <input type="date" name="dateTo" class="form-control" />
+             </div>
+             <div class="col-md-3 mb-3 d-flex align-items-end">
+               <button type="button" class="btn btn-primary" id="applyFilter">Aplicar filtros</button>
+               <button type="button" class="btn btn-secondary ms-2" id="clearFilter">Limpiar</button>
+             </div>
+           </div>
+         </form>
+       </div>
 
-<!-- Modal Exportar Facturas Recibidas -->
-<div class="modal fade" id="modalExport" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-file-export me-2"></i>Exportar Facturas</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label">Formato</label>
-          <select id="exportFormat" class="form-select">
-            <option value="pdf">PDF</option>
-            <option value="csv">CSV</option>
-            <option value="excel">Excel</option>
-          </select>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Periodo</label>
-          <select id="exportPeriod" class="form-select">
-            <option value="all">Todas</option>
-            <option value="month">Este mes</option>
-            <option value="year">Este año</option>
-          </select>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-primary" id="confirmExportBtn">Exportar</button>
-      </div>
-    </div>
-  </div>
-</div>
+       <!-- Summary Cards -->
+       <div class="row mb-4">
+         <div class="col-md-3 mb-3">
+           <div class="kpi-card" style="background: var(--metric2-bg); color: var(--metric2-text);">
+             <div class="kpi-header">
+               <div>
+                 <div class="kpi-title">Pendientes</div>
+                 <h2 class="kpi-value" id="pendingTotal">€0,00</h2>
+                 <div class="kpi-subtitle">Por pagar</div>
+               </div>
+               <div class="kpi-icon" style="background: rgb(255,255,255,0.2);">
+                 <i class="fas fa-clock"></i>
+               </div>
+             </div>
+           </div>
+         </div>
+         <div class="col-md-3 mb-3">
+           <div class="kpi-card" style="background: var(--metric1-bg); color: var(--metric1-text);">
+             <div class="kpi-header">
+               <div>
+                 <div class="kpi-title">Pagadas</div>
+                 <h2 class="kpi-value" id="paidTotal">€0,00</h2>
+                 <div class="kpi-subtitle">Este mes</div>
+               </div>
+               <div class="kpi-icon" style="background: rgb(255,255,255,0.2);">
+                 <i class="fas fa-check-circle"></i>
+               </div>
+             </div>
+           </div>
+         </div>
+         <div class="col-md-3 mb-3">
+           <div class="kpi-card" style="background: var(--metric3-bg); color: var(--metric3-text);">
+             <div class="kpi-header">
+               <div>
+                 <div class="kpi-title">Recibidas este mes</div>
+                 <h2 class="kpi-value" id="monthlyTotal">€0,00</h2>
+                 <div class="kpi-subtitle">Facturas</div>
+               </div>
+               <div class="kpi-icon" style="background: rgb(255,255,255,0.2);">
+                 <i class="fas fa-calendar-check"></i>
+               </div>
+             </div>
+           </div>
+         </div>
+         <div class="col-md-3 mb-3">
+           <div class="kpi-card" style="background: var(--danger-bg); color: var(--danger-text);">
+             <div class="kpi-header">
+               <div>
+                 <div class="kpi-title">Vencidas</div>
+                 <h2 class="kpi-value" id="overdueCount">0</h2>
+                 <div class="kpi-subtitle">Requieren atención</div>
+               </div>
+               <div class="kpi-icon" style="background: rgb(255,255,255,0.2);">
+                 <i class="fas fa-exclamation-triangle"></i>
+               </div>
+             </div>
+           </div>
+         </div>
+       </div>
 
+       <!-- Table Card -->
+       <div class="modern-card">
+         <h5 class="section-title"><i class="fas fa-list"></i> Facturas recibidas</h5>
+
+         <!-- NEW: Filter Row -->
+         <div class="row mb-3">
+           <div class="col-md-3">
+             <label class="form-label">Método Pago</label>
+             <select id="paymentFilter" class="form-select">
+               <option value="todas">Todas</option>
+               <option value="efectivo">💵 Efectivo</option>
+               <option value="tarjeta">💳 Tarjeta</option>
+               <option value="transferencia">🏦 Transferencia</option>
+               <option value="recibo">📄 Recibo</option>
+               <option value="cheque">✉️ Cheque</option>
+               <option value="paypal">💸 Paypal</option>
+             </select>
+           </div>
+           <div class="col-md-2">
+             <label class="form-label">Período</label>
+             <select id="dateFilter" class="form-select">
+               <option value="todos">Todos</option>
+               <option value="mes">Este mes</option>
+               <option value="trimestre">Este trimestre</option>
+               <option value="ano">Este año</option>
+             </select>
+           </div>
+           <div class="col-md-5">
+             <label class="form-label">Buscar</label>
+             <input type="text" id="searchInput" class="form-control" placeholder="Número, proveedor, notas...">
+           </div>
+           <div class="col-md-2">
+             <label class="form-label">&nbsp;</label>
+             <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">Limpiar</button>
+           </div>
+         </div>
+
+         <div class="table-responsive">
+           <table class="table">
+             <thead>
+               <tr>
+                 <th><i class="fas fa-hashtag me-1" title="Número"></i>#</th>
+                 <th title="Proveedor">Prov.</th>
+                 <th title="Fecha">Fecha</th>
+                 <th title="Base Imponible">Base</th>
+                 <th title="IVA %">IVA%</th>
+                 <th title="IVA Amount">IVA</th>
+                 <th title="Veri*Factu">Veri</th>
+                 <th title="Total">Total</th>
+                 <th title="Estado">Estado</th>
+                 <th title="Método Pago">Pago</th>
+                 <th>Acciones</th>
+             </thead>
+
+             <tbody id="invoiceTBody">
+               <tr>
+                 <td colspan="11" class="text-center text-muted">Cargando datos...</td>
+               </tr>
+             </tbody>
+           </table>
+         </div>
+       </div>
+
+       <!-- Chart Card -->
+       <div class="modern-card">
+         <h5 class="section-title"><i class="fas fa-chart-pie"></i> Distribución por proveedor</h5>
+         <div class="chart-container">
+           <canvas id="receivedChartCanvas"></canvas>
+         </div>
+       </div>
+     </main>
+   </div>
+ </div>
+
+ <!-- Modal Nueva Factura -->
+ <div class="modal fade" id="modalNewInvoiceReceived">
+   <div class="modal-dialog">
+     <div class="modal-content">
+       <div class="modal-header">
+         <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>Nueva factura</h5>
+         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+       </div>
+       <div class="modal-body">
+         <form id="formNewInvoiceReceived">
+           <div class="mb-3">
+             <label class="form-label"><i class="fas fa-file-invoice me-2"></i>Número de factura</label>
+             <input type="text" name="invoiceNumber" class="form-control" placeholder="Ej: REC-2025-001" required />
+           </div>
+           <div class="mb-3">
+             <label class="form-label"><i class="fas fa-building me-2"></i>Proveedor</label>
+             <input type="text" name="supplier" class="form-control" placeholder="Nombre del proveedor" required />
+           </div>
+           <div class="mb-3">
+             <label class="form-label"><i class="fas fa-id-card me-2"></i>NIF Proveedor</label>
+             <input type="text" name="supplierNif" class="form-control" placeholder="NIF del proveedor" />
+           </div>
+           <div class="mb-3">
+             <label class="form-label"><i class="fas fa-calendar me-2"></i>Fecha</label>
+             <input type="date" name="invoiceDate" class="form-control" required />
+           </div>
+           <div class="row mb-3">
+             <div class="col-md-6">
+               <label class="form-label"><i class="fas fa-file-invoice-dollar me-2"></i>Base Imponible (€)</label>
+               <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required />
+             </div>
+             <div class="col-md-6">
+               <label class="form-label"><i class="fas fa-percent me-2"></i>IVA (%)</label>
+               <input type="number" step="0.01" name="ivaRate" class="form-control" placeholder="21" value="21" />
+             </div>
+           </div>
+           <div class="mb-3">
+             <label class="form-label"><i class="fas fa-flag me-2"></i>Estado</label>
+             <select name="state" class="form-select">
+               <option value="Pendiente">Pendiente</option>
+               <option value="Pagada">Pagada</option>
+               <option value="Vencida">Vencida</option>
+             </select>
+           </div>
+
+           <!-- NEW: Payment Method for New Invoice -->
+           <div class="mb-3">
+             <label class="form-label">Método de pago <small>(si Pagada)</small></label>
+             <select name="paymentMethod" class="form-select">
+               <option value="">-- Seleccionar --</option>
+               <option value="efectivo">💵 Efectivo</option>
+               <option value="tarjeta">💳 Tarjeta</option>
+               <option value="transferencia">🏦 Ingreso/Transferencia</option>
+               <option value="recibo">📄 Recibo Bancario</option>
+               <option value="cheque">✉️ Pagaré/Cheque</option>
+               <option value="paypal">💸 Paypal</option>
+             </select>
+           </div>
+           <div class="mb-3">
+             <label class="form-label">Fecha de pago <small>(si Pagada)</small></label>
+             <input type="date" name="paymentDate" class="form-control" />
+             <div class="form-text">Se deja vacío, se usará la fecha actual</div>
+           </div>
+         </form>
+
+       </div>
+       <div class="modal-footer">
+         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+         <button type="button" class="btn btn-success" id="saveInvoiceReceivedBtn">
+           <i class="fas fa-save me-2"></i>Guardar
+         </button>
+       </div>
+     </div>
+   </div>
+ </div>
+
+ <!-- Modal Marcar Pagada -->
+ <div class="modal fade" id="modalMarkPaid" tabindex="-1">
+   <div class="modal-dialog">
+     <div class="modal-content">
+       <div class="modal-header">
+         <h5 class="modal-title"><i class="fas fa-check-circle me-2" style="color: var(--metric1-text);"></i>Marcar como Pagada</h5>
+         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+       </div>
+       <div class="modal-body">
+         <form id="formMarkPaid">
+           <input type="hidden" name="invoiceId" id="markPaidInvoiceId" />
+           <div class="mb-3">
+             <label class="form-label">Método de pago <span class="text-danger">*</span></label>
+             <select name="paymentMethod" class="form-select" required>
+               <option value="">-- Seleccionar método --</option>
+               <option value="efectivo">💵 Efectivo</option>
+               <option value="tarjeta">💳 Tarjeta</option>
+               <option value="transferencia">🏦 Ingreso/Transferencia</option>
+               <option value="recibo">📄 Recibo Bancario</option>
+               <option value="cheque">✉️ Pagaré/Cheque</option>
+               <option value="paypal">💸 Paypal</option>
+             </select>
+           </div>
+           <div class="mb-3">
+             <label class="form-label">Fecha de pago <span class="text-danger">*</span></label>
+             <input type="date" name="paymentDate" class="form-control" required />
+           </div>
+           <div class="mb-3">
+             <label class="form-label">Notas</label>
+             <textarea name="paymentNotes" class="form-control" rows="2" placeholder="Ref, banco, nº tarjeta..."></textarea>
+           </div>
+         </form>
+       </div>
+       <div class="modal-footer">
+         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+         <button type="button" class="btn btn-success" id="confirmMarkPaid">
+           <i class="fas fa-check me-2"></i>Confirmar Pago
+         </button>
+       </div>
+     </div>
+   </div>
+ </div>
+
+ <!-- Modal Nueva Factura por OCR -->
+ <div class="modal fade" id="modalNewInvoiceOCR" tabindex="-1" aria-labelledby="modalNewInvoiceOCRLabel" aria-hidden="true">
+
+   <div class="modal-dialog modal-dialog-centered modal-xl">
+     <div class="modal-content">
+       <div class="modal-header">
+         <h5 class="modal-title" id="modalNewInvoiceOCRLabel"><i class="fas fa-camera me-2"></i>Nueva factura recibida por OCR</h5>
+         <button type="button" class="btn-close" id="closeOCRModal" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+       </div>
+       <div class="modal-body">
+         <form id="formNewInvoiceOCR">
+           <div class="mb-3">
+             <label class="form-label">Subir archivo de factura</label>
+             <input type="file" name="ocrFile" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
+           </div>
+           <div class="alert alert-info">
+             El archivo será procesado automáticamente para extraer los datos de la factura.
+           </div>
+         </form>
+       </div>
+       <div class="modal-footer">
+         <button type="button" class="btn btn-secondary" id="cancelOCRBtn" data-bs-dismiss="modal">Cancelar</button>
+         <button type="button" class="btn btn-primary" id="saveOCRBtn"><i class="fas fa-cog me-2"></i>Procesar OCR</button>
+       </div>
+     </div>
+   </div>
+ </div>
+
+ <!-- Hidden file input for import -->
+ <input type="file" id="importFileInput" accept=".csv" style="display: none;" />
+
+ <!-- Bootstrap JS -->
+ <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+ <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+ <!-- Firebase SDK -->
+ <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+ <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+ <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+ <!-- Config -->
+ <script src="../shared/firebase-config.js"></script>
+ <!-- Auth FIRST - initializes Firebase -->
+ <script src="../shared/auth-system.js"></script>
+ <!-- Sync service -->
+ <script src="../shared/firebase-sync.js"></script>
+ <!-- Data Migration -->
+ <script src="../shared/data-migration.js"></script>
+ <!-- Store (uses sync service) -->
+ <script src="../shared/store.js"></script>
+
+ <!-- Veri*Factu Services -->
+ <script src="../shared/verifactu-hash.js"></script>
+ <script src="../shared/verifactu-ledger.js"></script>
+ <script src="../shared/verifactu-integration.js"></script>
+
+ <!-- Page specific -->
+ <script src="../shared/sidebar.js"></script>
+ <script src="./Invoice_recieved.js"></script>
+
+ <!-- Modal Ver Factura -->
+ <div class="modal fade" id="viewInvoiceModal" tabindex="-1">
+   <div class="modal-dialog">
+     <div class="modal-content">
+       <div class="modal-header">
+         <h5 class="modal-title"><i class="fas fa-file-import me-2"></i>Detalle de factura</h5>
+         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+       </div>
+       <div class="modal-body" id="viewInvoiceContent"></div>
+       <div class="modal-footer">
+         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+       </div>
+     </div>
+   </div>
+ </div>
+
+ <!-- Modal Importar Facturas Recibidas -->
+ <div class="modal fade" id="modalImport" tabindex="-1">
+   <div class="modal-dialog">
+     <div class="modal-content">
+       <div class="modal-header">
+         <h5 class="modal-title"><i class="fas fa-file-import me-2"></i>Importar Facturas Recibidas</h5>
+         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+       </div>
+       <div class="modal-body">
+         <div class="mb-3">
+           <label class="form-label">Seleccionar archivo CSV</label>
+           <input type="file" id="importFileInputReceived" class="form-control" accept=".csv" />
+         </div>
+         <div class="alert alert-info">
+           <i class="fas fa-info-circle me-2"></i>
+           <strong>Formato requerido:</strong> El CSV debe tener las columnas: Numero, Proveedor, NIF, Fecha, Base Imponible, IVA Rate, Estado
+         </div>
+         <button type="button" class="btn btn-info" onclick="downloadReceivedInvoiceTemplate()">
+           <i class="fas fa-download me-2"></i>Descargar plantilla
+         </button>
+       </div>
+       <div class="modal-footer">
+         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+         <button type="button" class="btn btn-success" id="confirmImportBtn">
+           <i class="fas fa-file-import me-2"></i>Importar
+         </button>
+       </div>
+     </div>
+   </div>
+ </div>
+
+ <!-- Modal Exportar Facturas Recibidas -->
+ <div class="modal fade" id="modalExport" tabindex="-1">
+   <div class="modal-dialog">
+     <div class="modal-content">
+       <div class="modal-header">
+         <h5 class="modal-title"><i class="fas fa-file-export me-2"></i>Exportar Facturas</h5>
+         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+       </div>
+       <div class="modal-body">
+         <div class="mb-3">
+           <label class="form-label">Formato</label>
+           <select id="exportFormat" class="form-select">
+             <option value="pdf">PDF</option>
+             <option value="csv">CSV</option>
+             <option value="excel">Excel</option>
+           </select>
+         </div>
+         <div class="mb-3">
+           <label class="form-label">Periodo</label>
+           <select id="exportPeriod" class="form-select">
+             <option value="all">Todas</option>
+             <option value="month">Este mes</option>
+             <option value="year">Este año</option>
+           </select>
+         </div>
+       </div>
+       <div class="modal-footer">
+         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+         <button type="button" class="btn btn-primary" id="confirmExportBtn">Exportar</button>
+       </div>
+     </div>
+   </div>
+ </div>
+ <script></script>
 </body>
 </html>

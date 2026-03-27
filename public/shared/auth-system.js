@@ -272,6 +272,7 @@ init: function() {
       
       // Prevent multiple simultaneous loads
       if (this.isLoadingUserData) {
+        console.log('[AuthService] User data already loading, skipping...');
         console.log('User data already loading, skipping...');
         return;
       }
@@ -279,7 +280,7 @@ init: function() {
       
       this.currentUser = firebaseUser;
       console.log('loadUserData chamado para:', firebaseUser.email, 'uid:', firebaseUser.uid);
-      
+      console.log('[AuthService] loadUserData chamado para:', firebaseUser.email, 'uid:', firebaseUser.uid);
       // Helper function to convert Firestore timestamp
       function convertFirestoreTimestamp(ts) {
         if (!ts) return null;
@@ -329,7 +330,7 @@ init: function() {
                 userData.role = existingRole;
               }
               
-              console.log('Dados carregados do Firestore (companies):', userData.email, userData.company, 'Role:', userData.role);
+              console.log('[AuthService] Dados carregados do Firestore (companies):', userData.email, userData.company, 'Role:', userData.role);
               
               // Apply user theme preference
               if (userData.settings && userData.settings.theme) {
@@ -339,15 +340,15 @@ init: function() {
             } else {
               // New user - create document with default role 'user'
               self.createUserDocument(firebaseUser.uid, userData);
-              console.log('Novo documento criado para:', userData.email, 'Role:', userData.role);
+              console.log('[AuthService] Novo documento criado para:', userData.email, 'Role:', userData.role);
             }
             
             // Save session with fresh data
             self.currentUserData = userData;
             self.saveSession(userData);
             
-            console.log('Session saved, chamando sincronizacao... Role:', userData.role);
-            
+            console.log('[AuthService] Sessão guardada, chamando sincronização... Role:', userData.role);
+
             // Sync data from Firestore subcollections
             if (SyncService && SyncService.syncFromFirebase) {
               SyncService.syncFromFirebase(firebaseUser.uid).then(function() {
@@ -357,7 +358,7 @@ init: function() {
                 triggerAuthReady();
               });
             } else {
-              console.log('SyncService nao disponivel');
+              console.warn('[AuthService] SyncService não disponível');
               self.isLoadingUserData = false;
               // Trigger auth ready
               triggerAuthReady();
@@ -365,7 +366,7 @@ init: function() {
           })
           .catch(function(error) {
             console.warn('Erro Firestore:', error.message);
-            self.firebaseError = error.message;
+            self.firebaseError = error;
             self.currentUserData = userData;
             self.saveSession(userData);
             self.isLoadingUserData = false;
@@ -419,6 +420,7 @@ saveSession: function(user) {
           user: user,
           loginTime: Date.now()
         }));
+        console.log('[AuthService] Sessão guardada no localStorage.');
       } catch (e) {
         console.warn('LocalStorage not available, using sessionStorage');
         try {
@@ -426,6 +428,7 @@ saveSession: function(user) {
             user: user,
             loginTime: Date.now()
           }));
+          console.log('[AuthService] Sessão guardada no sessionStorage.');
         } catch (e2) {
           console.error('Storage not available:', e2);
         }
@@ -435,6 +438,7 @@ saveSession: function(user) {
 getCurrentUser: function() {
       // First check Firebase Auth directly (this always works)
       if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+        console.log('[AuthService] getCurrentUser: Utilizador obtido do Firebase Auth.');
         return window.firebaseAuth.currentUser;
       }
       
@@ -442,19 +446,29 @@ getCurrentUser: function() {
       try {
         var session = localStorage.getItem('upsen_current_user');
         if (session) {
-          var data = JSON.parse(session);
-          if (data && data.user) return data.user;
+          try {
+            var data = JSON.parse(session);
+            if (data && data.user) {
+              console.log('[AuthService] getCurrentUser: Utilizador obtido do localStorage.');
+              return data.user;
+            }
+          } catch (e) {}
         }
       } catch (e) {
-        console.warn('LocalStorage not available');
+        console.warn('[AuthService] Leitura do localStorage falhou.');
       }
       
       // Try sessionStorage as fallback
       try {
         var session = sessionStorage.getItem('upsen_current_user');
         if (session) {
-          var data = JSON.parse(session);
-          if (data && data.user) return data.user;
+          try {
+            var data = JSON.parse(session);
+            if (data && data.user) {
+              console.log('[AuthService] getCurrentUser: Utilizador obtido do sessionStorage.');
+              return data.user;
+            }
+          } catch (e) {}
         }
       } catch (e) {
         console.warn('sessionStorage not available');
@@ -1196,4 +1210,3 @@ loginWithGoogle: function() {
   console.log('Auth System carregado!');
   
 })();
-

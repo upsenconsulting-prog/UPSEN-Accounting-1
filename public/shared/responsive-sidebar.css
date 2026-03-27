@@ -1,0 +1,77 @@
+/* RESPONSIVE SIDEBAR - FOR ALL PAGES */
+
+@media (max-width: 992px) {
+  .sidebar { 
+    position: relative !important; 
+    width: 100% !important; 
+    min-height: auto !important; 
+    border-right: none !important; 
+    border-bottom: 1px solid var(--border) !important; 
+    overflow-y: auto !important; 
+    max-height: 80vh;
+  }
+  
+  .main-content { 
+    margin-left: 0 !important; 
+    padding: 15px !important; 
+  }
+  
+  .page-header { 
+    flex-direction: column !important; 
+    align-items: stretch !important; 
+    gap: 20px !important; 
+  }
+  
+  .action-buttons { 
+    justify-content: center !important; 
+    flex-wrap: wrap !important; 
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar-menu li { 
+    padding: 0 10px !important; 
+  }
+  
+  .sidebar-link { 
+    padding: 10px 12px !important; 
+    font-size: 0.9rem !important; 
+  }
+  
+  .sidebar-header { 
+    padding: 20px 15px !important; 
+    font-size: 1.2em !important; 
+  }
+  
+  .table { 
+    font-size: 0.85rem !important; 
+  }
+  
+  .btn-sm { 
+    padding: 6px 10px !important; 
+    font-size: 0.8rem !important; 
+  }
+}
+
+/* FORCE SCROLLBAR VISIBILITY */
+.sidebar {
+  scrollbar-width: thin !important;
+  scrollbar-color: var(--muted) var(--border) !important;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 6px !important;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: var(--border) !important;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--muted) !important;
+  border-radius: 3px !important;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--text) !important;
+}

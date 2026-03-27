@@ -71,13 +71,18 @@ function getUserDataKey(baseKey) {
 function read(key) {
   // Primeiro tentar chave do utilizador atual
   var userKey = getUserDataKey(key);
-  var data = localStorage.getItem(userKey);
-  if (data) {
-    try {
-      return JSON.parse(data);
-    } catch (e) {
-      return [];
+  try {
+    var data = localStorage.getItem(userKey);
+    if (data) {
+      try {
+        return JSON.parse(data);
+      } catch (e) {
+        return [];
+      }
     }
+  } catch (e) {
+    console.warn('[Store] Acesso ao localStorage bloqueado ou falhou:', e);
+    return [];
   }
   
   // Não fazer fallback para chaves globais - cada utilizador tem dados separados
@@ -87,7 +92,11 @@ function read(key) {
 // Write to localStorage - usa APENAS chave única por utilizador
 function write(key, data) {
   var userKey = getUserDataKey(key);
-  localStorage.setItem(userKey, JSON.stringify(data));
+  try {
+    localStorage.setItem(userKey, JSON.stringify(data));
+  } catch (e) {
+    console.warn('[Store] Escrita no localStorage bloqueada ou falhou:', e);
+  }
 }
 
 // ===== Firebase Helper =====
@@ -694,7 +703,11 @@ function setupRealtimeListeners() {
       var userId = getCurrentUserId();
       var baseKey = 'upsen_' + collection.toLowerCase();
       var userKey = userId ? baseKey + '_' + userId : baseKey;
-      localStorage.setItem(userKey, JSON.stringify(e.detail.data));
+      try {
+        localStorage.setItem(userKey, JSON.stringify(e.detail.data));
+      } catch(err) {
+        console.warn('Erro ao salvar sync no localStorage:', err);
+      }
       
       // Disparar evento específico para a página renderizar novamente
       window.dispatchEvent(new CustomEvent('dataUpdated-' + collection));

@@ -599,13 +599,21 @@ function renderPaymentsForecastChart() {
 
 // ========== MODAL ==========
 function showNewDocumentModal() {
-  var modal = $('modalNewDocument');
-  if (modal) modal.classList.add('show');
+  var modalEl = $('modalNewDocument');
+  if (modalEl) {
+    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+  }
 }
 
 function hideNewDocumentModal() {
-  var modal = $('modalNewDocument');
-  if (modal) modal.classList.remove('show');
+  var modalEl = $('modalNewDocument');
+  if (modalEl) {
+    var modal = bootstrap.Modal.getInstance(modalEl);
+    if (modal) {
+      modal.hide();
+    }
+  }
 }
 
 function navigateToPage(page) {
@@ -754,39 +762,35 @@ function renderDashboardContent() {
   renderForecastChart();
   renderPaymentsForecastChart();
 
+  console.log('Dashboard carregado');
+}
+
+// Mover listeners para fora para que funcionem independente da carga de dados
+function initDashboardUI() {
   var newDocBtn = $('newDocumentBtn');
   if (newDocBtn) {
-    newDocBtn.addEventListener('click', showNewDocumentModal);
+    newDocBtn.onclick = showNewDocumentModal;
   }
 
   var btnNewExpense = $('btnNewExpense');
   if (btnNewExpense) {
-    btnNewExpense.addEventListener('click', function() { navigateToPage('../expense/expense.html'); });
+    btnNewExpense.onclick = function() { navigateToPage('../expense/expense.html'); };
   }
 
   var btnNewInvoiceIssued = $('btnNewInvoiceIssued');
   if (btnNewInvoiceIssued) {
-    btnNewInvoiceIssued.addEventListener('click', function() { navigateToPage('../Invoice-issued/invoice-issued.html'); });
+    btnNewInvoiceIssued.onclick = function() { navigateToPage('../Invoice-issued/invoice-issued.html'); };
   }
 
   var btnNewInvoiceReceived = $('btnNewInvoiceReceived');
   if (btnNewInvoiceReceived) {
-    btnNewInvoiceReceived.addEventListener('click', function() { navigateToPage('../Invoice_recieved/Invoice_recieved.html'); });
+    btnNewInvoiceReceived.onclick = function() { navigateToPage('../Invoice_recieved/Invoice_recieved.html'); };
   }
 
   var btnNewBudget = $('btnNewBudget');
   if (btnNewBudget) {
-    btnNewBudget.addEventListener('click', function() { navigateToPage('../budgetPage/budget.html'); });
+    btnNewBudget.onclick = function() { navigateToPage('../budgetPage/budget.html'); };
   }
-
-  window.addEventListener('click', function(e) {
-    var modal = $('modalNewDocument');
-    if (modal && e.target === modal) {
-      hideNewDocumentModal();
-    }
-  });
-  
-  console.log('Dashboard carregado');
 }
 
 // Esperar Auth estar pronto
@@ -857,6 +861,11 @@ function checkAuthAndInit() {
 
 // Iniciar com um pequeno atraso para garantir que todos os scripts estão carregados
 // Usar o novo sistema waitForAuth do auth-system.js
+document.addEventListener('DOMContentLoaded', function() {
+  // Inicializa a UI imediatamente para que os botões do modal funcionem
+  initDashboardUI();
+});
+
 setTimeout(function() {
   // Primeiro verificar se store.js está disponível
   function checkAndInit() {

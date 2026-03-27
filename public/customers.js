@@ -1,4 +1,4 @@
-(function() {
+ (function() {
   'use strict';
 
   // Removed imports, using window.ClientService instead
@@ -27,7 +27,7 @@
 
   function getCurrentUserId() {
     let user = null;
-    if (window.AuthService && typeof window.AuthService.getCurrentUser === 'function') {
+    if (window.AuthSystem && typeof window.AuthSystem.getCurrentUser === 'function') {
       user = window.AuthService.getCurrentUser();
     }
 
