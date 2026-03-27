@@ -77,9 +77,10 @@ function getAllInvoicesIssued() {
   return getUserInvoicesIssued();
 }
 
-// ========== GUARDAR FACTURA - Versão corrigida ==========
-function addInvoiceIssued(invoice) {
-  console.log('addInvoiceIssued chamado:', invoice);
+// ========== GUARDAR FACTURA (Wrapper local) ==========
+// Renomeado para evitar conflito com window.addInvoiceIssued do store.js
+function processInvoiceIssued(invoice) {
+  console.log('processInvoiceIssued chamado:', invoice);
   
   // Calcular IVA
   var baseImponible = Number(invoice.amount || 0);
@@ -104,9 +105,16 @@ function addInvoiceIssued(invoice) {
   };
   
   // Se store.js estiver disponível, usar ele (salva no Firebase + localStorage)
-  if (window.addInvoiceIssued && typeof window.addInvoiceIssued === 'function' && window.addInvoiceIssued !== addInvoiceIssued) {
+  if (window.addInvoiceIssued && typeof window.addInvoiceIssued === 'function') {
     console.log('Usando store.js para salvar no Firebase...');
-    return window.addInvoiceIssued(newInvoice);
+    // store.js retorna uma promise
+    window.addInvoiceIssued(newInvoice).then(() => {
+        // Renderizar após sucesso
+        if (typeof renderInvoices === 'function') renderInvoices();
+        if (typeof renderChart === 'function') renderChart();
+        if (typeof renderSummaryCards === 'function') renderSummaryCards();
+    });
+    return newInvoice;
   }
   
   // Fallback: salvar apenas localmente
@@ -114,7 +122,11 @@ function addInvoiceIssued(invoice) {
   var invoices = getUserInvoicesIssued();
   invoices.push(newInvoice);
   var key = 'upsen_invoices_issued_' + getUserId();
-  localStorage.setItem(key, JSON.stringify(invoices));
+  try {
+    localStorage.setItem(key, JSON.stringify(invoices));
+  } catch (e) {
+    console.error('Erro ao salvar localmente:', e);
+  }
   
   console.log('Fatura salva localmente:', newInvoice.invoiceNumber);
   
@@ -133,13 +145,13 @@ function deleteInvoiceIssued(id) {
   var invoices = getUserInvoicesIssued();
   var filtered = invoices.filter(function(inv) { return inv.id !== id; });
   var key = 'upsen_invoices_issued_' + getUserId();
-  localStorage.setItem(key, JSON.stringify(filtered));
+  try {
+    localStorage.setItem(key, JSON.stringify(filtered));
+  } catch (e) {}
   
-  // Tentar eliminar do Firebase
-  if (_storeDeleteInvoiceIssued && _storeDeleteInvoiceIssued !== deleteInvoiceIssued) {
-    _storeDeleteInvoiceIssued(id).catch(function(err) {
-      console.warn('Erro ao eliminar do Firebase:', err);
-    });
+  // Tentar eliminar do Firebase usando store.js se disponível
+  if (window.deleteInvoiceIssued && typeof window.deleteInvoiceIssued === 'function') {
+    window.deleteInvoiceIssued(id).catch(err => console.warn(err));
   }
   
   renderInvoices();
@@ -153,7 +165,9 @@ function updateInvoiceIssued(id, updates) {
     if (invoices[i].id === id) {
       invoices[i] = Object.assign({}, invoices[i], updates);
       var key = 'upsen_invoices_issued_' + getUserId();
-      localStorage.setItem(key, JSON.stringify(invoices));
+      try {
+        localStorage.setItem(key, JSON.stringify(invoices));
+      } catch(e) {}
       break;
     }
   }
@@ -162,56 +176,30 @@ function updateInvoiceIssued(id, updates) {
 }
 
 async function renderSummaryCards() {
-  var list = getAllInvoicesIssued();
-  var now = new Date();
-  var pendingTotal = 0, overdueTotal = 0, monthlyCount = 0, totalAmount = 0;
-  var paymentTotals = {
-    efectivo: 0, tarjeta: 0, transferencia: 0, recibo: 0, cheque: 0, paypal: 0
-  };
-  
-  for (var i = 0; i < list.length; i++) {
-    var inv = list[i];
-    var amount = Number(inv.amount || 0);
-    totalAmount += amount;
-    
-    // Existing stats
-    if (inv.state === 'Pendiente') pendingTotal += amount;
-    if (inv.dueDate && inv.state === 'Pendiente') {
-      var dueDate = new Date(inv.dueDate);
-      if (dueDate < now) overdueTotal += amount;
-    }
-    if (inv.invoiceDate) {
-      var parts = inv.invoiceDate.split('-');
-      if (parts.length >= 2) {
-        var year = parseInt(parts[0]);
-        var month = parseInt(parts[1]) - 1;
-        if (year === now.getFullYear() && month === now.getMonth()) monthlyCount++;
-      }
-    }
-    
-    // NEW: Payment method totals (only paid invoices)
-    if (inv.state === 'Pagada' && inv.paymentMethod && paymentTotals[inv.paymentMethod]) {
-      paymentTotals[inv.paymentMethod] += amount;
-    }
-  }
-  
-  var avgAmount = list.length > 0 ? totalAmount / list.length : 0;
-  
-  // Update existing cards
-  if ($('pendingTotal')) $('pendingTotal').textContent = moneyEUR(pendingTotal);
-  if ($('overdueTotal')) $('overdueTotal').textContent = moneyEUR(overdueTotal);
-  if ($('monthlyCount')) {
-    var mcSpan = $('monthlyCount').querySelector('span');
-    if (mcSpan) mcSpan.textContent = monthlyCount;
-    else $('monthlyCount').textContent = monthlyCount + ' facturas';
-  }
-  if ($('averageAmount')) {
-    var avgSpan = $('averageAmount').querySelector('span');
-    if (avgSpan) avgSpan.textContent = moneyEUR(avgAmount);
-    else $('averageAmount').textContent = moneyEUR(avgAmount);
-  }
-  
+  const list = getAllInvoicesIssued();
+  const stats = computeAllInvoiceStats(list);
+
+  // MAIN KPIs
+  if ($('pendingTotal')) $('pendingTotal').textContent = moneyEUR(stats.issued.totalPending);
+  if ($('overdueTotal')) $('overdueTotal').textContent = moneyEUR(stats.issued.totalOverdue);
+
+  if ($('monthlyAmount')) $('monthlyAmount').textContent = moneyEUR(stats.issued.monthlyAmount);
+  if ($('monthlyCount')) $('monthlyCount').textContent = stats.issued.monthlyCount + ' facturas';
+
+  if ($('collectedTotal')) $('collectedTotal').textContent = moneyEUR(stats.issued.totalCollected);
+  if ($('averageAmount')) $('averageAmount').textContent = moneyEUR(stats.issued.averageInvoice);
+
+  // IVA
+  if ($('ivaTotal')) $('ivaTotal').textContent = moneyEUR(stats.issued.ivaTotal);
+
+  // YTD
+  if ($('ytdIncome')) $('ytdIncome').textContent = moneyEUR(stats.ytd.ytdIncome);
+  if ($('ytdIVA')) $('ytdIVA').textContent = moneyEUR(stats.ytd.ytdIVA);
+
+  // PAYMENT METHODS
+  renderPaymentSummaryCards(stats.paymentMethods);
 }
+
 
 function renderPaymentSummaryCards(totals) {
   var container = $('paymentSummaryContainer');
@@ -720,8 +708,8 @@ async function saveInvoiceIssued() {
       var fallbackFields = computeFallbackVeriFactuFields(invoiceData);
       Object.assign(invoiceData, fallbackFields);
       
-      console.log('💾 Chamando addInvoiceIssued com dados (fallback):', invoiceData);
-      addInvoiceIssued(invoiceData);
+      console.log('💾 Chamando processInvoiceIssued com dados (fallback):', invoiceData);
+      processInvoiceIssued(invoiceData);
       verifactuSuccess = false;
     }
   } else {
@@ -731,8 +719,8 @@ async function saveInvoiceIssued() {
     var fallbackFields = computeFallbackVeriFactuFields(invoiceData);
     Object.assign(invoiceData, fallbackFields);
     
-    console.log('💾 Chamando addInvoiceIssued com dados:', invoiceData);
-    addInvoiceIssued(invoiceData);
+    console.log('💾 Chamando processInvoiceIssued com dados:', invoiceData);
+    processInvoiceIssued(invoiceData);
   }
 
   // Close modal
@@ -1122,14 +1110,262 @@ function importInvoicesFromCSV(csvContent) {
     }
     
     if (invoice.invoiceNumber && invoice.customer && invoice.amount) {
-      addInvoiceIssued(invoice);
+      processInvoiceIssued(invoice);
       importedCount++;
     }
   }
   
   return importedCount;
 }
+function computeYTD(list) {
+  const now = new Date();
+  const year = now.getFullYear();
+
+  let ytd = {
+    ytdIncome: 0,
+    ytdIVA: 0,
+    ytdPaid: 0,
+    ytdPending: 0
+  };
+
+  list.forEach(inv => {
+    if (!inv.invoiceDate) return;
+    const date = new Date(inv.invoiceDate);
+    if (date.getFullYear() !== year) return;
+
+    const amount = Number(inv.totalAmount || inv.amount || 0);
+    const iva = Number(inv.ivaAmount || 0);
+
+    ytd.ytdIncome += amount;
+    ytd.ytdIVA += iva;
+
+    if (inv.state === 'Pagada') ytd.ytdPaid += amount;
+    else ytd.ytdPending += amount;
+  });
+
+  return ytd;
+}
+
 // ===== ADD CALCULATION FUNCTIONS =====
+function computeIssuedTotals(list) {
+  const now = new Date();
+  let totals = {
+    totalIssued: 0,
+    totalCollected: 0,
+    totalPending: 0,
+    totalOverdue: 0,
+    overdueCount: 0,
+    ivaTotal: 0,
+    monthlyAmount: 0,
+    monthlyCount: 0,
+    averageInvoice: 0
+  };
+
+  list.forEach(inv => {
+    const amount = Number(inv.totalAmount || inv.amount || 0);
+    const iva = Number(inv.ivaAmount || 0);
+    const date = new Date(inv.invoiceDate);
+    const due = new Date(inv.dueDate);
+
+    totals.totalIssued += amount;
+    totals.ivaTotal += iva;
+
+    if (inv.state === 'Pagada') {
+      totals.totalCollected += amount;
+    } else if (inv.state === 'Pendiente') {
+      totals.totalPending += amount;
+      if (due < now) {
+        totals.totalOverdue += amount;
+        totals.overdueCount++;
+      }
+    }
+
+    if (date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) {
+      totals.monthlyAmount += amount;
+      totals.monthlyCount++;
+    }
+  });
+
+  totals.averageInvoice = list.length ? totals.totalIssued / list.length : 0;
+
+  return totals;
+}
+function computeMonthlySeries(list) {
+  const now = new Date();
+  let series = {};
+
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    series[key] = 0;
+  }
+
+  list.forEach(inv => {
+    if (!inv.invoiceDate) return;
+    const key = inv.invoiceDate.substring(0, 7);
+    if (series[key] !== undefined) {
+      series[key] += Number(inv.totalAmount || inv.amount || 0);
+    }
+  });
+
+  return series;
+}
+function computeForecast(monthlySeries) {
+  const values = Object.values(monthlySeries);
+  if (values.length < 3) return [];
+
+  const last3 = values.slice(-3);
+  const avg = last3.reduce((a, b) => a + b, 0) / 3;
+
+  return [
+    avg * 1.05, // +5%
+    avg * 1.10, // +10%
+    avg * 1.15  // +15%
+  ];
+}
+function computePaymentMethods(list) {
+  const totals = {
+    efectivo: 0,
+    tarjeta: 0,
+    transferencia: 0,
+    recibo: 0,
+    cheque: 0,
+    paypal: 0
+  };
+
+  list.forEach(inv => {
+    if (inv.state === 'Pagada' && inv.paymentMethod && totals[inv.paymentMethod] !== undefined) {
+      totals[inv.paymentMethod] += Number(inv.totalAmount || inv.amount || 0);
+    }
+  });
+
+  return totals;
+}
+function computeAllInvoiceStats(list, expenseTotals = { totalExpenses: 0 }) {
+  const issued = computeIssuedTotals(list);
+  const ytd = computeYTD(list);
+  const monthlySeries = computeMonthlySeries(list);
+  const forecast = computeForecast(monthlySeries);
+  const paymentMethods = computePaymentMethods(list);
+  const netRevenue = computeNetRevenue(issued, expenseTotals);
+
+  return {
+    issued,
+    ytd,
+    monthlySeries,
+    forecast,
+    paymentMethods,
+    netRevenue
+  };
+}
+// =====================
+// BACKEND CALCULATION ENGINE
+// =====================
+
+function computeIssuedTotals(list) {
+  const now = new Date();
+  let totals = {
+    totalIssued: 0,
+    totalCollected: 0,
+    totalPending: 0,
+    totalOverdue: 0,
+    overdueCount: 0,
+    ivaTotal: 0,
+    monthlyAmount: 0,
+    monthlyCount: 0,
+    averageInvoice: 0
+  };
+
+  list.forEach(inv => {
+    const amount = Number(inv.totalAmount || inv.amount || 0);
+    const iva = Number(inv.ivaAmount || 0);
+    const date = new Date(inv.invoiceDate);
+    const due = new Date(inv.dueDate);
+
+    totals.totalIssued += amount;
+    totals.ivaTotal += iva;
+
+    if (inv.state === 'Pagada') {
+      totals.totalCollected += amount;
+    } else if (inv.state === 'Pendiente') {
+      totals.totalPending += amount;
+      if (due < now) {
+        totals.totalOverdue += amount;
+        totals.overdueCount++;
+      }
+    }
+
+    if (date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) {
+      totals.monthlyAmount += amount;
+      totals.monthlyCount++;
+    }
+  });
+
+  totals.averageInvoice = list.length ? totals.totalIssued / list.length : 0;
+
+  return totals;
+}
+
+function computeYTD(list) {
+  const now = new Date();
+  const year = now.getFullYear();
+
+  let ytd = {
+    ytdIncome: 0,
+    ytdIVA: 0,
+    ytdPaid: 0,
+    ytdPending: 0
+  };
+
+  list.forEach(inv => {
+    if (!inv.invoiceDate) return;
+    const date = new Date(inv.invoiceDate);
+    if (date.getFullYear() !== year) return;
+
+    const amount = Number(inv.totalAmount || inv.amount || 0);
+    const iva = Number(inv.ivaAmount || 0);
+
+    ytd.ytdIncome += amount;
+    ytd.ytdIVA += iva;
+
+    if (inv.state === 'Pagada') ytd.ytdPaid += amount;
+    else ytd.ytdPending += amount;
+  });
+
+  return ytd;
+}
+
+function computePaymentMethods(list) {
+  const totals = {
+    efectivo: 0,
+    tarjeta: 0,
+    transferencia: 0,
+    recibo: 0,
+    cheque: 0,
+    paypal: 0
+  };
+
+  list.forEach(inv => {
+    if (inv.state === 'Pagada' && inv.paymentMethod && totals[inv.paymentMethod] !== undefined) {
+      totals[inv.paymentMethod] += Number(inv.totalAmount || inv.amount || 0);
+    }
+  });
+
+  return totals;
+}
+
+function computeAllInvoiceStats(list) {
+  const issued = computeIssuedTotals(list);
+  const ytd = computeYTD(list);
+  const paymentMethods = computePaymentMethods(list);
+
+  return {
+    issued,
+    ytd,
+    paymentMethods
+  };
+}
+
 function calculateLineSubtotal(line) {
     if (!line) return 0;
     var price = Number(line.price || line.precio || 0);
@@ -1199,3 +1435,4 @@ vatRates.forEach(rate => {
     const total = calculateInvoiceTotal(invoiceLines, rate);
     console.log(`Total with VAT ${rate * 100}%: ${total}`);
 });
+
