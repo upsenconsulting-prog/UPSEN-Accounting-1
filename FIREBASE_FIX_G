@@ -1,0 +1,93 @@
+# Guia para Corrigir Problemas de Firebase Firestore
+
+## Problema
+"Missing or insufficient permissions" quando tenta carregar os dados do utilizador.
+
+## Causa
+O documento do utilizador nao existe na colecao "users" do Firestore.
+
+## Solucao Passo a Passo:
+
+### Opcao 1: Atualizar Regras do Firestore (Recomendado)
+
+1. Aceda ao Firebase Console: https://console.firebase.google.com/
+2. Selecione o seu projeto
+3. Va para **Firestore Database** > **Regras**
+4. Substitua as regras atuais por:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Permitir acesso acolecao users
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    // Permitir acesso a sub-colecoes
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+```
+
+5. Clique em **Publicar**
+
+### Opcao 2: Criar Documento Manual (Rapido)
+
+1. Aceda ao Firebase Console
+2. Va para **Firestore Database** > **Iniciar colecao**
+3. Nome da colecao: `users`
+4. Clique em **Seguinte**
+5. Crie um documento com:
+   - ID do documento: `brunayasmin139` (o UID do utilizador)
+   - Campo: `email` = `brunayasmin139@gmail.com`
+   - Campo: `name` = `Nome do utilizador`
+   - Campo: `company` = `Nome da empresa`
+   - Campo: `role` = `user`
+   - Campo: `settings` = objeto com currency, language, theme
+
+### Opcao 3: Fazer Login Novamente (Sistema Automatico)
+
+O sistema auth-system.js ja foi atualizado para criar o documento automaticamente.
+
+1. Faca logout da aplicacao
+2. Limpe o cache do navegador (Ctrl+Shift+Delete)
+3. Faca login novamente com brunayasmin139@gmail.com
+4. O sistema criara o documento automaticamente
+
+## Verificar se Funciona
+
+1. Abra o console do navegador (F12)
+2. Faca login
+3. Deve ver mensagens como:
+   - "AuthSystem inicializado"
+   - "Documento criado: [uid]"
+   - "Dados carregados com sucesso"
+
+## Estrutura do Documento no Firestore
+
+```json
+{
+  "uid": "brunayasmin139",
+  "email": "brunayasmin139@gmail.com",
+  "name": "Bruno Yasmin",
+  "company": "Empresa",
+  "phone": "+351...",
+  "role": "user",
+  "emailVerified": true,
+  "createdAt": "2024-01-01T00:00:00.000Z",
+  "settings": {
+    "currency": "EUR",
+    "language": "pt",
+    "theme": "light"
+  }
+}
+```
+
+## Contatos de Suporte
+
+Se ainda tiver problemas:
+1. Verifique se o Firebase Auth esta ativado no Console
+2. Verifique se o email esta verificado
+3. Verifique as permissoes do projeto

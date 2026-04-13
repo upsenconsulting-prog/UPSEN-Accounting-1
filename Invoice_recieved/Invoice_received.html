@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Contabilidad - Facturas Recibidas</title>
+  <style>
+    /* Basis-Styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background-color: #eef1f7;
+      color: #333;
+      height: 100vh;
+      overflow: hidden;
+    }
+    /* (CSS permanece igual) */
+  </style>
+</head>
+<body>
+  <!-- Login Screen -->
+  <div class="login-container" id="loginScreen">
+    <div class="login-form">
+      <h2>Iniciar sesión en Contabilidad</h2>
+      <div class="form-group">
+        <label for="email">Correo electrónico</label>
+        <input type="email" id="email" placeholder="Tu correo electrónico" value="test@example.com">
+      </div>
+      <div class="form-group">
+        <label for="password">Contraseña</label>
+        <input type="password" id="password" placeholder="Tu contraseña" value="123456">
+      </div>
+      <button class="login-btn" id="loginBtn">Iniciar sesión</button>
+    </div>
+  </div>
+
+  <!-- App Container -->
+  <div class="app-container" id="appContainer">
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+      <div class="logo">Contabilidad</div>
+      <div class="nav-items">
+        <div class="user-profile">
+          <div class="avatar" id="userMenuBtn">JS</div>
+          <span>John Smith</span>
+          <div class="dropdown-menu" id="userDropdown">
+            <div class="dropdown-item">Perfil</div>
+            <div class="dropdown-item">Configuración</div>
+            <div class="dropdown-item" id="logoutBtn">Cerrar sesión</div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-header">Menú</div>
+        <div class="accordion">
+          <div class="accordion-item">
+            <div class="accordion-header">Contabilidad</div>
+            <div class="accordion-content open">
+                <ul class="sidebar-menu">
+                    <li><a href="../public/frontPage/frontPage.html" class="sidebar-link">Panel de control</a></li>
+                    <li><a href="../expense/expense.html" class="sidebar-link">Gastos</a></li>
+                    <li><a href="../Invoice-issued/invoice-issued.html" class="sidebar-link">Facturas Emitidas</a></li>
+                    <li class="active"><a href="../public/Invoice_recieved/Invoice_recieved.html" class="sidebar-link">Facturas Recibidas</a></li>
+                    <li><a href="../budgetPage/budget.html" class="sidebar-link">Presupuestos</a></li>
+                    <li><a href="#help" class="sidebar-link">Ayuda</a></li>
+                </ul>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Content Area -->
+      <main class="content">
+        <div class="dashboard-header">
+          <h1 class="page-title">Facturas Recibidas</h1>
+          <div class="period-selector">
+            <label for="periodSelect">Período:</label>
+            <select id="periodSelect">
+              <option>2025-Q3</option>
+              <option>2025-Q2</option>
+              <option>2025-Q1</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons" style="margin-bottom: 25px;">
+          <button class="btn btn-primary" id="newInvoiceBtn">
+            <span>+</span> Nueva factura
+          </button>
+          <button class="btn btn-primary" id="newInvoiceOCRBtn">
+            <span>📄</span> Factura por OCR
+          </button>
+          <button class="btn btn-secondary" id="filterBtn">
+            <span>🔍</span> Filtro
+          </button>
+          <button class="btn btn-success" id="downloadPDFBtn">
+            <span>📊</span> Descargar como PDF
+          </button>
+        </div>
+
+        <!-- Filter Card -->
+        <div class="filter-card" id="filterCard">
+          <form id="filterForm" class="filter-form">
+            <div class="filter-group">
+              <label>Estado</label>
+              <select name="state">
+                <option value="">Todos</option>
+                <option value="Paid">Pagado</option>
+                <option value="Overdue">Vencido</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Desde fecha</label>
+              <input type="date" name="dateFrom" />
+            </div>
+            <div class="filter-group">
+              <label>Hasta fecha</label>
+              <input type="date" name="dateTo" />
+            </div>
+            <div class="filter-group">
+              <button type="button" class="apply-filter-btn" id="applyFilter">Aplicar filtro</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="cards-container">
+          <div class="card summary-card">
+            <h2>Pagos pendientes</h2>
+            <p><strong>€3.250,00</strong></p>
+          </div>
+          <div class="card summary-card">
+            <h2>Facturas vencidas</h2>
+            <p><strong>€1.120,00</strong></p>
+          </div>
+          <div class="card summary-card">
+            <h2>Recibidas este mes</h2>
+            <p><strong>8 facturas</strong></p>
+          </div>
+          <div class="card summary-card">
+            <h2>Importe promedio</h2>
+            <p><strong>€406,25</strong></p>
+          </div>
+        </div>
+
+        <!-- Invoice Table -->
+        <div class="card">
+          <h2 class="card-header">Facturas Recibidas</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Número de factura</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+                <th>Proveedor</th>
+                <th>Importe</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="invoiceTbody">
+              <tr>
+                <td>EIN-2025-001</td>
+                <td><span class="status-badge status-paid">Pagado</span></td>
+                <td>01.09.2025</td>
+                <td>Material de Oficina AG</td>
+                <td>€250,00</td>
+                <td><button class="btn" style="padding: 4px 8px; font-size: 12px;">Ver</button></td>
+              </tr>
+              <tr>
+                <td>EIN-2025-002</td>
+                <td><span class="status-badge status-pending">Pendiente</span></td>
+                <td>05.09.2025</td>
+                <td>Servicios IT GmbH</td>
+                <td>€890,00</td>
+                <td><button class="btn" style="padding: 4px 8px; font-size: 12px;">Ver</button></td>
+              </tr>
+              <tr>
+                <td>EIN-2025-003</td>
+                <td><span class="status-badge status-pending">Pendiente</span></td>
+                <td>10.09.2025</td>
+                <td>Proveedor Eléctrico AG</td>
+                <td>€420,00</td>
+                <td><button class="btn" style="padding: 4px 8px; font-size: 12px;">Ver</button></td>
+              </tr>
+              <tr>
+                <td>EIN-2025-004</td>
+                <td><span class="status-badge status-overdue">Vencido</span></td>
+                <td>15.08.2025</td>
+                <td>Servicio de Limpieza Ltd.</td>
+                <td>€230,00</td>
+                <td><button class="btn" style="padding: 4px 8px; font-size: 12px;">Ver</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Charts Placeholder -->
+        <div class="card">
+          <h2 class="card-header">Evolución de gastos</h2>
+          <div class="chart-placeholder">
+            Gráfico de facturas recibidas y pagos realizados
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

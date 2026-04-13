@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proveedores - FactuFácil</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f7f9fc;
+      color: #1f2937;
+      margin: 0;
+      overflow-x: hidden;
+    }
+    /* SIDEBAR (copied from frontPage) */
+    .sidebar {
+      width: 260px; 
+      background: #FFFFFF; 
+      border-right: 1px solid #e6eaf0;
+      color: #1F2937; 
+      min-height: 100vh; 
+      position: fixed; 
+      z-index: 100;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+.sidebar { overflow-y: scroll !important; overflow-x: hidden; height: 100vh; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+.sidebar::-webkit-scrollbar { width: 8px; }
+.sidebar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+.sidebar::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+.sidebar::-webkit-scrollbar-thumb:hover { background: #555; }
+    .sidebar::-webkit-scrollbar-track { background: #e6eaf0; border-radius: 3px; }
+    .sidebar::-webkit-scrollbar-thumb { background: #6B7280; border-radius: 3px; }
+    .sidebar-header { padding: 30px 20px; font-size: 1.4em; font-weight: 700; text-align: center; border-bottom: 1px solid #e6eaf0; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .sidebar-header i { color: #0958b2; }
+    .sidebar-menu { list-style: none; padding: 15px 0; margin: 0; }
+    .sidebar-menu li { padding: 0 15px; margin-bottom: 6px; }
+    .sidebar-link { color: #6B7280; text-decoration: none; display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 15px; border-radius: 8px; transition: all 0.2s ease; font-weight: 500; }
+    .sidebar-link i { width: 24px; text-align: center; font-size: 1.1em; }
+    .sidebar-link:hover { background: #e6eaf0; color: #1F2937; }
+    .sidebar-menu li.active > .sidebar-link { background: #e2f1fd; color: #0958b2; font-weight: 600; }
+    .sidebar-menu li.active > .sidebar-link i { color: #0958b2; }
+    .sidebar-link-disabled { color: #6B7280; cursor: default; opacity: 0.95; }
+    .sidebar-link-disabled:hover { background: transparent; color: #6B7280; }
+    .sidebar-parent { position: relative; }
+    .sidebar-parent-arrow { margin-left: auto !important; transition: transform 0.2s ease; }
+    .sidebar-parent.open .sidebar-parent-arrow { transform: rotate(90deg); }
+    .sidebar-submenu { display: none; list-style: none; padding: 0 0 0 12px; margin: 2px 0 2px 18px; border-left: 2px solid #e2f1fd; }
+    .sidebar-submenu li { padding: 0; margin-bottom: 6px; }
+    .sidebar-submenu.show { display: block; }
+    /* MAIN */
+    .main-content { margin-left: 260px; padding: 32px; min-height: 100vh; max-width: 1100px; margin-right: auto; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+    .page-title { font-size: 1.8em; font-weight: 700; color: #1F2937; display: flex; align-items: center; gap: 15px; margin: 0; }
+    .card { border-radius: 12px; border: 1px solid #e6eaf0; }
+    .form-label { font-weight: 600; }
+    .table-wrapper { max-height: 440px; overflow-y: auto; }
+    @media (max-width: 992px) { .sidebar { position: relative; width: 100%; min-height: auto; border-right: none; border-bottom: 1px solid #e6eaf0; } .main-content { margin-left: 0; padding: 20px; } }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <i class="fas fa-chart-line"></i> FactuFácil
+    </div>
+    <ul class="sidebar-menu">
+      <li><a href="frontPage/frontPage.html" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a></li>
+      <li class="sidebar-parent">
+        <a href="javascript:void(0)" class="sidebar-link" onclick="toggleFacturacion(event)" data-menu="facturacion" aria-expanded="false">
+          <i class="fas fa-file-invoice-dollar"></i> Facturación
+          <i class="fas fa-chevron-right sidebar-parent-arrow"></i>
+        </a>
+        <ul class="sidebar-menu sidebar-submenu">
+          <li><a href="Invoice-issued/invoice-issued.html" class="sidebar-link"><i class="fas fa-file-export"></i> Facturas emitidas</a></li>
+          <li><a href="Invoice_recieved/Invoice_recieved.html" class="sidebar-link"><i class="fas fa-file-import"></i> Facturas recibidas</a></li>
+          <li><a href="budgetPage/budget.html" class="sidebar-link"><i class="fas fa-file-contract"></i> Presupuestos</a></li>
+        </ul>
+      </li>
+      <li><a href="expense/expense.html" class="sidebar-link"><i class="fas fa-receipt"></i> Gastos</a></li>
+      <li class="active"><a href="customers.html" class="sidebar-link"><i class="fas fa-users"></i> Clientes y Proveedores</a></li>
+      <li><a href="javascript:void(0)" class="sidebar-link sidebar-link-disabled"><i class="fas fa-cash-register"></i> Tesorería</a></li>
+      <li><a href="javascript:void(0)" class="sidebar-link sidebar-link-disabled"><i class="fas fa-university"></i> Impuestos</a></li>
+      <li class="sidebar-parent">
+        <a href="javascript:void(0)" class="sidebar-link" onclick="toggleConfiguracion(event)" data-menu="configuracion" aria-expanded="false">
+          <i class="fas fa-cog"></i> Configuración
+          <i class="fas fa-chevron-right sidebar-parent-arrow"></i>
+        </a>
+        <ul class="sidebar-menu sidebar-submenu">
+          <li><a href="profile/settings.html" class="sidebar-link"><i class="fas fa-building"></i> Datos de empresa</a></li>
+          <li><a href="profile/settings.html" class="sidebar-link"><i class="fas fa-image"></i> Logo y plantillas</a></li>
+          <li><a href="profile/profile.html" class="sidebar-link"><i class="fas fa-user"></i> Cuenta</a></li>
+        </ul>
+      </li>
+      <li><a href="javascript:void(0)" class="sidebar-link sidebar-link-disabled"><i class="fas fa-qrcode"></i> VeriFactu</a></li>
+      <li style="border-top: 1px solid #e6eaf0; margin-top: 10px; padding-top: 10px;">
+        <a href="javascript:void(0)" class="sidebar-link" onclick="confirmLogout()" style="color: #B91C1C;">
+          <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+        </a>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title"><i class="fas fa-truck"></i> Gestión de Proveedores</h1>
+      <div>
+        <a href="customers.html" class="btn btn-outline-primary me-2"><i class="fas fa-users"></i> Clientes</a>
+        <a href="frontPage/frontPage.html" class="btn btn-secondary"><i class="fas fa-home"></i> Panel Principal</a>
+      </div>
+    </div>
+
+    <div id="authStatus" class="alert alert-info mb-4 d-none"></div>
+
+    <!-- Provider Form -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Agregar/Editar Proveedor</h5>
+        <form id="providerForm" class="row gy-3">
+          <input type="hidden" id="providerId">
+          <div class="col-md-4">
+            <label for="name" class="form-label">Nombre</label>
+            <input type="text" id="name" class="form-control" placeholder="Nombre del proveedor" required>
+          </div>
+          <div class="col-md-4">
+            <label for="nif" class="form-label">NIF/NIE/CIF</label>
+            <input type="text" id="nif" class="form-control" placeholder="NIF/NIE/CIF" required>
+          </div>
+          <div class="col-md-4">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" id="email" class="form-control" placeholder="proveedor@ejemplo.com" required>
+          </div>
+          <div class="col-md-4">
+            <label for="phone" class="form-label">Teléfono</label>
+            <input type="tel" id="phone" class="form-control" placeholder="+34 600 000 000">
+          </div>
+          <div class="col-md-4">
+            <label for="address" class="form-label">Dirección fiscal</label>
+            <input type="text" id="address" class="form-control" placeholder="Calle, nº">
+          </div>
+          <div class="col-md-4">
+            <label for="country" class="form-label">País</label>
+            <input type="text" id="country" class="form-control" placeholder="España">
+          </div>
+          <div class="col-12 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i> Guardar proveedor
+            </button>
+            <button type="button" id="clearBtn" class="btn btn-outline-secondary">
+              <i class="fas fa-eraser"></i> Nuevo proveedor
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Providers List -->
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Proveedores guardados</h5>
+        <div class="table-wrapper">
+          <table class="table table-striped table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Nombre</th>
+                <th>NIF/NIE/CIF</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th>País</th>
+                <th>Creado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="providersTbody">
+              <!-- Providers will be populated here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="shared/firebase-config.js"></script>
+  <script src="shared/auth-system.js"></script>
+  <script src="costumers/providerService-browser.js"></script>
+  <script src="providers.js"></script>
+  <script>
+    const SIDEBAR_STATE_KEY = 'upsen_sidebar_open_menus';
+
+    function getSidebarState() {
+      try {
+        return JSON.parse(localStorage.getItem(SIDEBAR_STATE_KEY) || '{}');
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function setSidebarState(menuName, isOpen) {
+      const state = getSidebarState();
+      state[menuName] = !!isOpen;
+      localStorage.setItem(SIDEBAR_STATE_KEY, JSON.stringify(state));
+    }
+
+    function restoreSidebarMenus() {
+      const state = getSidebarState();
+      ['facturacion', 'configuracion'].forEach(menuName => {
+        const toggle = document.querySelector('.sidebar-link[data-menu="' + menuName + '"]');
+        if (!toggle) return;
+        const parent = toggle.closest('.sidebar-parent');
+        const submenu = parent ? parent.querySelector('.sidebar-submenu') : null;
+        if (!parent || !submenu) return;
+        const shouldOpen = !!state[menuName];
+        parent.classList.toggle('open', shouldOpen);
+        submenu.classList.toggle('show', shouldOpen);
+        toggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+      });
+    }
+
+    function toggleFacturacion(event) {
+      const parent = event.currentTarget.closest('.sidebar-parent');
+      const submenu = parent.querySelector('.sidebar-submenu');
+      const arrow = parent.querySelector('.sidebar-parent-arrow');
+      const sidebar = document.querySelector('.sidebar');
+      parent.classList.toggle('open');
+      submenu.classList.toggle('show');
+      const isOpen = submenu.classList.contains('show');
+      event.currentTarget.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      setSidebarState('facturacion', isOpen);
+      if (isOpen && sidebar) {
+        requestAnimationFrame(() => {
+          const sidebarRect = sidebar.getBoundingClientRect();
+          const parentRect = parent.getBoundingClientRect();
+          const bottomOverflow = parentRect.bottom - sidebarRect.bottom + 16;
+          if (bottomOverflow > 0) {
+            sidebar.scrollBy({ top: bottomOverflow, behavior: 'smooth' });
+          }
+        });
+      }
+    }
+    
+      function toggleConfiguracion(event) {
+        event.preventDefault();
+        const parents = document.querySelectorAll('.sidebar-parent');
+        const parent = parents[1];
+        if (!parent) return;
+        const submenu = parent.querySelector('.sidebar-submenu');
+        const sidebar = document.querySelector('.sidebar');
+        submenu.classList.toggle('show');
+        parent.classList.toggle('open');
+        const isOpen = submenu.classList.contains('show');
+        event.currentTarget.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        setSidebarState('configuracion', isOpen);
+        if (isOpen && sidebar) {
+          requestAnimationFrame(() => {
+            const sidebarRect = sidebar.getBoundingClientRect();
+            const parentRect = parent.getBoundingClientRect();
+            const bottomOverflow = parentRect.bottom - sidebarRect.bottom + 16;
+            if (bottomOverflow > 0) {
+              sidebar.scrollBy({ top: bottomOverflow, behavior: 'smooth' });
+            }
+          });
+        }
+      }
+    function confirmLogout() { 
+      if (confirm('¿Cerrar sesión?')) window.location.href = 'login.html'; 
+    }
+
+    restoreSidebarMenus();
+  </script>
+</body>
+</html>
