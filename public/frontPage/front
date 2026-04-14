@@ -1,4 +1,4 @@
-// frontPageDashboard.js - Com suporte a Firebase + localStorage
+// frontPageDashboard.js - Com suporte a Firebase + localStorage.
 
 function $(id) {
   return document.getElementById(id);
