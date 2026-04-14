@@ -6,22 +6,6 @@
 (function() {
   'use strict';
 
-  const SIDEBAR_STATE_KEY = 'upsen_sidebar_open_menus';
-
-  function getSidebarState() {
-    try {
-      return JSON.parse(localStorage.getItem(SIDEBAR_STATE_KEY) || '{}');
-    } catch (e) {
-      return {};
-    }
-  }
-
-  function setSidebarState(menuName, isOpen) {
-    const state = getSidebarState();
-    state[menuName] = !!isOpen;
-    localStorage.setItem(SIDEBAR_STATE_KEY, JSON.stringify(state));
-  }
-
   // Lógica de Prefixo: Detectar se estamos na raiz (public/) ou subpasta
   const pageName = window.location.pathname.split('/').pop() || 'index.html';
   const rootPages = ['customers.html', 'providers.html', 'invoices.html', 'index.html', 'login.html', 'migration.html', 'customers-backup.html'];
@@ -76,15 +60,11 @@
       border-right: 1px solid var(--border);
       color: var(--text);
       height: 100vh;
-      max-height: 100vh;
       position: fixed;
       top: 0;
       left: 0;
       z-index: 1000;
       overflow-y: auto;
-      overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
-      touch-action: pan-y;
       transition: transform 0.3s ease;
     }
 
@@ -131,7 +111,6 @@
       font-weight: 600;
     }
     .sidebar-menu li.active > .sidebar-link i { color: var(--metric3-text); }
-
     .sidebar-link-disabled {
       color: var(--muted);
       cursor: default;
@@ -140,6 +119,17 @@
     .sidebar-link-disabled:hover {
       background: transparent;
       color: var(--muted);
+    }
+
+    .sidebar-header-sm {
+      padding: 12px 20px;
+      font-size: 0.85em;
+      font-weight: 600;
+      color: var(--metric3-text);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+      margin: 0 15px 10px 15px;
     }
 
     /* Submenus */
@@ -203,7 +193,7 @@
       </li>
 
       <li class="sidebar-parent" id="facturacionParent">
-        <a href="javascript:void(0)" class="sidebar-link toggle-submenu" data-menu="facturacion" aria-expanded="false">
+        <a href="javascript:void(0)" class="sidebar-link toggle-submenu">
           <i class="fas fa-file-invoice-dollar"></i> Facturación
           <i class="fas fa-chevron-right sidebar-parent-arrow"></i>
         </a>
@@ -230,19 +220,18 @@
           <i class="fas fa-receipt"></i> Gastos
         </a>
       </li>
-
       <li data-page="customers.html"><a href="${pathPrefix}customers.html" class="sidebar-link"><i class="fas fa-users"></i> Clientes y Proveedores</a></li>
       <li><a href="javascript:void(0)" class="sidebar-link sidebar-link-disabled"><i class="fas fa-cash-register"></i> Tesorería</a></li>
       <li><a href="javascript:void(0)" class="sidebar-link sidebar-link-disabled"><i class="fas fa-university"></i> Impuestos</a></li>
 
       <li class="sidebar-parent" id="configuracionParent">
-        <a href="javascript:void(0)" class="sidebar-link toggle-submenu" data-menu="configuracion" aria-expanded="false">
+        <a href="javascript:void(0)" class="sidebar-link toggle-submenu">
           <i class="fas fa-cog"></i> Configuración
           <i class="fas fa-chevron-right sidebar-parent-arrow"></i>
         </a>
         <ul class="sidebar-menu sidebar-submenu">
           <li data-page="settings.html"><a href="${pathPrefix}profile/settings.html" class="sidebar-link"><i class="fas fa-building"></i> Datos de empresa</a></li>
-          <li data-page="settings.html"><a href="${pathPrefix}profile/settings.html" class="sidebar-link"><i class="fas fa-image"></i> Logo y plantillas</a></li>
+          <li><a href="${pathPrefix}profile/settings.html" class="sidebar-link"><i class="fas fa-image"></i> Logo y plantillas</a></li>
           <li data-page="profile.html"><a href="${pathPrefix}profile/profile.html" class="sidebar-link"><i class="fas fa-user"></i> Cuenta</a></li>
         </ul>
       </li>
@@ -276,47 +265,20 @@
     // Injetar HTML
     sidebar.innerHTML = sidebarHTML;
 
-    // Restaurar estado persistido dos menus
-    const savedState = getSidebarState();
-    const applyMenuState = function(menuName, shouldOpen) {
-      const toggle = sidebar.querySelector('.toggle-submenu[data-menu="' + menuName + '"]');
-      if (!toggle) return;
-      const parent = toggle.closest('.sidebar-parent');
-      const submenu = parent ? parent.querySelector('.sidebar-submenu') : null;
-      if (!parent || !submenu) return;
-      parent.classList.toggle('open', !!shouldOpen);
-      submenu.classList.toggle('show', !!shouldOpen);
-      toggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
-    };
-
-    applyMenuState('facturacion', !!savedState.facturacion);
-    applyMenuState('configuracion', !!savedState.configuracion);
-
     // Lógica de Ativação (Highlight da página atual)
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
     const links = sidebar.querySelectorAll('li[data-page]');
     let parentActive = false;
-    let activeAssigned = false;
 
     links.forEach(li => {
-      if (!activeAssigned && li.dataset.page === currentPage) {
+      if (li.dataset.page === currentPage) {
         li.classList.add('active');
-        activeAssigned = true;
         // Se estiver dentro de um submenu, abrir o pai
         const submenu = li.closest('.sidebar-submenu');
         if (submenu) {
           submenu.classList.add('show');
           const parentLi = submenu.closest('.sidebar-parent');
-          if (parentLi) {
-            parentLi.classList.add('open');
-            const parentToggle = parentLi.querySelector('.toggle-submenu');
-            if (parentToggle) {
-              parentToggle.setAttribute('aria-expanded', 'true');
-              if (parentToggle.dataset.menu) {
-                setSidebarState(parentToggle.dataset.menu, true);
-              }
-            }
-          }
+          if (parentLi) parentLi.classList.add('open');
           parentActive = true;
         }
       }
@@ -325,15 +287,6 @@
     // Event Listeners
     // Toggle Submenu
     const toggles = sidebar.querySelectorAll('.toggle-submenu');
-    const ensureSidebarItemVisible = function(targetEl) {
-      const sidebarRect = sidebar.getBoundingClientRect();
-      const targetRect = targetEl.getBoundingClientRect();
-      const bottomOverflow = targetRect.bottom - sidebarRect.bottom + 16;
-      if (bottomOverflow > 0) {
-        sidebar.scrollBy({ top: bottomOverflow, behavior: 'smooth' });
-      }
-    };
-
     toggles.forEach(toggle => {
       toggle.addEventListener('click', function(e) {
         e.preventDefault();
@@ -341,14 +294,6 @@
         const submenu = parent.querySelector('.sidebar-submenu');
         parent.classList.toggle('open');
         submenu.classList.toggle('show');
-        const isOpen = submenu.classList.contains('show');
-        this.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-        if (this.dataset.menu) {
-          setSidebarState(this.dataset.menu, isOpen);
-        }
-        if (isOpen) {
-          requestAnimationFrame(() => ensureSidebarItemVisible(parent));
-        }
       });
     });
 

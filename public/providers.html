@@ -27,7 +27,7 @@
       overflow-y: auto;
       overflow-x: hidden;
     }
-.sidebar { overflow-y: scroll !important; overflow-x: hidden; height: 100vh; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+.sidebar { overflow-y: scroll !important; overflow-x: hidden; height: 100vh; }
 .sidebar::-webkit-scrollbar { width: 8px; }
 .sidebar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
 .sidebar::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
@@ -37,19 +37,19 @@
     .sidebar-header { padding: 30px 20px; font-size: 1.4em; font-weight: 700; text-align: center; border-bottom: 1px solid #e6eaf0; display: flex; align-items: center; justify-content: center; gap: 10px; }
     .sidebar-header i { color: #0958b2; }
     .sidebar-menu { list-style: none; padding: 15px 0; margin: 0; }
-    .sidebar-menu li { padding: 0 15px; margin-bottom: 6px; }
-    .sidebar-link { color: #6B7280; text-decoration: none; display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 15px; border-radius: 8px; transition: all 0.2s ease; font-weight: 500; }
+    .sidebar-menu li { padding: 0 15px; margin-bottom: 5px; }
+    .sidebar-link { color: #6B7280; text-decoration: none; display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 8px; transition: all 0.2s ease; font-weight: 500; }
     .sidebar-link i { width: 24px; text-align: center; font-size: 1.1em; }
     .sidebar-link:hover { background: #e6eaf0; color: #1F2937; }
     .sidebar-menu li.active > .sidebar-link { background: #e2f1fd; color: #0958b2; font-weight: 600; }
     .sidebar-menu li.active > .sidebar-link i { color: #0958b2; }
     .sidebar-link-disabled { color: #6B7280; cursor: default; opacity: 0.95; }
     .sidebar-link-disabled:hover { background: transparent; color: #6B7280; }
+    .sidebar-header-sm { padding: 12px 20px; font-size: 0.85em; font-weight: 600; color: #0958b2; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e6eaf0; margin: 0 15px; }
     .sidebar-parent { position: relative; }
     .sidebar-parent-arrow { margin-left: auto !important; transition: transform 0.2s ease; }
     .sidebar-parent.open .sidebar-parent-arrow { transform: rotate(90deg); }
-    .sidebar-submenu { display: none; list-style: none; padding: 0 0 0 12px; margin: 2px 0 2px 18px; border-left: 2px solid #e2f1fd; }
-    .sidebar-submenu li { padding: 0; margin-bottom: 6px; }
+    .sidebar-submenu { display: none; list-style: none; padding: 0; margin: 0 0 0 40px; background: rgba(9, 88, 178, 0.05); border-left: 2px solid #e2f1fd; }
     .sidebar-submenu.show { display: block; }
     /* MAIN */
     .main-content { margin-left: 260px; padding: 32px; min-height: 100vh; max-width: 1100px; margin-right: auto; }
@@ -70,7 +70,7 @@
     <ul class="sidebar-menu">
       <li><a href="frontPage/frontPage.html" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a></li>
       <li class="sidebar-parent">
-        <a href="javascript:void(0)" class="sidebar-link" onclick="toggleFacturacion(event)" data-menu="facturacion" aria-expanded="false">
+        <a href="javascript:void(0)" class="sidebar-link" onclick="toggleFacturacion(event)">
           <i class="fas fa-file-invoice-dollar"></i> Facturación
           <i class="fas fa-chevron-right sidebar-parent-arrow"></i>
         </a>
@@ -85,7 +85,7 @@
       <li><a href="javascript:void(0)" class="sidebar-link sidebar-link-disabled"><i class="fas fa-cash-register"></i> Tesorería</a></li>
       <li><a href="javascript:void(0)" class="sidebar-link sidebar-link-disabled"><i class="fas fa-university"></i> Impuestos</a></li>
       <li class="sidebar-parent">
-        <a href="javascript:void(0)" class="sidebar-link" onclick="toggleConfiguracion(event)" data-menu="configuracion" aria-expanded="false">
+        <a href="javascript:void(0)" class="sidebar-link" onclick="toggleConfiguracion(event)">
           <i class="fas fa-cog"></i> Configuración
           <i class="fas fa-chevron-right sidebar-parent-arrow"></i>
         </a>
@@ -193,87 +193,23 @@
   <script src="costumers/providerService-browser.js"></script>
   <script src="providers.js"></script>
   <script>
-    const SIDEBAR_STATE_KEY = 'upsen_sidebar_open_menus';
-
-    function getSidebarState() {
-      try {
-        return JSON.parse(localStorage.getItem(SIDEBAR_STATE_KEY) || '{}');
-      } catch (e) {
-        return {};
-      }
-    }
-
-    function setSidebarState(menuName, isOpen) {
-      const state = getSidebarState();
-      state[menuName] = !!isOpen;
-      localStorage.setItem(SIDEBAR_STATE_KEY, JSON.stringify(state));
-    }
-
-    function restoreSidebarMenus() {
-      const state = getSidebarState();
-      ['facturacion', 'configuracion'].forEach(menuName => {
-        const toggle = document.querySelector('.sidebar-link[data-menu="' + menuName + '"]');
-        if (!toggle) return;
-        const parent = toggle.closest('.sidebar-parent');
-        const submenu = parent ? parent.querySelector('.sidebar-submenu') : null;
-        if (!parent || !submenu) return;
-        const shouldOpen = !!state[menuName];
-        parent.classList.toggle('open', shouldOpen);
-        submenu.classList.toggle('show', shouldOpen);
-        toggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
-      });
-    }
-
     function toggleFacturacion(event) {
       const parent = event.currentTarget.closest('.sidebar-parent');
       const submenu = parent.querySelector('.sidebar-submenu');
       const arrow = parent.querySelector('.sidebar-parent-arrow');
-      const sidebar = document.querySelector('.sidebar');
       parent.classList.toggle('open');
       submenu.classList.toggle('show');
-      const isOpen = submenu.classList.contains('show');
-      event.currentTarget.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-      setSidebarState('facturacion', isOpen);
-      if (isOpen && sidebar) {
-        requestAnimationFrame(() => {
-          const sidebarRect = sidebar.getBoundingClientRect();
-          const parentRect = parent.getBoundingClientRect();
-          const bottomOverflow = parentRect.bottom - sidebarRect.bottom + 16;
-          if (bottomOverflow > 0) {
-            sidebar.scrollBy({ top: bottomOverflow, behavior: 'smooth' });
-          }
-        });
-      }
     }
-    
-      function toggleConfiguracion(event) {
-        event.preventDefault();
-        const parents = document.querySelectorAll('.sidebar-parent');
-        const parent = parents[1];
-        if (!parent) return;
-        const submenu = parent.querySelector('.sidebar-submenu');
-        const sidebar = document.querySelector('.sidebar');
-        submenu.classList.toggle('show');
-        parent.classList.toggle('open');
-        const isOpen = submenu.classList.contains('show');
-        event.currentTarget.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-        setSidebarState('configuracion', isOpen);
-        if (isOpen && sidebar) {
-          requestAnimationFrame(() => {
-            const sidebarRect = sidebar.getBoundingClientRect();
-            const parentRect = parent.getBoundingClientRect();
-            const bottomOverflow = parentRect.bottom - sidebarRect.bottom + 16;
-            if (bottomOverflow > 0) {
-              sidebar.scrollBy({ top: bottomOverflow, behavior: 'smooth' });
-            }
-          });
-        }
-      }
+    function toggleConfiguracion(event) {
+      const parent = event.currentTarget.closest('.sidebar-parent');
+      const submenu = parent.querySelector('.sidebar-submenu');
+      const arrow = parent.querySelector('.sidebar-parent-arrow');
+      parent.classList.toggle('open');
+      submenu.classList.toggle('show');
+    }
     function confirmLogout() { 
       if (confirm('¿Cerrar sesión?')) window.location.href = 'login.html'; 
     }
-
-    restoreSidebarMenus();
   </script>
 </body>
 </html>
