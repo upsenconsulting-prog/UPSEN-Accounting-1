@@ -1,0 +1,33 @@
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <i class="fas fa-chart-line"></i> FactuFácil
+  </div>
+  <ul class="sidebar-menu">
+    <li><a href="frontPage/frontPage.html" class="sidebar-link"><i class="fas fa-home"></i> Panel de Control</a></li>
+    <li class="sidebar-header-sm">Facturación</li>
+    <li class="sidebar-parent">
+      <a href="javascript:void(0)" class="sidebar-link" onclick="toggleFacturacion(event)">
+        <i class="fas fa-file-invoice-dollar"></i> Facturación
+        <i class="fas fa-chevron-right sidebar-parent-arrow"></i>
+      </a>
+      <ul class="sidebar-menu sidebar-submenu">
+        <li><a href="./Invoice-issued/invoice-issued.html" class="sidebar-link"><i class="fas fa-file-export"></i> Facturas emitidas</a></li>
+        <li><a href="./budgetPage/budget.html" class="sidebar-link"><i class="fas fa-file-contract"></i> Presupuestos</a></li>
+      </ul>
+    </li>
+    <li><a href="./Invoice_recieved/Invoice_recieved.html" class="sidebar-link"><i class="fas fa-file-import"></i> Facturas recibidas</a></li>
+    <li><a href="./expense/expense.html" class="sidebar-link"><i class="fas fa-receipt"></i> Gastos</a></li>
+    <li class="sidebar-header-sm">Gestión</li>
+    <li class="sidebar-item clientes"><a href="customers.html" class="sidebar-link clientes-link"><i class="fas fa-users"></i> Clientes y Proveedores</a></li>
+    <li class="sidebar-item proveedores"><a href="providers.html" class="sidebar-link proveedores-link"><i class="fas fa-truck"></i> Proveedores</a></li>
+    <li class="sidebar-item facturas"><a href="invoices.html" class="sidebar-link facturas-link"><i class="fas fa-file-invoice"></i> Facturas</a></li>
+    <li class="sidebar-header-sm">Configuración</li>
+    <li><a href="../profile/profile.html" class="sidebar-link"><i class="fas fa-building"></i> Datos Empresa</a></li>
+    <li><a href="../profile/settings.html" class="sidebar-link"><i class="fas fa-cog"></i> Plantillas y Logos</a></li>
+    <li style="border-top: 1px solid #e6eaf0; margin-top: 10px; padding-top: 10px;">
+      <a href="javascript:void(0)" class="sidebar-link" onclick="confirmLogout()" style="color: #B91C1C;">
+        <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+      </a>
+    </li>
+  </ul>
+</aside>

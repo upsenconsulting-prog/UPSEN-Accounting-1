@@ -1,0 +1,1 @@
+[&#10;  {&#10;    "invoiceNumber": "EIN-2025-001",&#10;    "state": "Paid",&#10;    "date": "2025-09-01",&#10;    "supplier": "Material de Oficina AG",&#10;    "amount": 250.00&#10;  },&#10;  {&#10;    "invoiceNumber": "EIN-2025-002",&#10;    "state": "Pending",&#10;    "date": "2025-09-05",&#10;    "supplier": "Servicios IT GmbH",&#10;    "amount": 890.00&#10;  }&#10;]

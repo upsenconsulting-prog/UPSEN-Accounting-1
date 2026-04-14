@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configuracion - FactuFácil</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #eef1f7; min-height: 100vh; }
+    .main-content { padding: 30px; min-height: 100vh; background: #eef1f7; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+    .page-title { font-size: 2em; font-weight: 700; color: #2c3e50; display: flex; align-items: center; gap: 15px; }
+    .page-title i { color: #1abc9c; }
+    .modern-card { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 25px; transition: all 0.3s; border: 1px solid rgba(0,0,0,0.05); }
+    .modern-card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
+    .section-title { color: #2a4d9c; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #e9ecef; padding-bottom: 10px; }
+    .section-title i { color: #1abc9c; }
+    .form-label { font-weight: 500; color: #495057; margin-bottom: 8px; }
+    .form-control, .form-select { border-radius: 10px; padding: 12px 15px; border: 2px solid #e9ecef; transition: all 0.3s; font-size: 0.95em; }
+    .form-control:focus, .form-select:focus { border-color: #2a4d9c; box-shadow: 0 0 0 3px rgba(42, 77, 156, 0.1); }
+    .btn { border-radius: 8px; padding: 8px 16px; font-weight: 500; transition: all 0.3s; border: none; font-size: 0.9rem; }
+    .btn-primary { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); color: white; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(42, 77, 156, 0.4); color: white; }
+    .btn-success { background: linear-gradient(135deg, #1abc9c, #16a085); color: white; }
+    .btn-success:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(26, 188, 156, 0.4); color: white; }
+    .alert { border-radius: 10px; padding: 15px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .user-info { background: rgba(255,255,255,0.1); padding: 15px 20px; border-radius: 10px; margin: 20px; margin-top: auto; }
+    .user-info-name { font-weight: 600; margin-bottom: 5px; }
+    .user-info-email { font-size: 0.85em; opacity: 0.8; }
+    .btn-logout { background: rgba(231, 76, 60, 0.15); color: #e74c3c; border: none; width: calc(100% - 40px); margin: 15px 20px; margin-top: 15px; }
+    .btn-logout:hover { background: #e74c3c; color: white; }
+    .form-check-input:checked { background-color: #2a4d9c; border-color: #2a4d9c; }
+    .form-switch .form-check-input { width: 3em; height: 1.5em; cursor: pointer; }
+    @media (max-width: 992px) { .sidebar { position: relative; width: 100%; min-height: auto; } .main-content { margin-left: 0; } }
+  </style>
+</head>
+<body>
+    <main class="main-content">
+      <div class="page-header">
+        <h1 class="page-title"><i class="fas fa-cog me-3"></i>Configuracion</h1>
+        <button class="btn btn-danger" onclick="doLogout()"><i class="fas fa-sign-out-alt me-2"></i>Cerrar sesion</button>
+      </div>
+      <div id="alertMessage" class="alert" style="display: none;"></div>
+      <div class="modern-card">
+        <h5 class="section-title"><i class="fas fa-building"></i> Datos de la Empresa</h5>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Nombre de la empresa</label>
+            <input type="text" class="form-control" id="companyName" placeholder="Nombre">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">NIF / CIF</label>
+            <input type="text" class="form-control" id="companyTaxId" placeholder="NIF">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Direccion</label>
+            <input type="text" class="form-control" id="companyAddress" placeholder="Direccion">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Ciudad</label>
+            <input type="text" class="form-control" id="companyCity" placeholder="Ciudad">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Pais</label>
+            <input type="text" class="form-control" id="companyCountry" placeholder="Pais">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Sitio web</label>
+            <input type="text" class="form-control" id="companyWebsite" placeholder="www.ejemplo.com">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveCompanySettings()"><i class="fas fa-save me-2"></i>Guardar Empresa</button>
+      </div>
+      <div class="modern-card">
+        <h5 class="section-title"><i class="fas fa-sliders-h"></i> Preferencias</h5>
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Moneda</label>
+            <select class="form-select" id="settingCurrency">
+              <option value="EUR">Euro (EUR)</option>
+              <option value="USD">Dolar (USD)</option>
+              <option value="GBP">Libra (GBP)</option>
+              <option value="BRL">Real (BRL)</option>
+            </select>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Idioma</label>
+            <select class="form-select" id="settingLanguage">
+              <option value="es">Espanol</option>
+              <option value="pt">Portugues</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Tema</label>
+            <select class="form-select" id="settingTheme">
+              <option value="light">Claro</option>
+              <option value="dark">Oscuro</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-success" onclick="savePreferences()"><i class="fas fa-check me-2"></i>Guardar Preferencias</button>
+      </div>
+      <div class="modern-card">
+        <h5 class="section-title"><i class="fas fa-bell"></i> Notificaciones</h5>
+        <div class="form-check form-switch mb-3">
+          <input class="form-check-input" type="checkbox" id="notifyEmail" style="width: 3em; height: 1.5em;">
+          <label class="form-check-label ms-2" for="notifyEmail">Notificaciones por email</label>
+        </div>
+        <div class="form-check form-switch mb-3">
+          <input class="form-check-input" type="checkbox" id="notifyBrowser" style="width: 3em; height: 1.5em;">
+          <label class="form-check-label ms-2" for="notifyBrowser">Notificaciones en el navegador</label>
+        </div>
+        <button class="btn btn-primary" onclick="saveNotifications()"><i class="fas fa-bell me-2"></i>Guardar Notificaciones</button>
+      </div>
+    </main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+<!-- Config -->
+<script src="../shared/firebase-config.js"></script>
+<!-- Auth FIRST - initializes Firebase -->
+<script src="../shared/auth-system.js"></script>
+<!-- Sync service -->
+<script src="../shared/firebase-sync.js"></script>
+<!-- Data Migration -->
+<script src="../shared/data-migration.js"></script>
+<!-- Store (uses sync service) -->
+<script src="../shared/store.js"></script>
+<script src="../shared/sidebar.js"></script>
+<script>
+var currentUser = null;
+function getEl(id) { return document.getElementById(id); }
+function showAlert(message, type) {
+  var el = getEl('alertMessage');
+  if (el) {
+    el.textContent = message;
+    el.className = 'alert alert-' + (type || 'info');
+    el.style.display = 'flex';
+    setTimeout(function() { el.style.display = 'none'; }, 5000);
+  }
+}
+function getUser() {
+  // First check AuthSystem
+  var auth = window.AuthSystem || window.AuthService || window.Auth;
+  if (auth && typeof auth.getCurrentUser === 'function') {
+    var user = auth.getCurrentUser();
+    if (user) return user;
+  }
+  
+  // Then check Firebase Auth directly
+  if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+    return window.firebaseAuth.currentUser;
+  }
+  
+  // Finally check localStorage
+  try {
+    var session = localStorage.getItem('upsen_current_user');
+    if (session) {
+      var data = JSON.parse(session);
+      if (data && data.user) return data.user;
+    }
+  } catch (e) {}
+  
+  return null;
+}
+function getUserId() {
+  var user = getUser();
+  return user ? (user.uid || user.id) : null;
+}
+function loadSettings() {
+  var user = getUser();
+  if (!user) {
+    console.log('loadSettings: Utilizador não encontrado');
+    showAlert('Inicia sesión primero.', 'error');
+    return;
+  }
+  
+  console.log('loadSettings: Utilizador encontrado:', user.email);
+  currentUser = user;
+  var nameEl = getEl('userNameSidebar');
+  var emailEl = getEl('userEmailSidebar');
+  if (nameEl) nameEl.textContent = user.name || user.email || 'Usuario';
+  if (emailEl) emailEl.textContent = user.email || '-';
+  var companyData = user.companyData || {};
+  if (getEl('companyName')) getEl('companyName').value = companyData.name || user.company || '';
+  if (getEl('companyTaxId')) getEl('companyTaxId').value = companyData.taxId || '';
+  if (getEl('companyAddress')) getEl('companyAddress').value = companyData.address || '';
+  if (getEl('companyCity')) getEl('companyCity').value = companyData.city || '';
+  if (getEl('companyCountry')) getEl('companyCountry').value = companyData.country || 'Portugal';
+  if (getEl('companyWebsite')) getEl('companyWebsite').value = companyData.website || '';
+  var settings = user.settings || {};
+  if (getEl('settingCurrency')) getEl('settingCurrency').value = settings.currency || 'EUR';
+  if (getEl('settingLanguage')) getEl('settingLanguage').value = settings.language || 'es';
+  if (getEl('settingTheme')) getEl('settingTheme').value = settings.theme || 'light';
+  var notifications = settings.notifications || {};
+  if (getEl('notifyEmail')) getEl('notifyEmail').checked = notifications.email !== false;
+  if (getEl('notifyBrowser')) getEl('notifyBrowser').checked = notifications.browser || false;
+}
+function saveCompanySettings() {
+  var userId = getUserId();
+  if (!userId) { showAlert('Error: No hay usuario.', 'error'); return; }
+  
+  var saveBtn = document.querySelector('.modern-card:first-child .btn-primary');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...'; }
+  
+  var companyData = {
+    name: getEl('companyName')?.value || '',
+    taxId: getEl('companyTaxId')?.value || '',
+    address: getEl('companyAddress')?.value || '',
+    city: getEl('companyCity')?.value || '',
+    country: getEl('companyCountry')?.value || '',
+    website: getEl('companyWebsite')?.value || ''
+  };
+  
+  try {
+    var session = localStorage.getItem('upsen_current_user');
+    if (session) {
+      var data = JSON.parse(session);
+      if (data && data.user) {
+        data.user.companyData = companyData;
+        localStorage.setItem('upsen_current_user', JSON.stringify(data));
+      }
+    }
+  } catch (e) {}
+  
+  AuthSystem.updateUserProfile({ companyData: companyData }).then(function(result) {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-save me-2"></i>Guardar Empresa'; }
+    showAlert(result.message || 'Datos guardados!', 'success');
+  });
+}
+
+function savePreferences() {
+  var userId = getUserId();
+  if (!userId) { showAlert('Error: No hay usuario.', 'error'); return; }
+  
+  var saveBtn = document.querySelector('.modern-card:nth-child(2) .btn-success');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...'; }
+  
+  var settings = {
+    currency: getEl('settingCurrency')?.value || 'EUR',
+    language: getEl('settingLanguage')?.value || 'es',
+    theme: getEl('settingTheme')?.value || 'light'
+  };
+  
+  try {
+    var session = localStorage.getItem('upsen_current_user');
+    if (session) {
+      var data = JSON.parse(session);
+      if (data && data.user) {
+        data.user.settings = Object.assign({}, data.user.settings || {}, settings);
+        localStorage.setItem('upsen_current_user', JSON.stringify(data));
+      }
+    }
+  } catch (e) {}
+  
+  AuthSystem.updateUserProfile({ settings: settings }).then(function(result) {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-check me-2"></i>Guardar Preferencias'; }
+    showAlert(result.message || 'Preferencias guardadas!', 'success');
+    // Apply theme
+    if (window.applyTheme) applyTheme(settings.theme);
+  });
+}
+
+function saveNotifications() {
+  var userId = getUserId();
+  if (!userId) { showAlert('Error: No hay usuario.', 'error'); return; }
+  
+  var saveBtn = document.querySelector('.modern-card:nth-child(3) .btn-primary');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...'; }
+  
+  var notifications = {
+    email: getEl('notifyEmail')?.checked !== false,
+    browser: getEl('notifyBrowser')?.checked || false
+  };
+  
+  var settings = { notifications: notifications };
+  
+  try {
+    var session = localStorage.getItem('upsen_current_user');
+    if (session) {
+      var data = JSON.parse(session);
+      if (data && data.user) {
+        data.user.settings = Object.assign({}, data.user.settings || {}, settings);
+        localStorage.setItem('upsen_current_user', JSON.stringify(data));
+      }
+    }
+  } catch (e) {}
+  
+  AuthSystem.updateUserProfile({ settings: settings }).then(function(result) {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-bell me-2"></i>Guardar Notificaciones'; }
+    showAlert(result.message || 'Notificaciones guardadas!', 'success');
+  });
+}
+
+function applyTheme(theme) {
+  if (theme === 'dark') {
+    document.body.style.backgroundColor = '#1a1a2e';
+    document.body.style.color = '#ffffff';
+    var cards = document.querySelectorAll('.modern-card');
+    cards.forEach(function(card) {
+      card.style.backgroundColor = '#16213e';
+      card.style.color = '#ffffff';
+    });
+    var titles = document.querySelectorAll('.section-title, .page-title, .form-label');
+    titles.forEach(function(t) {
+      t.style.color = '#ffffff';
+    });
+  } else {
+    document.body.style.backgroundColor = '#eef1f7';
+    document.body.style.color = '#2c3e50';
+    var cards = document.querySelectorAll('.modern-card');
+    cards.forEach(function(card) {
+      card.style.backgroundColor = 'white';
+      card.style.color = '';
+    });
+  }
+}
+// Logout function with Firebase sign out
+function doLogout() {
+  if (confirm('Cerrar sesion?')) {
+    // 1. Limpar localStorage primeiro
+    localStorage.removeItem('upsen_current_user');
+    
+    // 2. Try to sign out from Firebase
+    if (window.firebaseAuth) {
+      window.firebaseAuth.signOut().then(function() {
+        console.log('Firebase signed out');
+      }).catch(function(e) {
+        console.log('Firebase sign out error:', e);
+      });
+    }
+    
+    // 3. Try AuthSystem logout
+    var auth = window.AuthSystem || window.AuthService || window.Auth;
+    if (auth && auth.logout) {
+      auth.logout().then(function() { window.location.href = '../login.html'; });
+    } else { window.location.href = '../login.html'; }
+  }
+}
+document.addEventListener('DOMContentLoaded', function() {
+  // Wait for auth to be ready with proper timing
+  var checkAuth = function() {
+    var auth = window.AuthSystem || window.AuthService || window.Auth;
+    
+    // Check if Firebase is configured and ready
+    if (window.firebaseAuth) {
+      // Use a small delay to ensure Firebase is fully initialized
+      setTimeout(function() {
+        // Check if there's a current user in Firebase
+        var firebaseUser = window.firebaseAuth.currentUser;
+        if (firebaseUser) {
+          console.log('Firebase Auth user detected:', firebaseUser.email);
+          // Also check if session is saved in localStorage
+          var session = localStorage.getItem('upsen_current_user');
+          if (session) {
+            try {
+              var data = JSON.parse(session);
+              if (data && data.user) {
+                console.log('User from localStorage:', data.user.email);
+                loadSettings();
+                return;
+              }
+            } catch (e) {}
+          }
+          // If no localStorage but Firebase user exists, load settings anyway
+          loadSettings();
+        } else {
+          // No Firebase user, check localStorage
+          var session = localStorage.getItem('upsen_current_user');
+          if (session) {
+            try {
+              var data = JSON.parse(session);
+              if (data && data.user) {
+                console.log('User from localStorage:', data.user.email);
+                loadSettings();
+                return;
+              }
+            } catch (e) {}
+          }
+          // Still no user - show alert
+          console.log('No user found');
+          loadSettings(); // This will show the alert
+        }
+      }, 500); // Wait 500ms for Firebase to initialize
+    } else if (auth && typeof auth.getCurrentUser === 'function') {
+      setTimeout(function() { loadSettings(); }, 500);
+    } else {
+      setTimeout(checkAuth, 100);
+    }
+  };
+  
+  // Start checking after a short delay to allow scripts to load
+  setTimeout(checkAuth, 500);
+});
+</script>
+</body>
+</html>

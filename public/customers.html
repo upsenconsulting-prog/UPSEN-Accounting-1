@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clientes - FactuFacil</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --bg: #F7F9FC;
+      --text: #1F2937;
+      --card-bg: #FFFFFF;
+      --border: #E6EAF0;
+      --muted: #6B7280;
+      --metric3-text: #0958b2;
+      --btn-primary-bg: #0958b2;
+      --btn-primary-text: #ffffff;
+      --btn-sec-bg: #FFFFFF;
+      --btn-sec-border: #D1D5DB;
+      --btn-sec-text: #4B5563;
+      --alert-bg: #FFF4E5;
+      --alert-border: #FEE8D9;
+      --alert-text: #B26A00;
+      --danger: #e74c3c;
+    }
+    body.dark {
+      --bg: #0F172A;
+      --text: #F1F5F9;
+      --card-bg: #1E293B;
+      --border: #334155;
+      --muted: #94A3B8;
+      --metric3-text: #93C5FD;
+      --btn-primary-bg: #1D4ED8;
+      --btn-primary-text: #ffffff;
+      --btn-sec-bg: transparent;
+      --btn-sec-border: #4B5563;
+      --btn-sec-text: #E5E7EB;
+      --alert-bg: #422006;
+      --alert-border: #713f12;
+      --alert-text: #FDBA74;
+      --danger: #ef4444;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      min-height: 100vh;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      overflow-x: hidden;
+    }
+    .main-content { margin-left: 260px; padding: 32px; min-height: 100vh; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+    .page-title { font-size: 1.8em; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 15px; margin: 0; }
+    .page-title i { color: var(--metric3-text); }
+    .btn { border-radius: 8px; padding: 8px 16px; font-weight: 500; font-size: 0.9rem; transition: all 0.2s; border: none; }
+    .btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); }
+    .btn-primary:hover { opacity: 0.9; color: var(--btn-primary-text); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .btn-secondary { background: var(--btn-sec-bg); color: var(--btn-sec-text); border: 1px solid var(--btn-sec-border); }
+    .btn-secondary:hover { background: var(--border); color: var(--text); transform: translateY(-1px); }
+    .btn-outline-primary { background: transparent; border: 1px solid var(--btn-primary-bg); color: var(--btn-primary-bg); }
+    .btn-outline-primary:hover { background: var(--btn-primary-bg); color: #ffffff; }
+    .btn-outline-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+    .btn-outline-danger:hover { background: var(--danger); color: #ffffff; }
+    .btn-outline-secondary { background: transparent; border: 1px solid var(--btn-sec-border); color: var(--btn-sec-text); }
+    .btn-outline-secondary:hover { background: var(--border); color: var(--text); }
+    .modern-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 25px;
+      border: 1px solid var(--border);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
+    }
+    .modern-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
+    body.dark .modern-card:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+    .form-control, .form-select {
+      border-radius: 8px;
+      padding: 12px 15px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      color: var(--text);
+      transition: all 0.2s;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: var(--metric3-text);
+      box-shadow: 0 0 0 3px rgb(9, 88, 178, 0.1);
+      background: var(--card-bg);
+      color: var(--text);
+    }
+    .form-label { color: var(--text); font-weight: 500; margin-bottom: 8px; }
+    .country-combobox { position: relative; }
+    .country-toggle {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .country-combobox .form-control { padding-right: 42px; }
+    .country-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      max-height: 220px;
+      overflow-y: auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      z-index: 30;
+    }
+    body.dark .country-dropdown { box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+    .country-option {
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      transition: background-color 0.15s ease;
+    }
+    .country-option:hover { background: rgba(9, 88, 178, 0.08); }
+    .country-empty {
+      padding: 10px 14px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .table { color: var(--text); border-color: var(--border); margin-bottom: 0; }
+    .table th {
+      background: transparent;
+      color: var(--text);
+      font-weight: 600;
+      border-bottom: 2px solid var(--border);
+      padding: 12px 8px;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+    .table td {
+      background: transparent;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+      padding: 12px 8px;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+    .alert {
+      background: var(--alert-bg);
+      border: 1px solid var(--alert-border);
+      color: var(--alert-text);
+      border-radius: 8px;
+    }
+    @media (max-width: 992px) {
+      .main-content { margin-left: 0; padding: 20px; }
+      .table { font-size: 0.85rem; }
+      .table th { font-size: 0.8rem; padding: 8px 4px !important; }
+      .table td { padding: 8px 4px !important; font-size: 0.85rem; }
+      .btn-sm { padding: 4px 6px !important; font-size: 0.7rem !important; margin: 0 1px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title"><i class="fas fa-users"></i> Gestion de Clientes</h1>
+      <div>
+        <a href="providers.html" class="btn btn-outline-primary me-2">
+          <i class="fas fa-truck"></i> Proveedores
+        </a>
+        <a href="frontPage/frontPage.html" class="btn btn-secondary"><i class="fas fa-home"></i> Panel Principal</a>
+      </div>
+    </div>
+
+    <div id="authStatus" class="alert alert-info mb-4 d-none"></div>
+
+    <div class="modern-card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Agregar/Editar Cliente</h5>
+        <form id="clientForm" class="row gy-3">
+          <input type="hidden" id="clientId">
+          <div class="col-md-4">
+            <label for="name" class="form-label">Nombre</label>
+            <input type="text" id="name" class="form-control" placeholder="Nombre del cliente" pattern="[A-Za-zÀ-ÖØ-öø-ÿĀ-žА-Яа-яЁёЇїІіЄє\s'-]+" title="Solo letras" required>
+          </div>
+          <div class="col-md-4">
+            <label for="nif" class="form-label">NIF/NIE/CIF</label>
+            <input type="text" id="nif" class="form-control" placeholder="NIF/NIE/CIF" required>
+          </div>
+          <div class="col-md-4">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" id="email" class="form-control" placeholder="cliente@ejemplo.com" required>
+          </div>
+          <div class="col-md-4">
+            <label for="phone" class="form-label">Telefono</label>
+            <input type="tel" id="phone" class="form-control" placeholder="+34600000000" inputmode="tel" pattern="\+?[0-9]*" title="Solo numeros y optionalmente un + al inicio">
+          </div>
+          <div class="col-md-4">
+            <label for="address" class="form-label">Direccion fiscal</label>
+            <input type="text" id="address" class="form-control" placeholder="Calle, no">
+          </div>
+          <div class="col-md-4">
+            <label for="country" class="form-label">Pais</label>
+            <div class="country-combobox">
+              <input type="text" id="country" class="form-control" placeholder="Escribe o selecciona un pais" autocomplete="off">
+              <button type="button" id="countryToggle" class="country-toggle" aria-label="Mostrar paises">
+                <i class="fas fa-chevron-down"></i>
+              </button>
+              <div id="countryDropdown" class="country-dropdown d-none">
+                <button type="button" class="country-option" data-country-value="Afganistan">Afganistan</button>
+                <button type="button" class="country-option" data-country-value="Albania">Albania</button>
+                <button type="button" class="country-option" data-country-value="Alemania">Alemania</button>
+                <button type="button" class="country-option" data-country-value="Andorra">Andorra</button>
+                <button type="button" class="country-option" data-country-value="Angola">Angola</button>
+                <button type="button" class="country-option" data-country-value="Arabia Saudita">Arabia Saudita</button>
+                <button type="button" class="country-option" data-country-value="Argelia">Argelia</button>
+                <button type="button" class="country-option" data-country-value="Argentina">Argentina</button>
+                <button type="button" class="country-option" data-country-value="Armenia">Armenia</button>
+                <button type="button" class="country-option" data-country-value="Australia">Australia</button>
+                <button type="button" class="country-option" data-country-value="Austria">Austria</button>
+                <button type="button" class="country-option" data-country-value="Azerbaiyan">Azerbaiyan</button>
+                <button type="button" class="country-option" data-country-value="Bahamas">Bahamas</button>
+                <button type="button" class="country-option" data-country-value="Bangladesh">Bangladesh</button>
+                <button type="button" class="country-option" data-country-value="Belgica">Belgica</button>
+                <button type="button" class="country-option" data-country-value="Bolivia">Bolivia</button>
+                <button type="button" class="country-option" data-country-value="Bosnia y Herzegovina">Bosnia y Herzegovina</button>
+                <button type="button" class="country-option" data-country-value="Brasil">Brasil</button>
+                <button type="button" class="country-option" data-country-value="Bulgaria">Bulgaria</button>
+                <button type="button" class="country-option" data-country-value="Canada">Canada</button>
+                <button type="button" class="country-option" data-country-value="Chile">Chile</button>
+                <button type="button" class="country-option" data-country-value="China">China</button>
+                <button type="button" class="country-option" data-country-value="Chipre">Chipre</button>
+                <button type="button" class="country-option" data-country-value="Colombia">Colombia</button>
+                <button type="button" class="country-option" data-country-value="Costa Rica">Costa Rica</button>
+                <button type="button" class="country-option" data-country-value="Croacia">Croacia</button>
+                <button type="button" class="country-option" data-country-value="Cuba">Cuba</button>
+                <button type="button" class="country-option" data-country-value="Dinamarca">Dinamarca</button>
+                <button type="button" class="country-option" data-country-value="Ecuador">Ecuador</button>
+                <button type="button" class="country-option" data-country-value="Egipto">Egipto</button>
+                <button type="button" class="country-option" data-country-value="El Salvador">El Salvador</button>
+                <button type="button" class="country-option" data-country-value="Emiratos Arabes Unidos">Emiratos Arabes Unidos</button>
+                <button type="button" class="country-option" data-country-value="Eslovaquia">Eslovaquia</button>
+                <button type="button" class="country-option" data-country-value="Eslovenia">Eslovenia</button>
+                <button type="button" class="country-option" data-country-value="Espana">Espana</button>
+                <button type="button" class="country-option" data-country-value="Estados Unidos">Estados Unidos</button>
+                <button type="button" class="country-option" data-country-value="Francia">Francia</button>
+                <button type="button" class="country-option" data-country-value="Grecia">Grecia</button>
+                <button type="button" class="country-option" data-country-value="India">India</button>
+                <button type="button" class="country-option" data-country-value="Irlanda">Irlanda</button>
+                <button type="button" class="country-option" data-country-value="Italia">Italia</button>
+                <button type="button" class="country-option" data-country-value="Japon">Japon</button>
+                <button type="button" class="country-option" data-country-value="Marruecos">Marruecos</button>
+                <button type="button" class="country-option" data-country-value="Mexico">Mexico</button>
+                <button type="button" class="country-option" data-country-value="Noruega">Noruega</button>
+                <button type="button" class="country-option" data-country-value="Paises Bajos">Paises Bajos</button>
+                <button type="button" class="country-option" data-country-value="Panama">Panama</button>
+                <button type="button" class="country-option" data-country-value="Peru">Peru</button>
+                <button type="button" class="country-option" data-country-value="Polonia">Polonia</button>
+                <button type="button" class="country-option" data-country-value="Portugal">Portugal</button>
+                <button type="button" class="country-option" data-country-value="Reino Unido">Reino Unido</button>
+                <button type="button" class="country-option" data-country-value="Rumania">Rumania</button>
+                <button type="button" class="country-option" data-country-value="Suiza">Suiza</button>
+                <button type="button" class="country-option" data-country-value="Turquia">Turquia</button>
+                <button type="button" class="country-option" data-country-value="Ucrania">Ucrania</button>
+                <button type="button" class="country-option" data-country-value="Uruguay">Uruguay</button>
+                <button type="button" class="country-option" data-country-value="Venezuela">Venezuela</button>
+                <div id="countryEmpty" class="country-empty d-none">No hay coincidencias</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i> Guardar cliente
+            </button>
+            <button type="button" id="clearBtn" class="btn btn-outline-secondary">
+              <i class="fas fa-eraser"></i> Nuevo cliente
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modern-card">
+      <div class="card-body">
+        <h5 class="card-title">Clientes guardados</h5>
+        <div class="table-wrapper">
+          <table class="table table-striped table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Nombre</th>
+                <th>NIF/NIE/CIF</th>
+                <th>Email</th>
+                <th>Telefono</th>
+                <th>Pais</th>
+                <th>Creado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="clientsTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="shared/firebase-config.js"></script>
+  <script src="shared/auth-system.js"></script>
+  <script src="costumers/clientService-browser.js"></script>
+  <script src="shared/sidebar.js"></script>
+  <script src="customers.js"></script>
+</body>
+</html>

@@ -1,0 +1,687 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perfil - FactuFácil</title>
+
+  <!-- Font Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+
+    /* === LIGHT MODE === */
+    :root {
+      --bg: #F7F9FC;
+      --text: #1F2937;
+      --card-bg: #FFFFFF;
+      --border: #E6EAF0;
+      --muted: #6B7280;
+      --metric1-bg: #e9f6ec;
+      --metric1-text: #0f6c69;
+      --metric2-bg: #fee8d9;
+      --metric2-text: #b86313;
+      --metric3-bg: #e2f1fd;
+      --metric3-text: #0958b2;
+      --metric4-bg: #e9e4fb;
+      --metric4-text: #314057;
+      --btn-primary-bg: #0958b2;
+      --btn-primary-text: #ffffff;
+      --btn-sec-bg: #FFFFFF;
+      --btn-sec-border: #D1D5DB;
+      --btn-sec-text: #4B5563;
+      --alert-bg: #FFF4E5;
+      --alert-border: #FEE8D9;
+      --alert-text: #B26A00;
+      --danger: #e74c3c;
+      --success: #0f6c69;
+    }
+
+    /* === DARK MODE === */
+    body.dark {
+      --bg: #0F172A;
+      --text: #F1F5F9;
+      --card-bg: #1E293B;
+      --border: #334155;
+      --muted: #94A3B8;
+      --metric1-bg: #064E3B;
+      --metric1-text: #6EE7B7;
+      --metric2-bg: #7C2D12;
+      --metric2-text: #FDBA74;
+      --metric3-bg: #1E3A8A;
+      --metric3-text: #93C5FD;
+      --metric4-bg: #4C1D95;
+      --metric4-text: #C4B5FD;
+      --btn-primary-bg: #1D4ED8;
+      --btn-primary-text: #ffffff;
+      --btn-sec-bg: transparent;
+      --btn-sec-border: #4B5563;
+      --btn-sec-text: #E5E7EB;
+      --alert-bg: #422006;
+      --alert-border: #713f12;
+      --alert-text: #FDBA74;
+      --danger: #ef4444;
+      --success: #6EE7B7;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      margin: 0;
+    }
+
+    /* MAIN CONTENT */
+    .main-content { margin-left: 260px; padding: 32px; min-height: 100vh; }
+
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+
+    .page-title { font-size: 1.8em; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 15px; margin: 0; }
+
+    .page-title i { color: var(--metric3-text); }
+
+    /* BUTTONS */
+    .btn { border-radius: 8px; padding: 8px 16px; font-weight: 500; font-size: 0.9rem; transition: all 0.2s; border: none; }
+
+    .btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); }
+    .btn-primary:hover { opacity: 0.9; color: var(--btn-primary-text); transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.15); }
+
+    .btn-secondary { background: var(--btn-sec-bg); color: var(--btn-sec-text); border: 1px solid var(--btn-sec-border); }
+    .btn-secondary:hover { background: var(--border); color: var(--text); transform: translateY(-1px); }
+
+    .btn-success { background: var(--metric1-bg); color: var(--metric1-text); border: 1px solid var(--metric1-text); }
+    .btn-success:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.1); }
+
+    .btn-info { background: var(--metric3-bg); color: var(--metric3-text); border: 1px solid var(--metric3-text); }
+    .btn-info:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.1); }
+
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.15); }
+
+    .btn-warning { background: var(--metric2-bg); color: var(--metric2-text); border: 1px solid var(--metric2-text); }
+    .btn-warning:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0,0,0,0.1); }
+
+    .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .dark-toggle-btn {
+      background: var(--btn-sec-bg);
+      border: 1px solid var(--btn-sec-border);
+      color: var(--btn-sec-text);
+      border-radius: 8px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 1.1em;
+    }
+    .dark-toggle-btn:hover { background: var(--border); color: var(--text); }
+
+    /* MODERN CARDS */
+    .modern-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 25px;
+      border: 1px solid var(--border);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
+    }
+
+    .modern-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgb(0,0,0,0.08); }
+    body.dark .modern-card:hover { box-shadow: 0 10px 25px rgb(0,0,0,0.3); }
+
+    /* USER AVATAR & INFO */
+    .user-avatar {
+      width: 100px; height: 100px; border-radius: 50%;
+      background: var(--metric3-bg); color: var(--metric3-text);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.5em; font-weight: 600; margin: 0 auto 20px;
+      border: 3px solid var(--border);
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+    .user-name { text-align: center; font-size: 1.5em; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+    .user-email { text-align: center; color: var(--muted); font-size: 1em; margin-bottom: 15px; }
+    .user-role {
+      display: inline-block; padding: 6px 16px;
+      background: var(--metric1-bg); color: var(--metric1-text);
+      border-radius: 8px; font-size: 0.9em; font-weight: 500;
+    }
+
+    /* SECTION TITLE */
+    .section-title {
+      color: var(--text);
+      font-weight: 600;
+      font-size: 1.1em;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title i { color: var(--metric3-text); }
+
+    /* INFO LABELS */
+    .info-label { color: var(--muted); font-size: 0.9em; margin-bottom: 5px; }
+    .info-value { font-weight: 600; color: var(--text); font-size: 1em; }
+
+    /* FORM CONTROLS */
+    .form-control, .form-select {
+      border-radius: 8px;
+      padding: 12px 15px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      color: var(--text);
+      transition: all 0.2s;
+    }
+
+    .form-control:focus, .form-select:focus {
+      border-color: var(--metric3-text);
+      box-shadow: 0 0 0 3px rgb(9, 88, 178, 0.1);
+      background: var(--card-bg);
+      color: var(--text);
+    }
+
+    .form-label { color: var(--text); font-weight: 500; margin-bottom: 8px; }
+
+    /* STAT CARDS */
+    .stat-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      border: 1px solid var(--border);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
+    }
+    .stat-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgb(0,0,0,0.08); }
+    body.dark .stat-card:hover { box-shadow: 0 10px 25px rgb(0,0,0,0.3); }
+
+    .stat-icon {
+      width: 50px; height: 50px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 12px; font-size: 1.3em;
+    }
+    .stat-icon.blue { background: var(--metric3-bg); color: var(--metric3-text); }
+    .stat-icon.green { background: var(--metric1-bg); color: var(--metric1-text); }
+    .stat-icon.red { background: var(--metric2-bg); color: var(--metric2-text); }
+    .stat-icon.purple { background: var(--metric4-bg); color: var(--metric4-text); }
+    .stat-value { font-size: 1.8em; font-weight: 700; color: var(--text); margin: 0; }
+    .stat-label { color: var(--muted); font-size: 0.85em; margin-top: 5px; }
+
+    /* ALERTS */
+    .alert { border-radius: 10px; padding: 15px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .alert-success { background: var(--metric1-bg); color: var(--metric1-text); border: 1px solid var(--border); }
+    .alert-error { background: #fde8e8; color: #c53030; border: 1px solid var(--border); }
+    body.dark .alert-error { background: #7C2D12; color: #FDBA74; }
+
+    /* MODAL */
+    .modal-content {
+      background: var(--card-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .modal-header { border-bottom: 1px solid var(--border); padding: 20px; }
+    .modal-header .modal-title { font-weight: 600; }
+    .modal-header .btn-close { filter: brightness(0.5); }
+    body.dark .modal-header .btn-close { filter: invert(1); }
+
+    .modal-body { padding: 25px; }
+    .modal-footer { padding: 20px; border-top: 1px solid var(--border); }
+
+    /* LOADING OVERLAY */
+    #loadingOverlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center; z-index: 9999;
+      transition: background-color 0.3s ease;
+    }
+    .spinner {
+      width: 45px; height: 45px;
+      border: 4px solid var(--border);
+      border-top-color: var(--btn-primary-bg);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .hidden { display: none !important; }
+
+    /* RESPONSIVE */
+    @media (max-width: 992px) {
+      .sidebar { position: relative; width: 100%; min-height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+      .main-content { margin-left: 0; padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+<div class="container-fluid p-0">
+    <main class="main-content">
+      <div class="page-header">
+        <h1 class="page-title"><i class="fas fa-user"></i> Mi Perfil</h1>
+        <div class="action-buttons">
+          <button class="btn btn-primary" onclick="showEditModal()"><i class="fas fa-edit me-2"></i>Editar Perfil</button>
+          <button class="dark-toggle-btn" id="themeToggle" title="Cambiar tema"><i class="fas fa-moon"></i></button>
+        </div>
+      </div>
+      <div id="alertMessage" class="alert hidden"></div>
+      <div class="modern-card" style="text-align: center;">
+        <div class="user-avatar" id="userAvatar">U</div>
+        <div class="user-name" id="userName">Usuario</div>
+        <div class="user-email" id="userEmail">-</div>
+        <span class="user-role" id="userRole">Usuario</span>
+      </div>
+      <div class="row">
+        <div class="col-lg-6 mb-4">
+          <div class="modern-card">
+            <h5 class="section-title"><i class="fas fa-building"></i> Datos de la Empresa</h5>
+            <div class="row">
+              <div class="col-6 mb-3"><div class="info-label">Nombre</div><div class="info-value" id="displayCompanyName">-</div></div>
+              <div class="col-6 mb-3"><div class="info-label">Telefono</div><div class="info-value" id="displayPhone">-</div></div>
+              <div class="col-6 mb-3"><div class="info-label">Email</div><div class="info-value" id="displayEmail">-</div></div>
+              <div class="col-6 mb-3"><div class="info-label">Rol</div><div class="info-value" id="displayRole">-</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+          <div class="modern-card">
+            <h5 class="section-title"><i class="fas fa-sliders-h"></i> Preferencias</h5>
+            <div class="row">
+              <div class="col-4 mb-3"><div class="info-label">Moneda</div><div class="info-value" id="displayCurrency">-</div></div>
+              <div class="col-4 mb-3"><div class="info-label">Idioma</div><div class="info-value" id="displayLanguage">-</div></div>
+              <div class="col-4 mb-3"><div class="info-label">Tema</div><div class="info-value" id="displayTheme">-</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modern-card">
+        <h5 class="section-title"><i class="fas fa-chart-bar"></i> Estadisticas</h5>
+        <div class="row">
+          <div class="col-md-3 col-6 mb-3">
+            <div class="stat-card">
+              <div class="stat-icon blue"><i class="fas fa-file-invoice"></i></div>
+              <div class="stat-value" id="statInvoices">0</div>
+              <div class="stat-label">Facturas Recibidas</div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6 mb-3">
+            <div class="stat-card">
+              <div class="stat-icon green"><i class="fas fa-file-export"></i></div>
+              <div class="stat-value" id="statIssued">0</div>
+              <div class="stat-label">Facturas Emitidas</div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6 mb-3">
+            <div class="stat-card">
+              <div class="stat-icon red"><i class="fas fa-shopping-cart"></i></div>
+              <div class="stat-value" id="statExpenses">0</div>
+              <div class="stat-label">Gastos</div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6 mb-3">
+            <div class="stat-card">
+              <div class="stat-icon purple"><i class="fas fa-calculator"></i></div>
+              <div class="stat-value" id="statBudgets">0</div>
+              <div class="stat-label">Presupuestos</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modern-card">
+        <h5 class="section-title"><i class="fas fa-info-circle"></i> Informacion</h5>
+        <div class="row">
+          <div class="col-md-6 mb-3"><div class="info-label">Fecha de registro</div><div class="info-value" id="displayCreatedAt">-</div></div>
+          <div class="col-md-6 mb-3"><div class="info-label">Ultimo acceso</div><div class="info-value" id="displayLastLogin">-</div></div>
+        </div>
+      </div>
+      <div class="modern-card">
+        <h5 class="section-title"><i class="fas fa-cogs"></i> Acciones</h5>
+        <div class="d-flex flex-wrap gap-3">
+          <button class="btn btn-primary" onclick="showEditModal()"><i class="fas fa-edit me-2"></i>Editar</button>
+          <button class="btn btn-success" onclick="showPasswordModal()"><i class="fas fa-lock me-2"></i>Password</button>
+          <button class="btn btn-info" onclick="exportDataPDF()"><i class="fas fa-file-pdf me-2"></i>PDF</button>
+          <button class="btn btn-danger" onclick="deleteAccount()"><i class="fas fa-trash me-2"></i>Eliminar</button>
+          <button class="btn btn-warning" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i>Cerrar sesion</button>
+        </div>
+      </div>
+    </main>
+</div>
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-user-edit me-2"></i>Editar Perfil</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="editAlert" class="alert hidden"></div>
+        <div class="row">
+          <div class="col-md-6 mb-3"><label class="form-label">Nombre</label><input type="text" class="form-control" id="editName" placeholder="Tu nombre"></div>
+          <div class="col-md-6 mb-3"><label class="form-label">Empresa</label><input type="text" class="form-control" id="editCompany" placeholder="Empresa"></div>
+          <div class="col-md-6 mb-3"><label class="form-label">Telefono</label><input type="tel" class="form-control" id="editPhone" placeholder="Telefono"></div>
+          <div class="col-md-6 mb-3"><label class="form-label">Email</label><input type="email" class="form-control" id="editEmail" readonly></div>
+        </div>
+        <hr style="border-color: var(--border);"><h6 class="mb-3" style="color: var(--text);">Preferencias</h6>
+        <div class="row">
+          <div class="col-md-4 mb-3"><label class="form-label">Moneda</label>
+            <select class="form-select" id="editCurrency"><option value="EUR">Euro (EUR)</option><option value="USD">Dolar (USD)</option><option value="GBP">Libra (GBP)</option><option value="BRL">Real (BRL)</option></select>
+          </div>
+          <div class="col-md-4 mb-3"><label class="form-label">Idioma</label>
+            <select class="form-select" id="editLanguage"><option value="es">Espanol</option><option value="pt">Portugues</option><option value="en">English</option></select>
+          </div>
+          <div class="col-md-4 mb-3"><label class="form-label">Tema</label>
+            <select class="form-select" id="editTheme"><option value="light">Claro</option><option value="dark">Oscuro</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="saveProfile()"><i class="fas fa-save me-2"></i>Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="passwordModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-lock me-2"></i>Cambiar Contrasena</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="passwordAlert" class="alert hidden"></div>
+        <div class="mb-3"><label class="form-label">Nueva contrasena</label><input type="password" class="form-control" id="newPassword" placeholder="Minimo 6 caracteres"></div>
+        <div class="mb-3"><label class="form-label">Confirmar contrasena</label><input type="password" class="form-control" id="confirmPassword" placeholder="Repetir contrasena"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" onclick="changePassword()"><i class="fas fa-key me-2"></i>Cambiar</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="loadingOverlay"><div class="spinner"></div></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+<!-- Config -->
+<script src="../shared/firebase-config.js"></script>
+<!-- Auth FIRST - initializes Firebase -->
+<script src="../shared/auth-system.js"></script>
+<!-- Sync service -->
+<script src="../shared/firebase-sync.js"></script>
+<!-- Data Migration -->
+<script src="../shared/data-migration.js"></script>
+<!-- Store (uses sync service) -->
+<script src="../shared/store.js"></script>
+<script src="../shared/sidebar.js"></script>
+<script>
+// --- DARK MODE LOGIC ---
+document.addEventListener('DOMContentLoaded', () => {
+  const themeToggleBtn = document.getElementById('themeToggle');
+  if(!themeToggleBtn) return;
+
+  const themeIcon = themeToggleBtn.querySelector('i');
+
+  if (localStorage.getItem("theme") === "dark") {
+    document.body.classList.add("dark");
+    if(themeIcon) themeIcon.classList.replace('fa-moon', 'fa-sun');
+  }
+
+  themeToggleBtn.addEventListener('click', () => {
+    document.body.classList.toggle("dark");
+    const isDark = document.body.classList.contains("dark");
+
+    if (isDark) {
+      localStorage.setItem("theme", "dark");
+      if(themeIcon) themeIcon.classList.replace('fa-moon', 'fa-sun');
+    } else {
+      localStorage.setItem("theme", "light");
+      if(themeIcon) themeIcon.classList.replace('fa-sun', 'fa-moon');
+    }
+  });
+});
+
+var editModal = null;
+var passwordModal = null;
+function hideLoading() { var o = document.getElementById('loadingOverlay'); if (o) o.style.display = 'none'; }
+function getUserId() { try { var s = localStorage.getItem('upsen_current_user'); if (s) { var d = JSON.parse(s); if (d && d.user) return d.user.uid || d.user.id || 'demo'; } } catch (e) {} return 'demo'; }
+function getUserData(k) { try { var d = localStorage.getItem(k); if (d) return JSON.parse(d); } catch (e) {} return []; }
+function setText(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; }
+function formatDate(ds) {
+  if (!ds) return '-';
+  // Handle Firestore timestamp
+  if (ds && ds.toDate && typeof ds.toDate === 'function') {
+    ds = ds.toDate();
+  }
+  var d = new Date(ds);
+  if (isNaN(d.getTime())) return '-';
+  return d.toLocaleDateString('es-ES', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+document.addEventListener('DOMContentLoaded', function() {
+  editModal = new bootstrap.Modal(document.getElementById('editProfileModal'));
+  passwordModal = new bootstrap.Modal(document.getElementById('passwordModal'));
+
+  function checkAuth() {
+    // Check Firebase Auth directly first
+    var firebaseUser = null;
+    if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+      firebaseUser = window.firebaseAuth.currentUser;
+      console.log('Firebase Auth user found:', firebaseUser.email);
+    }
+
+    // Check localStorage session
+    var hasLocalSession = false;
+    try {
+      var s = localStorage.getItem('upsen_current_user');
+      if (s) {
+        var d = JSON.parse(s);
+        if (d && d.user) {
+          hasLocalSession = true;
+          console.log('Local session found:', d.user.email);
+        }
+      }
+    } catch (e) {}
+
+    // If we have Firebase user or local session, load profile
+    if (firebaseUser || hasLocalSession) {
+      if (window.AuthSystem && window.AuthSystem.isLoggedIn && window.AuthSystem.isLoggedIn()) {
+        loadProfile();
+      } else if (hasLocalSession) {
+        var s = localStorage.getItem('upsen_current_user');
+        if (s) {
+          try {
+            var d = JSON.parse(s);
+            if (d && d.user) {
+              loadProfileFromLocal(d.user);
+            }
+          } catch (e) {}
+        }
+      }
+      hideLoading();
+      return;
+    }
+
+    // Wait for Auth
+    if (window.AuthSystem && window.AuthSystem.isLoggedIn && window.AuthSystem.isLoggedIn()) {
+      loadProfile();
+      hideLoading();
+    }
+    else {
+      setTimeout(checkAuth, 100);
+    }
+  }
+
+  setTimeout(checkAuth, 500);
+});
+function loadProfileFromLocal(user) {
+  var initials = (user.name || user.email || 'U').substring(0,2).toUpperCase();
+  setText('userAvatar', initials);
+  setText('userName', user.name || 'Usuario');
+  setText('userEmail', user.email || '-');
+  setText('userRole', user.role === 'admin' ? 'Administrador' : 'Usuario');
+  setText('displayCompanyName', user.company || '-');
+  setText('displayPhone', user.phone || '-');
+  setText('displayEmail', user.email || '-');
+  setText('displayRole', user.role === 'admin' ? 'Administrador' : 'Usuario');
+  var curr = {'EUR':'Euro (EUR)','USD':'Dolar (USD)','GBP':'Libra (GBP)','BRL':'Real (BRL)'};
+  var lang = {'es':'Espanol','pt':'Portugues','en':'English'};
+  var them = {'light':'Claro','dark':'Oscuro'};
+  var s = user.settings || {};
+  setText('displayCurrency', curr[s.currency] || 'Euro (EUR)');
+  setText('displayLanguage', lang[s.language] || 'Espanol');
+  setText('displayTheme', them[s.theme] || 'Claro');
+  setText('displayCreatedAt', formatDate(user.createdAt));
+  setText('displayLastLogin', user.lastLogin ? formatDate(user.lastLogin) : 'Primera sesion');
+  loadStats();
+}
+function loadStats() {
+  // Usar store.js para obter estatísticas
+  var inv = [];
+  var iss = [];
+  var exp = [];
+  var bud = [];
+
+  if (window.getInvoicesReceivedSync) {
+    inv = window.getInvoicesReceivedSync();
+  }
+  if (window.getInvoicesIssuedSync) {
+    iss = window.getInvoicesIssuedSync();
+  }
+  if (window.getExpensesSync) {
+    exp = window.getExpensesSync();
+  }
+  if (window.getBudgetsSync) {
+    bud = window.getBudgetsSync();
+  }
+
+  setText('statInvoices', inv.length || 0);
+  setText('statIssued', iss.length || 0);
+  setText('statExpenses', exp.length || 0);
+  setText('statBudgets', bud.length || 0);
+}
+function loadProfile() { var user = AuthSystem.getCurrentUser(); if (!user) return; loadProfileFromLocal(user); }
+function showAlert(id, msg, type) { var el = document.getElementById(id); if (el) { el.textContent = msg; el.className = 'alert alert-' + (type || 'info'); el.classList.remove('hidden'); setTimeout(function() { el.classList.add('hidden'); }, 5000); } }
+function showEditModal() { var user = AuthSystem.getCurrentUser(); if (!user) return; document.getElementById('editName').value = user.name || ''; document.getElementById('editCompany').value = user.company || ''; document.getElementById('editPhone').value = user.phone || ''; document.getElementById('editEmail').value = user.email || ''; var s = user.settings || {}; document.getElementById('editCurrency').value = s.currency || 'EUR'; document.getElementById('editLanguage').value = s.language || 'es'; document.getElementById('editTheme').value = s.theme || 'light'; document.getElementById('editAlert').classList.add('hidden'); editModal.show(); }
+function showPasswordModal() { document.getElementById('newPassword').value = ''; document.getElementById('confirmPassword').value = ''; document.getElementById('passwordAlert').classList.add('hidden'); passwordModal.show(); }
+async function saveProfile() {
+  var name = document.getElementById('editName').value.trim();
+  var company = document.getElementById('editCompany').value.trim();
+  var phone = document.getElementById('editPhone').value.trim();
+  var currency = document.getElementById('editCurrency').value;
+  var language = document.getElementById('editLanguage').value;
+  var theme = document.getElementById('editTheme').value;
+
+  if (!name || !company) { showAlert('editAlert', 'Completa todos los campos.', 'error'); return; }
+
+  var saveBtn = document.querySelector('#editProfileModal .btn-primary');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...'; }
+
+  var res = await AuthSystem.updateUserProfile({name:name, company:company, phone:phone, settings:{currency:currency, language:language, theme:theme}});
+
+  if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-save me-2"></i>Guardar'; }
+
+  if (res.success) {
+    editModal.hide();
+    loadProfile();
+    showAlert('alertMessage', 'Perfil actualizado correctamente!', 'success');
+    // Apply theme change
+    if (window.applyTheme) applyTheme(theme);
+  }
+  else { showAlert('editAlert', res.message || 'Error.', 'error'); }
+}
+
+async function changePassword() {
+  var np = document.getElementById('newPassword').value;
+  var cp = document.getElementById('confirmPassword').value;
+  if (!np || !cp) { showAlert('passwordAlert', 'Completa los campos.', 'error'); return; }
+  if (np !== cp) { showAlert('passwordAlert', 'Las contrasenas no coinciden.', 'error'); return; }
+  if (np.length < 6) { showAlert('passwordAlert', 'Minimo 6 caracteres.', 'error'); return; }
+  var res = await AuthSystem.changePassword(np);
+  if (res.success) { passwordModal.hide(); showAlert('alertMessage', 'Contrasena cambiada!', 'success'); }
+  else { showAlert('passwordAlert', res.message || 'Error.', 'error'); }
+}
+function exportDataPDF() {
+  var user = AuthSystem.getCurrentUser();
+  if (!user) { showAlert('alertMessage', 'Usuario no encontrado.', 'error'); return; }
+  var doc = new window.jspdf.jsPDF();
+  doc.setFillColor(9, 88, 178);
+  doc.rect(0, 0, 210, 35, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.text('FactuFácil', 105, 18, {align:'center'});
+  doc.setFontSize(12);
+  doc.text('Perfil de Usuario', 105, 28, {align:'center'});
+  doc.setTextColor(100);
+  doc.setFontSize(10);
+  doc.text('Generado: ' + new Date().toLocaleDateString('es-ES'), 195, 45, {align:'right'});
+  doc.line(15, 40, 195, 40);
+  var y = 55;
+  doc.setTextColor(0);
+  doc.setFontSize(14);
+  doc.text('Informacion del Perfil', 15, y);
+  y += 10;
+  doc.setFontSize(10);
+  doc.text('Nombre: ' + (user.name || '-'), 20, y); y += 7;
+  doc.text('Empresa: ' + (user.company || '-'), 20, y); y += 7;
+  doc.text('Email: ' + (user.email || '-'), 20, y); y += 7;
+  doc.text('Telefono: ' + (user.phone || '-'), 20, y); y += 15;
+  doc.setFontSize(14);
+  doc.text('Preferencias', 15, y);
+  y += 10;
+  doc.setFontSize(10);
+  var s = user.settings || {};
+  doc.text('Moneda: ' + (s.currency || 'EUR'), 20, y); y += 7;
+  doc.text('Idioma: ' + (s.language || 'es'), 20, y); y += 7;
+  doc.text('Tema: ' + (s.theme || 'light'), 20, y);
+  doc.save('upsen_perfil.pdf');
+  showAlert('alertMessage', 'PDF exportado!', 'success');
+}
+function deleteAccount() {
+  if (confirm('Eliminar cuenta? Esta accion no se puede deshacer.')) {
+    AuthSystem.deleteAccount().then(function(result) {
+      if (result && result.success) {
+        window.location.href = '../login.html';
+      } else {
+        showAlert('alertMessage', result.message || 'Error al eliminar cuenta', 'error');
+      }
+    });
+  }
+}
+// Logout function with Firebase sign out
+function logout() {
+  if (confirm('Cerrar sesion?')) {
+    // 1. Limpar localStorage primeiro
+    localStorage.removeItem('upsen_current_user');
+
+    // 2. Try to sign out from Firebase
+    if (window.firebaseAuth) {
+      window.firebaseAuth.signOut().then(function() {
+        console.log('Firebase signed out');
+      }).catch(function(e) {
+        console.log('Firebase sign out error:', e);
+      });
+    }
+
+    // 3. Try AuthService logout
+    if (AuthSystem && AuthSystem.logout) {
+      AuthSystem.logout();
+    }
+
+    window.location.href = '../login.html';
+  }
+}
+</script>
+</body>
+</html>

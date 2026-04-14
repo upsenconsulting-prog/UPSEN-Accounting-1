@@ -1,0 +1,402 @@
+/**
+ * Firebase Integration - UPSEN Accounting
+ * Servicios:
+ * - Auth: Autenticacion con Email/Password
+ * - Firestore: Base de datos
+ * - Auth Guard: Proteccion de rutas
+ */
+
+// Firebase SDKs (usando CDN scripts no HTML)
+let auth = null;
+let db = null;
+let googleProvider = null;
+
+// Inicializar Firebase
+async function initializeFirebase() {
+  // Esperar que Firebase SDK este disponible
+  if (typeof window.firebase === 'undefined') {
+    console.error('Firebase SDK no cargado. Añade los scripts CDN al HTML.');
+    return null;
+  }
+  
+  try {
+    // Verificar si ya inicializado
+    if (window.firebase.apps && window.firebase.apps.length > 0) {
+      const app = window.firebase.apps[0];
+      auth = window.firebase.auth(app);
+      db = window.firebase.firestore(app);
+      
+      // Activar persistence para offline
+      await auth.setPersistence(window.firebase.auth.Auth.Persistence.LOCAL);
+      
+      console.log('Firebase inicializado (existente)');
+      return { auth, db };
+    }
+    
+    // Usar config desde window
+    const config = window.FIREBASE_CONFIG || {
+      apiKey: "AIzaSyBi1RinGAhVVWtT5wYn9ycf-4uWS5P1z1k",
+      authDomain: "upsen-accounting-3109f.firebaseapp.com",
+      projectId: "upsen-accounting-3109f",
+      storageBucket: "upsen-accounting-3109f.firebasestorage.app",
+      messagingSenderId: "706016193278",
+      appId: "1:706016193278:web:48f754a2b77ce0684393af"
+    };
+    
+    // Inicializar nuevo
+    const app = window.firebase.initializeApp(config);
+    auth = window.firebase.auth(app);
+    db = window.firebase.firestore(app);
+    
+    // Google Provider
+    googleProvider = new window.firebase.auth.GoogleAuthProvider();
+    googleProvider.setCustomParameters({
+      prompt: 'select_account'
+    });
+    
+    // Activar persistence
+    await auth.setPersistence(window.firebase.auth.Auth.Persistence.LOCAL);
+    
+    console.log('Firebase inicializado con exito!');
+    return { auth, db };
+  } catch (error) {
+    console.error('Error al inicializar Firebase:', error);
+    return null;
+  }
+}
+
+// ==================== AUTH SERVICE ====================
+const AuthService = {
+  // Estado actual del usuario (cache)
+  currentUser: null,
+  currentUserData: null,
+  
+  // Observar estado de autenticacion
+  onAuthChange(callback) {
+    if (!auth) {
+      console.warn('Auth no inicializado');
+      callback({ user: null, userData: null, isLoggedIn: false });
+      return () => {};
+    }
+    
+    return auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        let userData = null;
+        try {
+          const doc = await db.collection('companies').doc(user.uid).get();
+          if (doc.exists) {
+            userData = { uid: doc.id, ...doc.data() };
+          }
+        } catch (e) {
+          console.log('Error al obtener datos:', e);
+        }
+        
+        this.currentUser = user;
+        this.currentUserData = userData;
+        
+        callback({ user, userData, isLoggedIn: true });
+      } else {
+        this.currentUser = null;
+        this.currentUserData = null;
+        callback({ user: null, userData: null, isLoggedIn: false });
+      }
+    });
+  },
+  
+  // Obtener usuario actual
+  getCurrentUser() {
+    return this.currentUserData || this.currentUser || null;
+  },
+  
+  // Verificar si esta logueado
+  isLoggedIn() {
+    return this.currentUser !== null || this.currentUserData !== null;
+  },
+  
+  // Registrar nueva empresa/usuario
+  async register(email, password, userData) {
+    try {
+      const { user } = await auth.createUserWithEmailAndPassword(email, password);
+      
+      await user.sendEmailVerification();
+      console.log('Email de verificacion enviado');
+      
+      await db.collection('companies').doc(user.uid).set({
+        email: user.email,
+        name: userData.name || '',
+        company: userData.company || '',
+        phone: userData.phone || '',
+        role: 'admin',
+        emailVerified: false,
+        createdAt: window.firebase.firestore.FieldValue.serverTimestamp(),
+        settings: {
+          currency: 'EUR',
+          language: 'es',
+          theme: 'light'
+        }
+      });
+      
+      await auth.signOut();
+      
+      return { 
+        success: true, 
+        user: { uid: user.uid, email: user.email, ...userData },
+        message: 'Cuenta creada! Por favor verifica tu email.'
+      };
+    } catch (error) {
+      return { 
+        success: false, 
+        message: this.getErrorMessage(error.code),
+        code: error.code 
+      };
+    }
+  },
+  
+  // Login con email/password
+  async login(email, password) {
+    try {
+      const { user } = await auth.signInWithEmailAndPassword(email, password);
+      
+      if (!user.emailVerified) {
+        await auth.signOut();
+        return { 
+          success: false, 
+          message: 'Por favor verifica tu email antes de hacer login.',
+          code: 'auth/email-not-verified'
+        };
+      }
+      
+      await db.collection('companies').doc(user.uid).update({
+        lastLogin: window.firebase.firestore.FieldValue.serverTimestamp()
+      });
+      
+      const userData = await this.getUserData(user.uid);
+      
+      return { 
+        success: true, 
+        user: userData,
+        message: 'Login realizado!' 
+      };
+    } catch (error) {
+      return { 
+        success: false, 
+        message: this.getErrorMessage(error.code),
+        code: error.code 
+      };
+    }
+  },
+  
+  // Login con Google
+  async loginWithGoogle() {
+    try {
+      const { user } = await auth.signInWithPopup(googleProvider);
+      
+      const userDoc = await db.collection('companies').doc(user.uid).get();
+      if (!userDoc.exists) {
+        await db.collection('companies').doc(user.uid).set({
+          email: user.email,
+          name: user.displayName || '',
+          company: '',
+          phone: user.phoneNumber || '',
+          role: 'admin',
+          createdAt: window.firebase.firestore.FieldValue.serverTimestamp(),
+          settings: {
+            currency: 'EUR',
+            language: 'es',
+            theme: 'light'
+          }
+        });
+      }
+      
+      const userData = await this.getUserData(user.uid);
+      
+      return { 
+        success: true, 
+        user: userData,
+        message: 'Login con Google realizado!' 
+      };
+    } catch (error) {
+      return { 
+        success: false, 
+        message: this.getErrorMessage(error.code),
+        code: error.code 
+      };
+    }
+  },
+  
+  // Logout
+  async logout() {
+    try {
+      this.currentUser = null;
+      this.currentUserData = null;
+      await auth.signOut();
+      return { success: true, message: 'Sesion terminada!' };
+    } catch (error) {
+      return { success: false, message: 'Error al terminar sesion.' };
+    }
+  },
+  
+  // Recuperar password
+  async resetPassword(email) {
+    try {
+      await auth.sendPasswordResetEmail(email);
+      return { success: true, message: 'Email de recuperacion enviado!' };
+    } catch (error) {
+      return { success: false, message: this.getErrorMessage(error.code) };
+    }
+  },
+  
+  // Obtener datos del usuario
+  async getUserData(uid) {
+    try {
+      const doc = await db.collection('companies').doc(uid).get();
+      if (doc.exists) {
+        return { uid: doc.id, ...doc.data() };
+      }
+      return null;
+    } catch (error) {
+      console.error('Error al obtener datos:', error);
+      return null;
+    }
+  },
+  
+  // Actualizar perfil
+  async updateProfile(uid, updates) {
+    try {
+      await db.collection('companies').doc(uid).update({
+        ...updates,
+        updatedAt: window.firebase.firestore.FieldValue.serverTimestamp()
+      });
+      return { success: true, message: 'Perfil actualizado!' };
+    } catch (error) {
+      return { success: false, message: 'Error al actualizar perfil.' };
+    }
+  },
+  
+  // Cambiar password
+  async changePassword(newPassword) {
+    try {
+      const user = auth.currentUser;
+      if (!user) return { success: false, message: 'Usuario no autenticado.' };
+      await user.updatePassword(newPassword);
+      return { success: true, message: 'Password cambiada!' };
+    } catch (error) {
+      return { success: false, message: this.getErrorMessage(error.code) };
+    }
+  },
+  
+  // Mensajes de error
+  getErrorMessage(code) {
+    const messages = {
+      'auth/email-already-in-use': 'Este email ya esta registrado.',
+      'auth/invalid-email': 'Email invalido.',
+      'auth/operation-not-allowed': 'Operacion no permitida.',
+      'auth/weak-password': 'Password muy debel (minimo 6 caracteres).',
+      'auth/user-disabled': 'Cuenta desactivada.',
+      'auth/user-not-found': 'Usuario no encontrado.',
+      'auth/wrong-password': 'Password incorrecta.',
+      'auth/popup-closed-by-user': 'Ventana de login cancelada.',
+      'auth/network-request-failed': 'Error de red.'
+    };
+    return messages[code] || 'Ocurrio un error. Intenta de nuevo.';
+  }
+};
+
+// ==================== FIRESTORE SERVICE ====================
+const FirestoreService = {
+  // Obtener todos los documentos
+  async getAll(collectionName) {
+    try {
+      const user = auth?.currentUser;
+      if (!user) throw new Error('Usuario no autenticado.');
+      
+      const snapshot = await db.collection(`companies/${user.uid}/${collectionName}`)
+        .orderBy('createdAt', 'desc')
+        .get();
+      
+      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      return docs;
+    } catch (error) {
+      console.error('Error al obtener:', error);
+      return [];
+    }
+  },
+  
+  // Agregar documento
+  async add(collectionName, data) {
+    try {
+      const user = auth?.currentUser;
+      if (!user) throw new Error('Usuario no autenticado.');
+      
+      const docRef = await db.collection(`companies/${user.uid}/${collectionName}`).add({
+        ...data,
+        createdAt: window.firebase.firestore.FieldValue.serverTimestamp(),
+        createdBy: user.uid
+      });
+      return { success: true, id: docRef.id };
+    } catch (error) {
+      console.error('Error al agregar:', error);
+      return { success: false, message: error.message };
+    }
+  },
+  
+  // Actualizar documento
+  async update(collectionName, id, data) {
+    try {
+      const user = auth?.currentUser;
+      if (!user) throw new Error('Usuario no autenticado.');
+      
+      await db.collection(`companies/${user.uid}/${collectionName}`).doc(id).update({
+        ...data,
+        updatedAt: window.firebase.firestore.FieldValue.serverTimestamp()
+      });
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  },
+  
+  // Eliminar documento
+  async delete(collectionName, id) {
+    try {
+      const user = auth?.currentUser;
+      if (!user) throw new Error('Usuario no autenticado.');
+      
+      await db.collection(`companies/${user.uid}/${collectionName}`).doc(id).delete();
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  },
+  
+  // Suscribir a cambios
+  subscribeToCollection(collectionName, callback) {
+    const user = auth?.currentUser;
+    if (!user) {
+      callback([]);
+      return () => {};
+    }
+    
+    return db.collection(`companies/${user.uid}/${collectionName}`)
+      .orderBy('createdAt', 'desc')
+      .onSnapshot(
+        (snapshot) => {
+          const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          callback(docs);
+        },
+        (error) => console.error('Error en snapshot:', error)
+      );
+  }
+};
+
+// ==================== EXPORTS ====================
+window.FirebaseApp = {
+  initialize: initializeFirebase,
+  auth: AuthService,
+  firestore: FirestoreService
+};
+
+window.AuthService = AuthService;
+window.FirestoreService = FirestoreService;
+
+console.log('Firebase Integration cargado!');

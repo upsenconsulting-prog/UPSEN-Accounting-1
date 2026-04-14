@@ -1,0 +1,29 @@
+[
+  {
+    "id": "inv1",
+    "invoiceNumber": "INV-001",
+    "customer": "Cliente Teste",
+    "customerNif": "111222333",
+    "invoiceDate": "2024-11-01",
+    "dueDate": "2024-11-30",
+    "amount": 1200.00,
+    "ivaRate": 21,
+    "ivaAmount": 252.00,
+    "totalAmount": 1452.00,
+    "state": "Pendiente"
+  },
+  {
+    "id": "inv2",
+    "invoiceNumber": "INV-002",
+    "customer": "Empresa XYZ",
+    "customerNif": "444555666",
+    "invoiceDate": "2024-11-12",
+    "dueDate": "2024-12-12",
+    "amount": 800.00,
+    "ivaRate": 21,
+    "ivaAmount": 168.00,
+    "totalAmount": 968.00,
+    "state": "Pagada",
+    "paymentMethod": "transferencia"
+  }
+]
