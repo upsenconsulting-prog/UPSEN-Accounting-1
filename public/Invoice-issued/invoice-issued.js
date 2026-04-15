@@ -81,7 +81,7 @@ function getInvoiceStatusValue(invoice) {
   if (window.StatusEngine && typeof window.StatusEngine.getEffectiveInvoiceState === 'function') {
     return window.StatusEngine.getEffectiveInvoiceState(invoice || {});
   }
-  return (invoice && invoice.state) || 'Pendiente';
+  return (invoice && invoice.state) || 'draft';
 }
 
 function getInvoiceStatusLabel(invoice) {
@@ -94,8 +94,8 @@ function getInvoiceStatusLabel(invoice) {
 
 function getInvoiceStatusClass(invoice) {
   var status = getInvoiceStatusValue(invoice);
-  if (status === 'Pagada') return 'status-paid';
-  if (status === 'Vencida') return 'status-overdue';
+  if (status === 'paid') return 'status-paid';
+  if (window.StatusEngine && typeof window.StatusEngine.isInvoiceOverdue === 'function' && window.StatusEngine.isInvoiceOverdue(invoice)) return 'status-overdue';
   return 'status-pending';
 }
 
@@ -229,8 +229,8 @@ async function renderSummaryCards() {
     
     // Existing stats
     var status = getInvoiceStatusValue(inv);
-    if (status === 'Pendiente') pendingTotal += amount;
-    if (status === 'Vencida') overdueTotal += amount;
+    if (status === 'sent') pendingTotal += amount;
+    if (window.StatusEngine && typeof window.StatusEngine.isInvoiceOverdue === 'function' && window.StatusEngine.isInvoiceOverdue(inv)) overdueTotal += amount;
     if (inv.invoiceDate) {
       var parts = inv.invoiceDate.split('-');
       if (parts.length >= 2) {
@@ -241,7 +241,7 @@ async function renderSummaryCards() {
     }
     
     // NEW: Payment method totals (only paid invoices)
-    if (status === 'Pagada' && inv.paymentMethod && paymentTotals[inv.paymentMethod]) {
+    if (status === 'paid' && inv.paymentMethod && paymentTotals[inv.paymentMethod]) {
       paymentTotals[inv.paymentMethod] += amount;
     }
   }
@@ -443,8 +443,10 @@ async function renderInvoices() {
 
   for (var i = 0; i < list.length; i++) {
     var inv = list[i];
+    var statusValue = getInvoiceStatusValue(inv);
     var statusClass = getInvoiceStatusClass(inv);
     var statusText = getInvoiceStatusLabel(inv);
+    var canMarkPaid = statusValue === 'sent';
     
     // Veri*Factu status
     var vfStatus = getVeriFactuStatus(inv);
@@ -467,7 +469,7 @@ async function renderInvoices() {
       '<td>' + getPaymentMethodText(inv.paymentMethod) + (inv.paymentDate ? '<br><small>' + formatDate(inv.paymentDate) + '</small>' : '') + '</td>' +
       '<td class="action-buttons">' +
         '<button class="btn btn-primary btn-sm py-1 px-2 me-1" style="font-size:0.75rem" data-view="' + inv.id + '"><i class="fas fa-eye"></i></button>' +
-        '<button class="btn btn-success btn-sm py-1 px-2 me-1" style="font-size:0.75rem" data-paid="' + inv.id + '"><i class="fas fa-check"></i></button>' +
+        (canMarkPaid ? '<button class="btn btn-success btn-sm py-1 px-2 me-1" style="font-size:0.75rem" data-paid="' + inv.id + '"><i class="fas fa-check"></i></button>' : '') +
         '<button class="btn btn-danger btn-sm py-1 px-2" style="font-size:0.75rem" data-del="' + inv.id + '"><i class="fas fa-trash"></i></button>' +
       '</td>';
     tbody.appendChild(tr);
@@ -513,7 +515,7 @@ async function renderInvoices() {
       }
       
       var formData = {
-        state: 'Pagada',
+        state: 'paid',
         paymentMethod: paymentMethod,
         paymentDate: paymentDate,
         paymentNotes: paymentNotes
@@ -707,7 +709,7 @@ async function saveInvoiceIssued() {
   var dueDate = "";
   var amount = "";
   var ivaRate = "";
-  var state = "Pendiente";
+  var state = "draft";
   
   var inputs = form.querySelectorAll('input, select');
   for (var i = 0; i < inputs.length; i++) {
@@ -1148,8 +1150,8 @@ function exportToExcel(list) {
 
 function downloadIssuedInvoiceTemplate() {
   var template = 'Numero,Cliente,NIF,Fecha,Vence,Base Imponible,IVA Rate,Estado\n';
-  template += 'INV-2025-001,Cliente SL,12345678A,2025-01-15,2025-02-15,1000.00,21,Pendiente\n';
-  template += 'INV-2025-002,Empresa SA,87654321B,2025-01-20,2025-02-20,2500.00,21,Pagada\n';
+  template += 'INV-2025-001,Cliente SL,12345678A,2025-01-15,2025-02-15,1000.00,21,draft\n';
+  template += 'INV-2025-002,Empresa SA,87654321B,2025-01-20,2025-02-20,2500.00,21,paid\n';
   
   var blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
   var link = document.createElement('a');

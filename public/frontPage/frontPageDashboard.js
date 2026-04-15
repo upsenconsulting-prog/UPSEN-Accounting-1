@@ -128,6 +128,13 @@ function getInvoiceDashboardState(invoice) {
   return (invoice && invoice.state) || '';
 }
 
+function isDashboardInvoiceOverdue(invoice) {
+  if (window.StatusEngine && typeof window.StatusEngine.isInvoiceOverdue === 'function') {
+    return window.StatusEngine.isInvoiceOverdue(invoice || {});
+  }
+  return false;
+}
+
 // ========== KPI HELPERS ==========
 function sumInvoicesReceivedMonthYear(year, month) {
   var total = 0;
@@ -172,8 +179,8 @@ function countInvoicesReceivedPending() {
   var invoices = getUserInvoicesReceived();
   
   for (var i = 0; i < invoices.length; i++) {
-    var state = (invoices[i].state || '').toLowerCase();
-    if (state === 'pendiente') count++;
+    var state = getInvoiceDashboardState(invoices[i]);
+    if (state === 'sent') count++;
   }
   return count;
 }
@@ -221,8 +228,8 @@ function countInvoicesIssuedPending() {
   var invoices = getUserInvoicesIssued();
   
   for (var i = 0; i < invoices.length; i++) {
-    var state = (invoices[i].state || '').toLowerCase();
-    if (state === 'pendiente') count++;
+    var state = getInvoiceDashboardState(invoices[i]);
+    if (state === 'sent') count++;
   }
   return count;
 }
@@ -558,7 +565,7 @@ function renderPaymentsForecastChart() {
         
         if (invYear === year && invMonth === month) {
           var state = getInvoiceDashboardState(inv);
-          if (state === 'Pendiente' || state === 'Vencida') {
+          if (state === 'sent' || isDashboardInvoiceOverdue(inv)) {
             pendingTotal += Number(inv.amount) || 0;
           }
           issuedTotal += Number(inv.amount) || 0;

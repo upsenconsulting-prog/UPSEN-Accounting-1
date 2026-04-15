@@ -117,27 +117,30 @@ window.CalculationEngine = {
 
 const STATUS_RULES = {
   invoice: {
-    defaultValue: "Pendiente",
+    defaultValue: "draft",
     aliases: {
-      pendiente: "Pendiente",
-      free: "Pendiente",
-      emit: "Pendiente",
-      enviada: "Pendiente",
-      enviadao: "Pendiente",
-      pagada: "Pagada",
-      paid: "Pagada",
-      vencida: "Vencida",
-      overdue: "Vencida"
+      draft: "draft",
+      borrador: "draft",
+      pendiente: "draft",
+      free: "draft",
+      sent: "sent",
+      enviado: "sent",
+      enviada: "sent",
+      emit: "sent",
+      vencida: "sent",
+      overdue: "sent",
+      paid: "paid",
+      pagada: "paid"
     },
     labels: {
-      Pendiente: "Pendiente",
-      Pagada: "Pagada",
-      Vencida: "Vencida"
+      draft: "Draft",
+      sent: "Sent",
+      paid: "Paid"
     },
     transitions: {
-      Pendiente: ["Pendiente", "Pagada", "Vencida"],
-      Vencida: ["Vencida", "Pagada"],
-      Pagada: ["Pagada"]
+      draft: ["draft", "sent"],
+      sent: ["sent", "paid"],
+      paid: ["paid"]
     }
   },
   budget: {
@@ -163,25 +166,29 @@ const STATUS_RULES = {
     }
   },
   simpleInvoice: {
-    defaultValue: "pendiente",
+    defaultValue: "draft",
     aliases: {
-      pendiente: "pendiente",
-      free: "pendiente",
-      emit: "pendiente",
-      pagada: "pagada",
-      paid: "pagada",
-      parcial: "parcial",
-      partial: "parcial"
+      draft: "draft",
+      borrador: "draft",
+      pendiente: "draft",
+      free: "draft",
+      sent: "sent",
+      emit: "sent",
+      enviado: "sent",
+      partial: "sent",
+      parcial: "sent",
+      paid: "paid",
+      pagada: "paid"
     },
     labels: {
-      pendiente: "Pendiente",
-      pagada: "Pagada",
-      parcial: "Parcial"
+      draft: "Draft",
+      sent: "Sent",
+      paid: "Paid"
     },
     transitions: {
-      pendiente: ["pendiente", "parcial", "pagada"],
-      parcial: ["parcial", "pagada"],
-      pagada: ["pagada"]
+      draft: ["draft", "sent"],
+      sent: ["sent", "paid"],
+      paid: ["paid"]
     }
   }
 };
@@ -213,19 +220,20 @@ function getTodayIsoDate() {
 }
 
 function getEffectiveInvoiceState(invoice) {
-  var normalizedState = normalizeStatusValue("invoice", invoice && invoice.state);
-  if (normalizedState === "Pagada") return "Pagada";
+  return normalizeStatusValue("invoice", invoice && invoice.state);
+}
+
+function isInvoiceOverdue(invoice) {
+  if (getEffectiveInvoiceState(invoice) === "paid") return false;
   var dueDate = normalizeString(invoice && invoice.dueDate);
-  if (dueDate && isValidIsoDate(dueDate) && dueDate < getTodayIsoDate()) {
-    return "Vencida";
-  }
-  return normalizedState;
+  return !!(dueDate && isValidIsoDate(dueDate) && dueDate < getTodayIsoDate());
 }
 
 window.StatusEngine = {
   normalizeStatusValue: normalizeStatusValue,
   ensureAllowedStatusTransition: ensureAllowedStatusTransition,
   getEffectiveInvoiceState: getEffectiveInvoiceState,
+  isInvoiceOverdue: isInvoiceOverdue,
   getStatusLabel: function(type, value) {
     var normalizedValue = normalizeStatusValue(type, value);
     return STATUS_RULES[type].labels[normalizedValue] || normalizedValue;
@@ -1035,10 +1043,10 @@ function buildDashboardSummary(invoicesIssued, invoicesReceived, expenses, budge
   }, 0));
 
   var pendingInvoices = issued.filter(function(invoice) {
-    return getEffectiveInvoiceState(invoice) === "Pendiente";
+    return getEffectiveInvoiceState(invoice) === "sent";
   });
   var overdueInvoices = issued.filter(function(invoice) {
-    return getEffectiveInvoiceState(invoice) === "Vencida";
+    return isInvoiceOverdue(invoice);
   });
   var pendingBudgets = budgetList.filter(function(budget) {
     return normalizeStatusValue("budget", budget.status) === "pending";
@@ -1060,7 +1068,7 @@ function buildDashboardSummary(invoicesIssued, invoicesReceived, expenses, budge
     }, 0)),
     pendingBudgets: pendingBudgets.length,
     paidInvoices: issued.filter(function(invoice) {
-      return getEffectiveInvoiceState(invoice) === "Pagada";
+      return getEffectiveInvoiceState(invoice) === "paid";
     }).length
   };
 }
@@ -1106,7 +1114,7 @@ function countInvoicesReceivedMonth(year, month) {
 
 function countInvoicesReceivedPending() {
   const invoices = getInvoicesReceivedSync();
-  return invoices.filter(inv => getEffectiveInvoiceState(inv) === "Pendiente").length;
+  return invoices.filter(inv => getEffectiveInvoiceState(inv) === "sent").length;
 }
 
 function sumInvoicesIssuedMonth(year, month) {
@@ -1132,7 +1140,7 @@ function countInvoicesIssuedMonth(year, month) {
 
 function countInvoicesIssuedPending() {
   const invoices = getInvoicesIssuedSync();
-  return invoices.filter(inv => getEffectiveInvoiceState(inv) === "Pendiente").length;
+  return invoices.filter(inv => getEffectiveInvoiceState(inv) === "sent").length;
 }
 
 function sumExpensesMonth(year, month) {

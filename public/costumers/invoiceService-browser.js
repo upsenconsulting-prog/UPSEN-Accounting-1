@@ -12,22 +12,29 @@
   const normalizeDate = (value) => normalizeString(value);
   const isValidIsoDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(new Date(value + 'T00:00:00').getTime());
   const SIMPLE_INVOICE_STATUS = {
-    defaultValue: 'pendiente',
+    defaultValue: 'draft',
     labels: {
-      pendiente: 'Pendiente',
-      parcial: 'Parcial',
-      pagada: 'Pagada'
+      draft: 'Draft',
+      sent: 'Sent',
+      paid: 'Paid'
     },
     aliases: {
-      free: 'pendiente',
-      emit: 'pendiente',
-      paid: 'pagada',
-      partial: 'parcial'
+      draft: 'draft',
+      borrador: 'draft',
+      pendiente: 'draft',
+      free: 'draft',
+      sent: 'sent',
+      emit: 'sent',
+      enviado: 'sent',
+      partial: 'sent',
+      parcial: 'sent',
+      paid: 'paid',
+      pagada: 'paid'
     },
     transitions: {
-      pendiente: ['pendiente', 'parcial', 'pagada'],
-      parcial: ['parcial', 'pagada'],
-      pagada: ['pagada']
+      draft: ['draft', 'sent'],
+      sent: ['sent', 'paid'],
+      paid: ['paid']
     }
   };
 

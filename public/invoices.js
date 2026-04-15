@@ -41,7 +41,7 @@
     document.getElementById('clientSelect').value = '';
     document.getElementById('providerSelect').value = '';
     document.getElementById('total').value = '';
-    document.getElementById('estado').value = 'pendiente';
+    document.getElementById('estado').value = 'draft';
     document.getElementById('descripcion').value = '';
     setMessage('Formulario listo para nueva factura.', 'info');
   }
@@ -97,10 +97,11 @@
 
       invoices.forEach(invoice => {
         const row = document.createElement('tr');
-        const estadoBadge = invoice.estado === 'pagada' ? 'badge-success' : 
-                           invoice.estado === 'parcial' ? 'badge-warning' : 'badge-danger';
-        const estadoText = invoice.estado === 'pagada' ? 'Pagada' : 
-                          invoice.estado === 'parcial' ? 'Parcial' : 'Pendiente';
+        const normalizedEstado = (invoice.estado || 'draft').toLowerCase();
+        const estadoBadge = normalizedEstado === 'paid' ? 'badge-success' :
+                           normalizedEstado === 'sent' ? 'badge-warning' : 'badge-danger';
+        const estadoText = normalizedEstado === 'paid' ? 'Paid' :
+                          normalizedEstado === 'sent' ? 'Sent' : 'Draft';
 
         // Get client and provider names
         const clientName = invoice.client ? `${invoice.client.nombre} (${invoice.client.nif_nie_cif})` : 'N/A';
@@ -137,7 +138,7 @@
     document.getElementById('clientSelect').value = invoice.clientId || '';
     document.getElementById('providerSelect').value = invoice.providerId || '';
     document.getElementById('total').value = invoice.total || '';
-    document.getElementById('estado').value = invoice.estado || 'pendiente';
+    document.getElementById('estado').value = invoice.estado || 'draft';
     document.getElementById('descripcion').value = invoice.descripcion || '';
     setMessage('Editando factura: ' + (invoice.numero || ''), 'info');
     // Switch to new tab
@@ -251,4 +252,3 @@
 
   document.addEventListener('DOMContentLoaded', init);
 })();
-
