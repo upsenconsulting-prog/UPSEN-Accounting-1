@@ -9,6 +9,27 @@
 5. Rueckverfolgbarkeit
 6. Dashboard-Unterstuetzung
 
+## Umsetzungsstand
+
+Fertiggestellt, getestet und committed:
+- Backend-Validierungen fuer Rechnungen, Budgets und Ausgaben
+  Commit: `aa500af` `Add validation guards for invoices budgets and expenses`
+- Zentrales Berechnungsmodul fuer Rechnungen und Budgets
+  Commit: `dc2d604` `Centralize invoice and budget calculations`
+- Dokumentstatus und Statusuebergaenge fuer Rechnungen und Budgets
+  Commit: `1fa9f28` `Add controlled status transitions for documents`
+- Rueckverfolgbarkeit mit `createdAt`, `updatedAt`, `createdBy`, `updatedBy`, `statusHistory`
+  Commit: `c2fba13` `Add traceability fields for financial documents`
+- Dashboard-Zusammenfassung fuer Einnahmen, Ausgaben, offene und ueberfaellige Dokumente
+  Commit: `980d665` `Add dashboard summary logic for finance overview`
+
+Getestet wurde pro Block jeweils strukturell im Projekt:
+- Validierungsregeln vorhanden und an Speichervorgaenge angebunden
+- Berechnungsengine zentral definiert und von Rechnungs-/Budgetmodulen benutzt
+- Statusregeln, Uebergaenge und Frontend-Anbindung vorhanden
+- Audit-Felder und Historie werden beim Anlegen und Aktualisieren gesetzt
+- Dashboard-Zusammenfassung ist zentral exportiert und in der Startseitenlogik eingebunden
+
 ## 1. Entitaeten
 
 ### 1. Kunde
@@ -461,4 +482,3 @@ Nicht erkennbar:
 - `createdAt` und `updatedAt` fuer Lieferanten in `public/costumers/providerService-browser.js`
 - einfache Rechnungsvalidierung fuer Pflichtfelder, positive Betraege und gueltige Datumswerte in `public/costumers/invoiceService-browser.js`
 - `createdAt` und `updatedAt` fuer einfache Rechnungen in `public/costumers/invoiceService-browser.js`
-
