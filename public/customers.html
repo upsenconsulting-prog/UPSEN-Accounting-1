@@ -111,6 +111,23 @@
       margin-bottom: 25px; border: 1px solid var(--border);
       transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
     }
+    .modern-card:not(.clickable),
+    .modern-card:not(.clickable) * { cursor: default !important; }
+    .modern-card:not(.clickable) a,
+    .modern-card:not(.clickable) button,
+    .modern-card:not(.clickable) [role="button"],
+    .modern-card:not(.clickable) input[type="button"],
+    .modern-card:not(.clickable) input[type="submit"],
+    .modern-card:not(.clickable) input[type="reset"],
+    .modern-card:not(.clickable) input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+    .modern-card:not(.clickable) textarea,
+    .modern-card:not(.clickable) [contenteditable="true"],
+    .modern-card:not(.clickable) summary,
+    .modern-card:not(.clickable) select { cursor: pointer !important; }
+
+    .modern-card:not(.clickable) input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+    .modern-card:not(.clickable) textarea,
+    .modern-card:not(.clickable) [contenteditable="true"] { cursor: text !important; }
     .modern-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
     body.dark .modern-card:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
     /* KPI METRIC CARDS */
@@ -118,7 +135,21 @@
       border-radius: 12px; padding: 20px; display: flex; flex-direction: column;
       height: 100%; border: 1px solid var(--border);
       transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
-      cursor: pointer;
+      cursor: default;
+    }
+    .kpi-card:not(.clickable),
+    .kpi-card:not(.clickable) * { cursor: default !important; }
+    .kpi-card.clickable,
+    .kpi-card.clickable * { cursor: pointer !important; }
+
+    p, span, td, th, .table td, .table th { user-select: text; }
+
+    input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+    textarea,
+    [contenteditable="true"],
+    .form-control {
+      cursor: text !important;
+      user-select: text;
     }
     .kpi-card:hover { transform: translateY(-6px); box-shadow: 0 10px 25px rgb(0,0,0,0.12); }
     body.dark .kpi-card:hover { box-shadow: 0 10px 25px rgb(0,0,0,0.4); }

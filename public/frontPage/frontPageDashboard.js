@@ -356,7 +356,7 @@ function renderDashboardKPIs() {
 
 // ========== CHARTS ==========
 function renderExpensesChart() {
-  var chartContainer = $('expensesChart');
+  var chartContainer = $('expensesDonutChart');
   if (!chartContainer) return;
 
   var ctx = chartContainer.getContext('2d');
@@ -369,7 +369,22 @@ function renderExpensesChart() {
   var labels = Object.keys(categoryData);
   var data = Object.values(categoryData);
 
-  var colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c'];
+  var legendContainerLeft = $('expenses-legend-left');
+  var legendContainerRight = $('expenses-legend');
+  var palette = [
+    '#3E74B5', '#4E84BF', '#5D92C7', '#6CA0CF',
+    '#2F8C88', '#3D9A95', '#4AA8A2', '#58B5AE',
+    '#699F4D', '#77AA5A', '#85B567', '#93C074',
+    '#C48E3A', '#CF9B47', '#D9A855', '#E2B462',
+    '#C25151', '#CC5E5E', '#D66B6B', '#DF7878',
+    '#6C58B3', '#7A66BD', '#8873C5', '#9581CD',
+    '#5763B7', '#6671BF', '#7580C7', '#848ECE',
+    '#BC5F95', '#C86EA1', '#D37DAC', '#DD8DB8'
+  ];
+
+  var chartLabels = labels.length > 0 ? labels : ['Sin datos'];
+  var chartData = data.length > 0 ? data : [1];
+  var chartColors = chartLabels.map(function(_, i) { return palette[i % palette.length]; });
 
   if (expensesChart) {
     expensesChart.destroy();
@@ -378,25 +393,110 @@ function renderExpensesChart() {
   expensesChart = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: labels.length > 0 ? labels : ['Sin datos'],
+      labels: chartLabels,
       datasets: [{
-        data: data.length > 0 ? data : [1],
-        backgroundColor: labels.map(function(_, i) { return colors[i % colors.length]; }),
-        borderWidth: 0
+        data: chartData,
+        backgroundColor: chartColors,
+        borderWidth: 0,
+        hoverOffset: 6
       }]
     },
     options: {
       responsive: true,
-      maintainAspectRatio: false,
+      maintainAspectRatio: true,
+      cutout: '55%',
+      layout: {
+        padding: 12
+      },
       plugins: {
-        legend: { position: 'right' },
-        title: {
-          display: true,
-          text: 'Gastos por categoria (mes actual)',
-          font: { size: 14, weight: '600' }
+        legend: {
+          display: false
+        },
+        tooltip: {
+          enabled: false
         }
+      },
+      animation: {
+        duration: 300
       }
     }
+  });
+
+  renderCustomLegend(expensesChart, legendContainerLeft, legendContainerRight);
+}
+
+function renderCustomLegend(chart, leftContainer, rightContainer) {
+  if (!chart || !rightContainer) return;
+
+  var labels = chart.data.labels || [];
+  var colors = (chart.data.datasets && chart.data.datasets[0] && chart.data.datasets[0].backgroundColor) || [];
+
+  var useBothSides = !!leftContainer && labels.length >= 12;
+
+  if (leftContainer) {
+    leftContainer.innerHTML = '';
+    leftContainer.style.display = useBothSides ? 'flex' : 'none';
+  }
+
+  rightContainer.innerHTML = '';
+  rightContainer.style.display = 'flex';
+
+  function createLegendItem(label, index, targetContainer) {
+    if (!targetContainer) return;
+
+    var item = document.createElement('div');
+    item.className = 'chart-legend-item';
+    item.setAttribute('role', 'button');
+    item.setAttribute('tabindex', '0');
+    item.setAttribute('aria-label', 'Mostrar u ocultar ' + label);
+    item.title = 'Clic para ocultar o mostrar esta categoria';
+
+    var color = document.createElement('span');
+    color.className = 'chart-legend-color';
+    color.style.backgroundColor = colors[index] || '#1D4ED8';
+
+    var text = document.createElement('span');
+    text.className = 'chart-legend-label';
+    text.textContent = label;
+
+    item.appendChild(color);
+    item.appendChild(text);
+    targetContainer.appendChild(item);
+
+    function syncLegendVisibilityState() {
+      var isVisible = chart.getDataVisibility ? chart.getDataVisibility(index) : true;
+      item.classList.toggle('is-hidden', !isVisible);
+    }
+
+    function toggleCategory() {
+      if (!chart.toggleDataVisibility) return;
+      chart.toggleDataVisibility(index);
+      chart.update();
+      syncLegendVisibilityState();
+    }
+
+    item.addEventListener('click', toggleCategory);
+    item.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleCategory();
+      }
+    });
+
+    syncLegendVisibilityState();
+  }
+
+  if (useBothSides) {
+    var half = Math.ceil(labels.length / 2);
+    labels.forEach(function(label, index) {
+      var target = index < half ? leftContainer : rightContainer;
+      createLegendItem(label, index, target);
+    });
+    return;
+  }
+
+  labels.forEach(function(label, index) {
+    createLegendItem(label, index, rightContainer);
   });
 }
 

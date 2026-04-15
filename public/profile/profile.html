@@ -141,6 +141,16 @@
     .modern-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgb(0,0,0,0.08); }
     body.dark .modern-card:hover { box-shadow: 0 10px 25px rgb(0,0,0,0.3); }
 
+    .profile-summary-cards > [class*="col-"] {
+      display: flex;
+    }
+
+    .profile-summary-cards .modern-card {
+      width: 100%;
+      height: 100%;
+      margin-bottom: 0;
+    }
+
     /* USER AVATAR & INFO */
     .user-avatar {
       width: 100px; height: 100px; border-radius: 50%;
@@ -270,7 +280,6 @@
         <h1 class="page-title"><i class="fas fa-user"></i> Mi Perfil</h1>
         <div class="action-buttons">
           <button class="btn btn-primary" onclick="showEditModal()"><i class="fas fa-edit me-2"></i>Editar Perfil</button>
-          <button class="dark-toggle-btn" id="themeToggle" title="Cambiar tema"><i class="fas fa-moon"></i></button>
         </div>
       </div>
       <div id="alertMessage" class="alert hidden"></div>
@@ -280,7 +289,7 @@
         <div class="user-email" id="userEmail">-</div>
         <span class="user-role" id="userRole">Usuario</span>
       </div>
-      <div class="row">
+      <div class="row profile-summary-cards">
         <div class="col-lg-6 mb-4">
           <div class="modern-card">
             <h5 class="section-title"><i class="fas fa-building"></i> Datos de la Empresa</h5>
@@ -378,9 +387,6 @@
           <div class="col-md-4 mb-3"><label class="form-label">Idioma</label>
             <select class="form-select" id="editLanguage"><option value="es">Espanol</option><option value="pt">Portugues</option><option value="en">English</option></select>
           </div>
-          <div class="col-md-4 mb-3"><label class="form-label">Tema</label>
-            <select class="form-select" id="editTheme"><option value="light">Claro</option><option value="dark">Oscuro</option></select>
-          </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -427,30 +433,18 @@
 <script src="../shared/store.js"></script>
 <script src="../shared/sidebar.js"></script>
 <script>
-// --- DARK MODE LOGIC ---
+// --- THEME LOGIC (read-only, controlled from settings page) ---
+const THEME_STORAGE_KEY = 'factufacil-theme';
+
+function applySavedTheme() {
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || localStorage.getItem('theme') || 'light';
+  const isDark = savedTheme === 'dark';
+  document.body.classList.toggle('dark', isDark);
+  document.body.classList.toggle('theme-dark', isDark);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  const themeToggleBtn = document.getElementById('themeToggle');
-  if(!themeToggleBtn) return;
-
-  const themeIcon = themeToggleBtn.querySelector('i');
-
-  if (localStorage.getItem("theme") === "dark") {
-    document.body.classList.add("dark");
-    if(themeIcon) themeIcon.classList.replace('fa-moon', 'fa-sun');
-  }
-
-  themeToggleBtn.addEventListener('click', () => {
-    document.body.classList.toggle("dark");
-    const isDark = document.body.classList.contains("dark");
-
-    if (isDark) {
-      localStorage.setItem("theme", "dark");
-      if(themeIcon) themeIcon.classList.replace('fa-moon', 'fa-sun');
-    } else {
-      localStorage.setItem("theme", "light");
-      if(themeIcon) themeIcon.classList.replace('fa-sun', 'fa-moon');
-    }
-  });
+  applySavedTheme();
 });
 
 var editModal = null;
@@ -573,7 +567,7 @@ function loadStats() {
 }
 function loadProfile() { var user = AuthSystem.getCurrentUser(); if (!user) return; loadProfileFromLocal(user); }
 function showAlert(id, msg, type) { var el = document.getElementById(id); if (el) { el.textContent = msg; el.className = 'alert alert-' + (type || 'info'); el.classList.remove('hidden'); setTimeout(function() { el.classList.add('hidden'); }, 5000); } }
-function showEditModal() { var user = AuthSystem.getCurrentUser(); if (!user) return; document.getElementById('editName').value = user.name || ''; document.getElementById('editCompany').value = user.company || ''; document.getElementById('editPhone').value = user.phone || ''; document.getElementById('editEmail').value = user.email || ''; var s = user.settings || {}; document.getElementById('editCurrency').value = s.currency || 'EUR'; document.getElementById('editLanguage').value = s.language || 'es'; document.getElementById('editTheme').value = s.theme || 'light'; document.getElementById('editAlert').classList.add('hidden'); editModal.show(); }
+function showEditModal() { var user = AuthSystem.getCurrentUser(); if (!user) return; document.getElementById('editName').value = user.name || ''; document.getElementById('editCompany').value = user.company || ''; document.getElementById('editPhone').value = user.phone || ''; document.getElementById('editEmail').value = user.email || ''; var s = user.settings || {}; document.getElementById('editCurrency').value = s.currency || 'EUR'; document.getElementById('editLanguage').value = s.language || 'es'; document.getElementById('editAlert').classList.add('hidden'); editModal.show(); }
 function showPasswordModal() { document.getElementById('newPassword').value = ''; document.getElementById('confirmPassword').value = ''; document.getElementById('passwordAlert').classList.add('hidden'); passwordModal.show(); }
 async function saveProfile() {
   var name = document.getElementById('editName').value.trim();
@@ -581,14 +575,13 @@ async function saveProfile() {
   var phone = document.getElementById('editPhone').value.trim();
   var currency = document.getElementById('editCurrency').value;
   var language = document.getElementById('editLanguage').value;
-  var theme = document.getElementById('editTheme').value;
 
   if (!name || !company) { showAlert('editAlert', 'Completa todos los campos.', 'error'); return; }
 
   var saveBtn = document.querySelector('#editProfileModal .btn-primary');
   if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...'; }
 
-  var res = await AuthSystem.updateUserProfile({name:name, company:company, phone:phone, settings:{currency:currency, language:language, theme:theme}});
+  var res = await AuthSystem.updateUserProfile({name:name, company:company, phone:phone, settings:{currency:currency, language:language}});
 
   if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-save me-2"></i>Guardar'; }
 
@@ -596,8 +589,6 @@ async function saveProfile() {
     editModal.hide();
     loadProfile();
     showAlert('alertMessage', 'Perfil actualizado correctamente!', 'success');
-    // Apply theme change
-    if (window.applyTheme) applyTheme(theme);
   }
   else { showAlert('editAlert', res.message || 'Error.', 'error'); }
 }

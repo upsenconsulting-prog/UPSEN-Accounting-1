@@ -147,6 +147,29 @@
             border: 1px solid var(--border);
             transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
         }
+        .modern-card:not(.clickable),
+        .modern-card:not(.clickable) * {
+          cursor: default !important;
+        }
+        .modern-card:not(.clickable) a,
+        .modern-card:not(.clickable) button,
+        .modern-card:not(.clickable) [role="button"],
+        .modern-card:not(.clickable) input[type="button"],
+        .modern-card:not(.clickable) input[type="submit"],
+        .modern-card:not(.clickable) input[type="reset"],
+        .modern-card:not(.clickable) input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+        .modern-card:not(.clickable) textarea,
+        .modern-card:not(.clickable) [contenteditable="true"],
+        .modern-card:not(.clickable) summary,
+        .modern-card:not(.clickable) select {
+          cursor: pointer !important;
+        }
+
+        .modern-card:not(.clickable) input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+        .modern-card:not(.clickable) textarea,
+        .modern-card:not(.clickable) [contenteditable="true"] {
+          cursor: text !important;
+        }
 
         .modern-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgb(0,0,0,0.08); }
         body.dark .modern-card:hover { box-shadow: 0 10px 25px rgb(0,0,0,0.3); }
@@ -160,7 +183,27 @@
             height: 100%;
             border: 1px solid var(--border);
             transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
-            cursor: pointer;
+          cursor: default;
+        }
+        .kpi-card:not(.clickable),
+        .kpi-card:not(.clickable) * {
+          cursor: default !important;
+        }
+        .kpi-card.clickable,
+        .kpi-card.clickable * {
+          cursor: pointer !important;
+        }
+
+        p, span, td, th, .table td, .table th {
+          user-select: text;
+        }
+
+        input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+        textarea,
+        [contenteditable="true"],
+        .form-control {
+          cursor: text !important;
+          user-select: text;
         }
 
         .kpi-card:hover { transform: translateY(-6px); box-shadow: 0 10px 25px rgb(0,0,0,0.12); }
@@ -298,9 +341,6 @@
                     </button>
                     <button class="btn btn-secondary" id="btnExport">
                         <i class="fas fa-file-export me-1"></i>Exportar
-                    </button>
-                    <button class="dark-toggle-btn" id="themeToggle" title="Cambiar tema">
-                        <i class="fas fa-moon"></i>
                     </button>
                 </div>
             </div>
@@ -668,57 +708,43 @@
     <script src="invoice-issued.js"></script>
 
     <script>
-        // Dark Mode Toggle
+        // Theme application (read-only, controlled from settings page)
+        const THEME_STORAGE_KEY = 'factufacil-theme';
+
+        function applySavedTheme() {
+          const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || localStorage.getItem('theme') || 'light';
+          const isDark = savedTheme === 'dark';
+          document.body.classList.toggle('dark', isDark);
+          document.body.classList.toggle('theme-dark', isDark);
+          return isDark;
+        }
+
+        function updateChartColors(isDark) {
+          if (typeof Chart === 'undefined') return;
+          const textColor = isDark ? '#F1F5F9' : '#1F2937';
+          const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+
+          for (let id in Chart.instances) {
+            try {
+              let chart = Chart.instances[id];
+              if (chart.options && chart.options.scales) {
+                if (chart.options.scales.x) {
+                  chart.options.scales.x.grid.color = gridColor;
+                  chart.options.scales.x.ticks.color = textColor;
+                }
+                if (chart.options.scales.y) {
+                  chart.options.scales.y.grid.color = gridColor;
+                  chart.options.scales.y.ticks.color = textColor;
+                }
+              }
+              chart.update();
+            } catch (e) {}
+          }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
-            const themeToggleBtn = document.getElementById('themeToggle');
-            if (!themeToggleBtn) return;
-
-            const themeIcon = themeToggleBtn.querySelector('i');
-
-            if (localStorage.getItem("theme") === "dark") {
-                document.body.classList.add("dark");
-                if (themeIcon) themeIcon.classList.replace('fa-moon', 'fa-sun');
-            }
-
-            function updateChartColors(isDark) {
-                if (typeof Chart === 'undefined') return;
-                const textColor = isDark ? '#F1F5F9' : '#1F2937';
-                const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
-
-                for (let id in Chart.instances) {
-                    try {
-                        let chart = Chart.instances[id];
-                        if (chart.options && chart.options.scales) {
-                            if (chart.options.scales.x) {
-                                chart.options.scales.x.grid.color = gridColor;
-                                chart.options.scales.x.ticks.color = textColor;
-                            }
-                            if (chart.options.scales.y) {
-                                chart.options.scales.y.grid.color = gridColor;
-                                chart.options.scales.y.ticks.color = textColor;
-                            }
-                        }
-                        chart.update();
-                    } catch (e) {}
-                }
-            }
-
-            setTimeout(() => updateChartColors(document.body.classList.contains("dark")), 1000);
-
-            themeToggleBtn.addEventListener('click', () => {
-                document.body.classList.toggle("dark");
-                const isDark = document.body.classList.contains("dark");
-
-                if (isDark) {
-                    localStorage.setItem("theme", "dark");
-                    if (themeIcon) themeIcon.classList.replace('fa-moon', 'fa-sun');
-                } else {
-                    localStorage.setItem("theme", "light");
-                    if (themeIcon) themeIcon.classList.replace('fa-sun', 'fa-moon');
-                }
-
-                updateChartColors(isDark);
-            });
+          const isDark = applySavedTheme();
+          setTimeout(() => updateChartColors(isDark), 1000);
         });
 
         // Confirm logout

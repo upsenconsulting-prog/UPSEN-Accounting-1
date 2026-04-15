@@ -173,7 +173,6 @@ body.dark .modal-header .btn-close { filter: invert(1); }
         <div class="action-buttons d-flex gap-2">
           <button class="btn btn-primary" id="newBudgetBtn"><i class="fas fa-plus me-2"></i>Nuevo presupuesto</button>
           <button class="btn btn-secondary" id="viewBudgetsBtn"><i class="fas fa-folder-open me-2"></i>Ver presupuestos</button>
-          <button class="dark-toggle-btn" id="themeToggle" title="Cambiar tema"><i class="fas fa-moon"></i></button>
         </div>
       </div>
 
@@ -328,32 +327,19 @@ body.dark .modal-header .btn-close { filter: invert(1); }
 
 <script>
 /**
- * Lógica de UI local (Dark mode e logout)
+ * Lógica de UI local (tema read-only e logout)
  */
+const THEME_STORAGE_KEY = 'factufacil-theme';
+
+function applySavedTheme() {
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || localStorage.getItem('theme') || 'light';
+  const isDark = savedTheme === 'dark';
+  document.body.classList.toggle('dark', isDark);
+  document.body.classList.toggle('theme-dark', isDark);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  const themeToggleBtn = document.getElementById('themeToggle');
-  if(!themeToggleBtn) return;
-
-  const themeIcon = themeToggleBtn.querySelector('i');
-
-  // Load saved theme
-  if (localStorage.getItem("theme") === "dark") {
-    document.body.classList.add("dark");
-    if(themeIcon) themeIcon.classList.replace('fa-moon', 'fa-sun');
-  }
-
-  themeToggleBtn.addEventListener('click', () => {
-    document.body.classList.toggle("dark");
-    const isDark = document.body.classList.contains("dark");
-
-    if (isDark) {
-      localStorage.setItem("theme", "dark");
-      if(themeIcon) themeIcon.classList.replace('fa-moon', 'fa-sun');
-    } else {
-      localStorage.setItem("theme", "light");
-      if(themeIcon) themeIcon.classList.replace('fa-sun', 'fa-moon');
-    }
-  });
+  applySavedTheme();
 });
 
 function confirmLogout() {

@@ -134,6 +134,31 @@
             transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
         }
 
+        .modern-card:not(.clickable),
+        .modern-card:not(.clickable) * {
+            cursor: default !important;
+        }
+
+        .modern-card:not(.clickable) a,
+        .modern-card:not(.clickable) button,
+        .modern-card:not(.clickable) [role="button"],
+        .modern-card:not(.clickable) input[type="button"],
+        .modern-card:not(.clickable) input[type="submit"],
+        .modern-card:not(.clickable) input[type="reset"],
+        .modern-card:not(.clickable) input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+        .modern-card:not(.clickable) textarea,
+        .modern-card:not(.clickable) [contenteditable="true"],
+        .modern-card:not(.clickable) summary,
+        .modern-card:not(.clickable) select {
+            cursor: pointer !important;
+        }
+
+        .modern-card:not(.clickable) input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+        .modern-card:not(.clickable) textarea,
+        .modern-card:not(.clickable) [contenteditable="true"] {
+            cursor: text !important;
+        }
+
         .modern-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgb(0,0,0,0.08); }
         body.dark .modern-card:hover { box-shadow: 0 10px 25px rgb(0,0,0,0.3); }
 
@@ -146,7 +171,29 @@
             height: 100%;
             border: 1px solid var(--border);
             transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
-            cursor: pointer;
+            cursor: default;
+        }
+
+        .kpi-card:not(.clickable),
+        .kpi-card:not(.clickable) * {
+            cursor: default !important;
+        }
+
+        .kpi-card.clickable,
+        .kpi-card.clickable * {
+            cursor: pointer !important;
+        }
+
+        p, span, td, th, .table td, .table th {
+            user-select: text;
+        }
+
+        input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+        textarea,
+        [contenteditable="true"],
+        .form-control {
+            cursor: text !important;
+            user-select: text;
         }
 
         .kpi-card:hover { transform: translateY(-6px); box-shadow: 0 10px 25px rgb(0,0,0,0.12); }
@@ -280,9 +327,6 @@
                     </button>
                     <button class="btn btn-secondary" id="refreshBtn">
                         <i class="fas fa-sync-alt me-2"></i>Actualizar
-                    </button>
-                    <button class="dark-toggle-btn" id="themeToggle" title="Cambiar tema">
-                        <i class="fas fa-moon"></i>
                     </button>
                 </div>
             </div>
@@ -538,7 +582,18 @@
 
     <script>
         // Mantemos apenas a lógica de UI básica no HTML
+        const THEME_STORAGE_KEY = 'factufacil-theme';
+
+        function applySavedTheme() {
+            const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || localStorage.getItem('theme') || 'light';
+            const isDark = savedTheme === 'dark';
+            document.body.classList.toggle('dark', isDark);
+            document.body.classList.toggle('theme-dark', isDark);
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            applySavedTheme();
+
             // Import Button
             document.getElementById('btnImport').addEventListener('click', function() {
                 if (modalImport) {

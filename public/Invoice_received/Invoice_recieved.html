@@ -130,6 +130,24 @@
     .modern-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
     body.dark .modern-card:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
 
+    .modern-card:not(.clickable),
+    .modern-card:not(.clickable) * { cursor: default !important; }
+    .modern-card:not(.clickable) a,
+    .modern-card:not(.clickable) button,
+    .modern-card:not(.clickable) [role="button"],
+    .modern-card:not(.clickable) input[type="button"],
+    .modern-card:not(.clickable) input[type="submit"],
+    .modern-card:not(.clickable) input[type="reset"],
+    .modern-card:not(.clickable) input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+    .modern-card:not(.clickable) textarea,
+    .modern-card:not(.clickable) [contenteditable="true"],
+    .modern-card:not(.clickable) summary,
+    .modern-card:not(.clickable) select { cursor: pointer !important; }
+
+    .modern-card:not(.clickable) input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+    .modern-card:not(.clickable) textarea,
+    .modern-card:not(.clickable) [contenteditable="true"] { cursor: text !important; }
+
     /* SUMMARY CARDS */
     .summary-card {
       background: var(--card-bg);
@@ -148,7 +166,7 @@
       border-radius: 10px;
       display: flex;
       align-items: center;
-      justify-content: center;
+      cursor: default;
       margin: 0 auto 12px;
       font-size: 1.3em;
     }
@@ -193,6 +211,17 @@
       background: var(--card-bg);
       color: var(--text);
     }
+
+    p, span, td, th, .table td, .table th { user-select: text; }
+
+    input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+    textarea,
+    [contenteditable="true"],
+    .form-control {
+      cursor: text !important;
+      user-select: text;
+    }
+
     .form-label { font-weight: 500; color: var(--text); margin-bottom: 6px; }
     .form-text { color: var(--muted); }
 
@@ -303,7 +332,6 @@
           <button class="btn btn-secondary" id="btnVerifyIntegrity" title="Verificar integridad de la cadena Veri*Factu">
             <i class="fas fa-shield-alt me-1"></i>Verificar Integridad
           </button>
-          <button class="dark-toggle-btn" id="themeToggle" title="Cambiar tema"><i class="fas fa-moon"></i></button>
         </div>
       </div>
 
@@ -702,63 +730,49 @@
 </div>
 
 <script>
-// --- LOGICĂ DARK MODE ---
+// --- THEME LOGIC (read-only, controlled from settings page) ---
+const THEME_STORAGE_KEY = 'factufacil-theme';
+
+function applySavedTheme() {
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || localStorage.getItem('theme') || 'light';
+  const isDark = savedTheme === 'dark';
+  document.body.classList.toggle('dark', isDark);
+  document.body.classList.toggle('theme-dark', isDark);
+  return isDark;
+}
+
+function updateChartColors(isDark) {
+  if (typeof Chart === 'undefined') return;
+
+  const textColor = isDark ? '#94A3B8' : '#6B7280';
+  const gridColor = isDark ? '#334155' : '#E6EAF0';
+
+  Chart.defaults.color = textColor;
+  if (Chart.defaults.scale) {
+      Chart.defaults.scale.grid.color = gridColor;
+  }
+
+  for (let id in Chart.instances) {
+    try {
+      let chart = Chart.instances[id];
+      if (chart.options && chart.options.scales) {
+         if (chart.options.scales.x) {
+            chart.options.scales.x.grid.color = gridColor;
+            chart.options.scales.x.ticks.color = textColor;
+         }
+         if (chart.options.scales.y) {
+            chart.options.scales.y.grid.color = gridColor;
+            chart.options.scales.y.ticks.color = textColor;
+         }
+      }
+      chart.update();
+    } catch (e) {}
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  const themeToggleBtn = document.getElementById('themeToggle');
-  if(!themeToggleBtn) return;
-
-  const themeIcon = themeToggleBtn.querySelector('i');
-
-  if (localStorage.getItem("theme") === "dark") {
-    document.body.classList.add("dark");
-    if(themeIcon) themeIcon.classList.replace('fa-moon', 'fa-sun');
-  }
-
-  function updateChartColors(isDark) {
-    if (typeof Chart === 'undefined') return;
-
-    const textColor = isDark ? '#94A3B8' : '#6B7280';
-    const gridColor = isDark ? '#334155' : '#E6EAF0';
-
-    Chart.defaults.color = textColor;
-    if(Chart.defaults.scale) {
-        Chart.defaults.scale.grid.color = gridColor;
-    }
-
-    for (let id in Chart.instances) {
-      try {
-        let chart = Chart.instances[id];
-        if(chart.options && chart.options.scales) {
-           if(chart.options.scales.x) {
-              chart.options.scales.x.grid.color = gridColor;
-              chart.options.scales.x.ticks.color = textColor;
-           }
-           if(chart.options.scales.y) {
-              chart.options.scales.y.grid.color = gridColor;
-              chart.options.scales.y.ticks.color = textColor;
-           }
-        }
-        chart.update();
-      } catch(e) {}
-    }
-  }
-
-  setTimeout(() => updateChartColors(document.body.classList.contains("dark")), 1000);
-
-  themeToggleBtn.addEventListener('click', () => {
-    document.body.classList.toggle("dark");
-    const isDark = document.body.classList.contains("dark");
-
-    if (isDark) {
-      localStorage.setItem("theme", "dark");
-      if(themeIcon) themeIcon.classList.replace('fa-moon', 'fa-sun');
-    } else {
-      localStorage.setItem("theme", "light");
-      if(themeIcon) themeIcon.classList.replace('fa-sun', 'fa-moon');
-    }
-
-    updateChartColors(isDark);
-  });
+  const isDark = applySavedTheme();
+  setTimeout(() => updateChartColors(isDark), 1000);
 });
 
 // --- LOGOUT ---
