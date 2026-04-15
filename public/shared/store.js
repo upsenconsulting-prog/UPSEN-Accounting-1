@@ -236,6 +236,56 @@ window.StatusEngine = {
   }
 };
 
+function getCurrentActor() {
+  var actor = {
+    id: getCurrentUserId() || "anonymous",
+    email: "",
+    name: ""
+  };
+
+  if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+    actor.email = window.firebaseAuth.currentUser.email || "";
+    actor.name = window.firebaseAuth.currentUser.displayName || "";
+    return actor;
+  }
+
+  try {
+    var auth = window.AuthService || window.Auth;
+    if (auth && auth.getCurrentUser) {
+      var user = auth.getCurrentUser();
+      if (user) {
+        actor.id = user.uid || user.id || actor.id;
+        actor.email = user.email || "";
+        actor.name = user.displayName || user.name || "";
+      }
+    }
+  } catch (e) {}
+
+  return actor;
+}
+
+function createStatusHistoryEntry(status, actor, changedAt) {
+  return {
+    status: status,
+    changedAt: changedAt,
+    changedBy: actor
+  };
+}
+
+function buildInitialStatusHistory(status, actor, changedAt) {
+  if (!status) return [];
+  return [createStatusHistoryEntry(status, actor, changedAt)];
+}
+
+function appendStatusHistory(history, previousStatus, nextStatus, actor, changedAt) {
+  var entries = Array.isArray(history) ? history.slice() : [];
+  if (!nextStatus) return entries;
+  if (!previousStatus || previousStatus !== nextStatus) {
+    entries.push(createStatusHistoryEntry(nextStatus, actor, changedAt));
+  }
+  return entries;
+}
+
 // ===== Keys =====
 const KEYS = {
   invoicesReceived: "upsen_invoices_received",
@@ -399,6 +449,8 @@ async function addInvoiceReceived(invoice) {
   if (!isValidVatRate(ivaRate)) throw new Error('IVA invalido');
   if (invoice.paymentDate && !isValidIsoDate(invoice.paymentDate)) throw new Error('Fecha de pago invalida');
   ensureUniqueValue(list, 'invoiceNumber', invoiceNumber, 'Numero de factura');
+  var actor = getCurrentActor();
+  var nowIso = new Date().toISOString();
   var normalizedState = getEffectiveInvoiceState({
     state: invoice.state,
     dueDate: invoice.dueDate
@@ -418,7 +470,11 @@ const item = {
     description: invoice.description ?? "",
     paymentMethod: invoice.paymentMethod ?? null,  // efectivo|tarjeta|transferencia|recibo|cheque|paypal  
     paymentDate: invoice.paymentDate ?? null,     // YYYY-MM-DD
-    createdAt: new Date().toISOString(),
+    createdAt: nowIso,
+    updatedAt: nowIso,
+    createdBy: actor,
+    updatedBy: actor,
+    statusHistory: buildInitialStatusHistory(normalizedState, actor, nowIso),
     ...verifactuFields
   };
   
@@ -501,6 +557,8 @@ async function addInvoiceIssued(invoice) {
   if (!isValidVatRate(ivaRate)) throw new Error('IVA invalido');
   if (invoice.paymentDate && !isValidIsoDate(invoice.paymentDate)) throw new Error('Fecha de pago invalida');
   ensureUniqueValue(list, 'invoiceNumber', invoiceNumber, 'Numero de factura');
+  var actor = getCurrentActor();
+  var nowIso = new Date().toISOString();
   var normalizedState = getEffectiveInvoiceState({
     state: invoice.state,
     dueDate: dueDate,
@@ -521,7 +579,11 @@ const item = {
     state: normalizedState,
     paymentMethod: invoice.paymentMethod ?? null,  // efectivo|tarjeta|transferencia|recibo|cheque|paypal
     paymentDate: invoice.paymentDate ?? null,     // YYYY-MM-DD
-    createdAt: new Date().toISOString(),
+    createdAt: nowIso,
+    updatedAt: nowIso,
+    createdBy: actor,
+    updatedBy: actor,
+    statusHistory: buildInitialStatusHistory(normalizedState, actor, nowIso),
     ...verifactuFields
   };
   
@@ -586,6 +648,8 @@ async function updateInvoiceIssued(id, updates) {
       ? updates.state
       : merged.state;
     var normalizedState = ensureAllowedStatusTransition('invoice', currentState, requestedState);
+    var actor = getCurrentActor();
+    var nowIso = new Date().toISOString();
     normalizedState = getEffectiveInvoiceState({
       state: normalizedState,
       dueDate: dueDate,
@@ -602,14 +666,17 @@ async function updateInvoiceIssued(id, updates) {
       ivaRate: ivaRate,
       state: normalizedState,
       ivaAmount: roundMoney(merged.ivaAmount ?? issuedTotals.ivaAmount),
-      totalAmount: roundMoney(merged.totalAmount ?? issuedTotals.totalAmount)
+      totalAmount: roundMoney(merged.totalAmount ?? issuedTotals.totalAmount),
+      updatedAt: nowIso,
+      updatedBy: actor,
+      statusHistory: appendStatusHistory(merged.statusHistory, currentState, normalizedState, actor, nowIso)
     };
     write(KEYS.invoicesIssued, list);
     
     // Atualizar no Firebase se disponível
     if (isFirebaseReady()) {
       try {
-        await window.FirebaseSync.updateInFirebaseAndLocalStorage('invoicesIssued', id, updates);
+        await window.FirebaseSync.updateInFirebaseAndLocalStorage('invoicesIssued', id, list[index]);
       } catch (e) {
         console.warn('[Store] Erro ao atualizar invoice issued no Firebase:', e);
       }
@@ -647,6 +714,8 @@ async function updateInvoiceReceived(id, updates) {
       ? updates.state
       : merged.state;
     var normalizedState = ensureAllowedStatusTransition('invoice', currentState, requestedState);
+    var actor = getCurrentActor();
+    var nowIso = new Date().toISOString();
     normalizedState = getEffectiveInvoiceState({
       state: normalizedState,
       dueDate: merged.dueDate,
@@ -662,14 +731,17 @@ async function updateInvoiceReceived(id, updates) {
       ivaRate: ivaRate,
       state: normalizedState,
       ivaAmount: roundMoney(merged.ivaAmount ?? receivedTotals.ivaAmount),
-      totalAmount: roundMoney(merged.totalAmount ?? receivedTotals.totalAmount)
+      totalAmount: roundMoney(merged.totalAmount ?? receivedTotals.totalAmount),
+      updatedAt: nowIso,
+      updatedBy: actor,
+      statusHistory: appendStatusHistory(merged.statusHistory, currentState, normalizedState, actor, nowIso)
     };
     write(KEYS.invoicesReceived, list);
     
     // Atualizar no Firebase se disponível
     if (isFirebaseReady()) {
       try {
-        await window.FirebaseSync.updateInFirebaseAndLocalStorage('invoicesReceived', id, updates);
+        await window.FirebaseSync.updateInFirebaseAndLocalStorage('invoicesReceived', id, list[index]);
       } catch (e) {
         console.warn('[Store] Erro ao atualizar invoice received no Firebase:', e);
       }
@@ -709,6 +781,8 @@ async function addExpense(expense) {
   if (!(amount >= 0)) throw new Error('Importe de gasto invalido');
   if (!isValidVatRate(ivaRate)) throw new Error('IVA invalido');
   if (supplierNif && !isValidNifNie(supplierNif)) throw new Error('NIF de proveedor invalido');
+  var actor = getCurrentActor();
+  var nowIso = new Date().toISOString();
 
   const item = {
     id: uid(),
@@ -724,7 +798,10 @@ async function addExpense(expense) {
     paymentMethod: expense.paymentMethod ?? "",
     supplierNif: supplierNif,
     supplierName: expense.supplierName ?? "",
-    createdAt: new Date().toISOString(),
+    createdAt: nowIso,
+    updatedAt: nowIso,
+    createdBy: actor,
+    updatedBy: actor,
   };
   
   // Adicionar à lista apenas uma vez
@@ -794,6 +871,8 @@ async function addBudget(budget) {
   var budgetTotals = window.CalculationEngine
     ? window.CalculationEngine.calculateBudgetTotals(items, retention)
     : { totalAmount: roundMoney(items.reduce(function(sum, item) { return sum + item.total; }, 0) - (items.reduce(function(sum, item) { return sum + item.total; }, 0) * (retention / 100))) };
+  var actor = getCurrentActor();
+  var nowIso = new Date().toISOString();
   var normalizedStatus = normalizeStatusValue('budget', budget.status);
 
   const item = {
@@ -809,7 +888,11 @@ async function addBudget(budget) {
     tags: budget.tags ?? "",
     items: items,
     total: budgetTotals.totalAmount,
-    createdAt: new Date().toISOString(),
+    createdAt: nowIso,
+    updatedAt: nowIso,
+    createdBy: actor,
+    updatedBy: actor,
+    statusHistory: buildInitialStatusHistory(normalizedStatus, actor, nowIso),
   };
   
   list.push(item);
@@ -852,6 +935,8 @@ async function updateBudget(id, updates) {
       ? updates.status
       : merged.status;
     var normalizedStatus = ensureAllowedStatusTransition('budget', currentStatus, requestedStatus);
+    var actor = getCurrentActor();
+    var nowIso = new Date().toISOString();
     list[index] = {
       ...merged,
       number: number,
@@ -861,14 +946,17 @@ async function updateBudget(id, updates) {
       retention: retention,
       status: normalizedStatus,
       items: items,
-      total: budgetTotals.totalAmount
+      total: budgetTotals.totalAmount,
+      updatedAt: nowIso,
+      updatedBy: actor,
+      statusHistory: appendStatusHistory(merged.statusHistory, currentStatus, normalizedStatus, actor, nowIso)
     };
     write(KEYS.budgets, list);
     
     // Atualizar no Firebase se disponível
     if (isFirebaseReady()) {
       try {
-        await window.FirebaseSync.updateInFirebaseAndLocalStorage('budgets', id, updates);
+        await window.FirebaseSync.updateInFirebaseAndLocalStorage('budgets', id, list[index]);
       } catch (e) {
         console.warn('[Store] Erro ao atualizar budget no Firebase:', e);
       }

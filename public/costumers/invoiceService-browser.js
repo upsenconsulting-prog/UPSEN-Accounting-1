@@ -43,6 +43,23 @@
     return (typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore.FieldValue : null;
   };
 
+  function getCurrentActor() {
+    const user = firebase.auth().currentUser;
+    return {
+      id: user?.uid || 'anonymous',
+      email: user?.email || '',
+      name: user?.displayName || ''
+    };
+  }
+
+  function createStatusHistoryEntry(status, actor, changedAt) {
+    return {
+      status,
+      changedAt,
+      changedBy: actor
+    };
+  }
+
   function normalizeInvoiceData(invoiceData) {
     return {
       numero: normalizeString(invoiceData.numero),
@@ -104,11 +121,15 @@
         }
         await ensureUniqueInvoiceNumber(normalizedData.numero);
 
+        const actor = getCurrentActor();
         const now = getFieldValue() ? getFieldValue().serverTimestamp() : new Date().toISOString();
         const docRef = await getUserCollection().add({
           ...normalizedData,
           createdAt: now,
-          updatedAt: now
+          updatedAt: now,
+          createdBy: actor,
+          updatedBy: actor,
+          statusHistory: [createStatusHistoryEntry(normalizedData.estado, actor, new Date().toISOString())]
         });
         console.log('Factura creada con ID:', docRef.id);
         return { success: true, id: docRef.id };
@@ -141,11 +162,19 @@
         if (!currentData) {
           return { success: false, message: 'Factura no encontrada' };
         }
+        const actor = getCurrentActor();
+        const changedAt = new Date().toISOString();
         normalizedData.estado = ensureAllowedInvoiceTransition(currentData.estado, normalizedData.estado);
+        const statusHistory = Array.isArray(currentData.statusHistory) ? currentData.statusHistory.slice() : [];
+        if (currentData.estado !== normalizedData.estado) {
+          statusHistory.push(createStatusHistoryEntry(normalizedData.estado, actor, changedAt));
+        }
 
         await getUserCollection().doc(id).update({
           ...normalizedData,
-          updatedAt: getFieldValue() ? getFieldValue().serverTimestamp() : new Date().toISOString()
+          updatedAt: getFieldValue() ? getFieldValue().serverTimestamp() : changedAt,
+          updatedBy: actor,
+          statusHistory
         });
         console.log('Factura editada:', id);
         return { success: true };
