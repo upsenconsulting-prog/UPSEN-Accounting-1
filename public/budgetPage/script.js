@@ -8,6 +8,28 @@ function moneyEUR(n) {
   return 'EUR ' + Number(n || 0).toFixed(2);
 }
 
+function getBudgetStatusValue(budget) {
+  if (window.StatusEngine && typeof window.StatusEngine.normalizeStatusValue === 'function') {
+    return window.StatusEngine.normalizeStatusValue('budget', budget && budget.status);
+  }
+  return (budget && budget.status) || 'pending';
+}
+
+function getBudgetStatusLabel(budget) {
+  var status = getBudgetStatusValue(budget);
+  if (window.StatusEngine && typeof window.StatusEngine.getStatusLabel === 'function') {
+    return window.StatusEngine.getStatusLabel('budget', status);
+  }
+  return status;
+}
+
+function getBudgetStatusClass(budget) {
+  var status = getBudgetStatusValue(budget);
+  if (status === 'approved') return 'badge-paid';
+  if (status === 'rejected') return 'badge-late';
+  return 'badge-pending';
+}
+
 // ========== ID DO USUÁRIO ==========
 // Use the global getUserId from store.js
 const getUserId = window.getUserId;
@@ -363,8 +385,8 @@ window.loadSavedBudgets = async function() {
   );
   
   tbody.innerHTML = sortedBudgets.map(budget => {
-    const statusClass = { pending: 'badge-pending', approved: 'badge-paid', rejected: 'badge-late' }[budget.status] || 'badge-pending';
-    const statusLabel = { pending: 'Pendiente', approved: 'Aprobado', rejected: 'Rechazado' }[budget.status] || 'Pendiente';
+    const statusClass = getBudgetStatusClass(budget);
+    const statusLabel = getBudgetStatusLabel(budget);
     
     return `
       <tr>
@@ -399,7 +421,7 @@ window.viewBudget = async function(id) {
     </tr>
   `).join('') || '<tr><td colspan="4" class="text-center">Sin artículos</td></tr>';
   
-  const statusLabel = { pending: 'Pendiente', approved: 'Aprobado', rejected: 'Rechazado' }[budget.status] || 'Pendiente';
+  const statusLabel = getBudgetStatusLabel(budget);
   
   const content = $('viewBudgetContent');
   content.innerHTML = `
@@ -456,11 +478,51 @@ window.changeBudgetStatus = async function(id, newStatus) {
   const budget = budgets.find(b => b.id === id);
   if (!budget) return;
   
-  const statusLabels = { pending: 'Pendiente', approved: 'Aprobado', rejected: 'Rechazado' };
+  const targetLabel = getBudgetStatusLabel({ status: newStatus });
   
-  if (confirm('¿Cambiar estado de "' + budget.number + '" a ' + statusLabels[newStatus] + '?')) {
-    await updateUserBudget(id, { status: newStatus });
-    window.loadSavedBudgets();
-    alert('Estado actualizado correctamente.');
+  if (confirm('¿Cambiar estado de "' + budget.number + '" a ' + targetLabel + '?')) {
+    try {
+      await updateUserBudget(id, { status: newStatus });
+      window.loadSavedBudgets();
+      alert('Estado actualizado correctamente.');
+    } catch (error) {
+      alert(error && error.message ? error.message : 'No se pudo actualizar el estado.');
+    }
+  }
+};
+
+window.changeBudgetStatus = async function(id, newStatus) {
+  const budgets = await getUserBudgets();
+  const budget = budgets.find(b => b.id === id);
+  if (!budget) return;
+
+  const targetLabel = getBudgetStatusLabel({ status: newStatus });
+
+  if (confirm('¿Cambiar estado de "' + budget.number + '" a ' + targetLabel + '?')) {
+    try {
+      await updateUserBudget(id, { status: newStatus });
+      window.loadSavedBudgets();
+      alert('Estado actualizado correctamente.');
+    } catch (error) {
+      alert(error && error.message ? error.message : 'No se pudo actualizar el estado.');
+    }
+  }
+};
+
+window.changeBudgetStatus = async function(id, newStatus) {
+  const budgets = await getUserBudgets();
+  const budget = budgets.find(b => b.id === id);
+  if (!budget) return;
+
+  const targetLabel = getBudgetStatusLabel({ status: newStatus });
+
+  if (confirm('Â¿Cambiar estado de "' + budget.number + '" a ' + targetLabel + '?')) {
+    try {
+      await updateUserBudget(id, { status: newStatus });
+      window.loadSavedBudgets();
+      alert('Estado actualizado correctamente.');
+    } catch (error) {
+      alert(error && error.message ? error.message : 'No se pudo actualizar el estado.');
+    }
   }
 };

@@ -115,6 +115,127 @@ window.CalculationEngine = {
   }
 };
 
+const STATUS_RULES = {
+  invoice: {
+    defaultValue: "Pendiente",
+    aliases: {
+      pendiente: "Pendiente",
+      free: "Pendiente",
+      emit: "Pendiente",
+      enviada: "Pendiente",
+      enviadao: "Pendiente",
+      pagada: "Pagada",
+      paid: "Pagada",
+      vencida: "Vencida",
+      overdue: "Vencida"
+    },
+    labels: {
+      Pendiente: "Pendiente",
+      Pagada: "Pagada",
+      Vencida: "Vencida"
+    },
+    transitions: {
+      Pendiente: ["Pendiente", "Pagada", "Vencida"],
+      Vencida: ["Vencida", "Pagada"],
+      Pagada: ["Pagada"]
+    }
+  },
+  budget: {
+    defaultValue: "pending",
+    aliases: {
+      pending: "pending",
+      free: "pending",
+      enviado: "pending",
+      approved: "approved",
+      aceptado: "approved",
+      rejected: "rejected",
+      rechazado: "rejected"
+    },
+    labels: {
+      pending: "Pendiente",
+      approved: "Aprobado",
+      rejected: "Rechazado"
+    },
+    transitions: {
+      pending: ["pending", "approved", "rejected"],
+      approved: ["approved"],
+      rejected: ["rejected"]
+    }
+  },
+  simpleInvoice: {
+    defaultValue: "pendiente",
+    aliases: {
+      pendiente: "pendiente",
+      free: "pendiente",
+      emit: "pendiente",
+      pagada: "pagada",
+      paid: "pagada",
+      parcial: "parcial",
+      partial: "parcial"
+    },
+    labels: {
+      pendiente: "Pendiente",
+      pagada: "Pagada",
+      parcial: "Parcial"
+    },
+    transitions: {
+      pendiente: ["pendiente", "parcial", "pagada"],
+      parcial: ["parcial", "pagada"],
+      pagada: ["pagada"]
+    }
+  }
+};
+
+function normalizeStatusValue(type, value) {
+  var rules = STATUS_RULES[type];
+  if (!rules) throw new Error("Tipo de estado desconocido");
+  var raw = normalizeString(value);
+  if (!raw) return rules.defaultValue;
+  if (rules.labels[raw]) return raw;
+  var aliasKey = raw.toLowerCase();
+  if (rules.aliases[aliasKey]) return rules.aliases[aliasKey];
+  throw new Error("Estado invalido");
+}
+
+function ensureAllowedStatusTransition(type, currentValue, nextValue) {
+  var rules = STATUS_RULES[type];
+  var currentStatus = normalizeStatusValue(type, currentValue);
+  var nextStatus = normalizeStatusValue(type, nextValue);
+  var allowedTransitions = rules.transitions[currentStatus] || [currentStatus];
+  if (!allowedTransitions.includes(nextStatus)) {
+    throw new Error("Transicion de estado no permitida");
+  }
+  return nextStatus;
+}
+
+function getTodayIsoDate() {
+  return new Date().toISOString().split("T")[0];
+}
+
+function getEffectiveInvoiceState(invoice) {
+  var normalizedState = normalizeStatusValue("invoice", invoice && invoice.state);
+  if (normalizedState === "Pagada") return "Pagada";
+  var dueDate = normalizeString(invoice && invoice.dueDate);
+  if (dueDate && isValidIsoDate(dueDate) && dueDate < getTodayIsoDate()) {
+    return "Vencida";
+  }
+  return normalizedState;
+}
+
+window.StatusEngine = {
+  normalizeStatusValue: normalizeStatusValue,
+  ensureAllowedStatusTransition: ensureAllowedStatusTransition,
+  getEffectiveInvoiceState: getEffectiveInvoiceState,
+  getStatusLabel: function(type, value) {
+    var normalizedValue = normalizeStatusValue(type, value);
+    return STATUS_RULES[type].labels[normalizedValue] || normalizedValue;
+  },
+  getAllowedTransitions: function(type, value) {
+    var normalizedValue = normalizeStatusValue(type, value);
+    return (STATUS_RULES[type].transitions[normalizedValue] || [normalizedValue]).slice();
+  }
+};
+
 // ===== Keys =====
 const KEYS = {
   invoicesReceived: "upsen_invoices_received",
@@ -278,6 +399,10 @@ async function addInvoiceReceived(invoice) {
   if (!isValidVatRate(ivaRate)) throw new Error('IVA invalido');
   if (invoice.paymentDate && !isValidIsoDate(invoice.paymentDate)) throw new Error('Fecha de pago invalida');
   ensureUniqueValue(list, 'invoiceNumber', invoiceNumber, 'Numero de factura');
+  var normalizedState = getEffectiveInvoiceState({
+    state: invoice.state,
+    dueDate: invoice.dueDate
+  });
 
 const item = {
     id: uid(),
@@ -289,7 +414,7 @@ const item = {
     ivaRate: ivaRate,
     ivaAmount: roundMoney(invoice.ivaAmount ?? receivedTotals.ivaAmount),
     totalAmount: roundMoney(invoice.totalAmount ?? receivedTotals.totalAmount),
-    state: invoice.state ?? "Pendiente",
+    state: normalizedState,
     description: invoice.description ?? "",
     paymentMethod: invoice.paymentMethod ?? null,  // efectivo|tarjeta|transferencia|recibo|cheque|paypal  
     paymentDate: invoice.paymentDate ?? null,     // YYYY-MM-DD
@@ -376,6 +501,11 @@ async function addInvoiceIssued(invoice) {
   if (!isValidVatRate(ivaRate)) throw new Error('IVA invalido');
   if (invoice.paymentDate && !isValidIsoDate(invoice.paymentDate)) throw new Error('Fecha de pago invalida');
   ensureUniqueValue(list, 'invoiceNumber', invoiceNumber, 'Numero de factura');
+  var normalizedState = getEffectiveInvoiceState({
+    state: invoice.state,
+    dueDate: dueDate,
+    paymentDate: invoice.paymentDate
+  });
 
 const item = {
     id: uid(),
@@ -388,7 +518,7 @@ const item = {
     ivaRate: ivaRate,
     ivaAmount: roundMoney(invoice.ivaAmount ?? issuedTotals.ivaAmount),
     totalAmount: roundMoney(invoice.totalAmount ?? issuedTotals.totalAmount),
-    state: invoice.state ?? "Pendiente",
+    state: normalizedState,
     paymentMethod: invoice.paymentMethod ?? null,  // efectivo|tarjeta|transferencia|recibo|cheque|paypal
     paymentDate: invoice.paymentDate ?? null,     // YYYY-MM-DD
     createdAt: new Date().toISOString(),
@@ -451,6 +581,16 @@ async function updateInvoiceIssued(id, updates) {
       ? window.CalculationEngine.calculateInvoiceTotals(amount, ivaRate)
       : { ivaAmount: roundMoney(amount * (ivaRate / 100)), totalAmount: roundMoney(amount + roundMoney(amount * (ivaRate / 100))) };
     ensureUniqueValue(list, 'invoiceNumber', invoiceNumber, 'Numero de factura', id);
+    var currentState = getEffectiveInvoiceState(list[index]);
+    var requestedState = updates && Object.prototype.hasOwnProperty.call(updates, 'state')
+      ? updates.state
+      : merged.state;
+    var normalizedState = ensureAllowedStatusTransition('invoice', currentState, requestedState);
+    normalizedState = getEffectiveInvoiceState({
+      state: normalizedState,
+      dueDate: dueDate,
+      paymentDate: merged.paymentDate
+    });
     list[index] = {
       ...merged,
       invoiceNumber: invoiceNumber,
@@ -460,6 +600,7 @@ async function updateInvoiceIssued(id, updates) {
       dueDate: dueDate,
       amount: amount,
       ivaRate: ivaRate,
+      state: normalizedState,
       ivaAmount: roundMoney(merged.ivaAmount ?? issuedTotals.ivaAmount),
       totalAmount: roundMoney(merged.totalAmount ?? issuedTotals.totalAmount)
     };
@@ -501,6 +642,16 @@ async function updateInvoiceReceived(id, updates) {
       ? window.CalculationEngine.calculateInvoiceTotals(amount, ivaRate)
       : { ivaAmount: roundMoney(amount * (ivaRate / 100)), totalAmount: roundMoney(amount + roundMoney(amount * (ivaRate / 100))) };
     ensureUniqueValue(list, 'invoiceNumber', invoiceNumber, 'Numero de factura', id);
+    var currentState = getEffectiveInvoiceState(list[index]);
+    var requestedState = updates && Object.prototype.hasOwnProperty.call(updates, 'state')
+      ? updates.state
+      : merged.state;
+    var normalizedState = ensureAllowedStatusTransition('invoice', currentState, requestedState);
+    normalizedState = getEffectiveInvoiceState({
+      state: normalizedState,
+      dueDate: merged.dueDate,
+      paymentDate: merged.paymentDate
+    });
     list[index] = {
       ...merged,
       invoiceNumber: invoiceNumber,
@@ -509,6 +660,7 @@ async function updateInvoiceReceived(id, updates) {
       supplierNif: supplierNif,
       amount: amount,
       ivaRate: ivaRate,
+      state: normalizedState,
       ivaAmount: roundMoney(merged.ivaAmount ?? receivedTotals.ivaAmount),
       totalAmount: roundMoney(merged.totalAmount ?? receivedTotals.totalAmount)
     };
@@ -642,6 +794,7 @@ async function addBudget(budget) {
   var budgetTotals = window.CalculationEngine
     ? window.CalculationEngine.calculateBudgetTotals(items, retention)
     : { totalAmount: roundMoney(items.reduce(function(sum, item) { return sum + item.total; }, 0) - (items.reduce(function(sum, item) { return sum + item.total; }, 0) * (retention / 100))) };
+  var normalizedStatus = normalizeStatusValue('budget', budget.status);
 
   const item = {
     id: uid(),
@@ -652,7 +805,7 @@ async function addBudget(budget) {
     customer: customer,
     notes: budget.notes ?? "",
     retention: retention,
-    status: budget.status ?? "pending",
+    status: normalizedStatus,
     tags: budget.tags ?? "",
     items: items,
     total: budgetTotals.totalAmount,
@@ -694,6 +847,11 @@ async function updateBudget(id, updates) {
     var budgetTotals = window.CalculationEngine
       ? window.CalculationEngine.calculateBudgetTotals(items, retention)
       : { totalAmount: roundMoney(items.reduce(function(sum, item) { return sum + item.total; }, 0) - (items.reduce(function(sum, item) { return sum + item.total; }, 0) * (retention / 100))) };
+    var currentStatus = normalizeStatusValue('budget', list[index].status);
+    var requestedStatus = updates && Object.prototype.hasOwnProperty.call(updates, 'status')
+      ? updates.status
+      : merged.status;
+    var normalizedStatus = ensureAllowedStatusTransition('budget', currentStatus, requestedStatus);
     list[index] = {
       ...merged,
       number: number,
@@ -701,6 +859,7 @@ async function updateBudget(id, updates) {
       validity: validity,
       customer: customer,
       retention: retention,
+      status: normalizedStatus,
       items: items,
       total: budgetTotals.totalAmount
     };
@@ -788,7 +947,7 @@ function countInvoicesReceivedMonth(year, month) {
 
 function countInvoicesReceivedPending() {
   const invoices = getInvoicesReceivedSync();
-  return invoices.filter(inv => (inv.state || "").toLowerCase() === "pendiente").length;
+  return invoices.filter(inv => getEffectiveInvoiceState(inv) === "Pendiente").length;
 }
 
 function sumInvoicesIssuedMonth(year, month) {
@@ -814,7 +973,7 @@ function countInvoicesIssuedMonth(year, month) {
 
 function countInvoicesIssuedPending() {
   const invoices = getInvoicesIssuedSync();
-  return invoices.filter(inv => (inv.state || "").toLowerCase() === "pendiente").length;
+  return invoices.filter(inv => getEffectiveInvoiceState(inv) === "Pendiente").length;
 }
 
 function sumExpensesMonth(year, month) {
@@ -905,6 +1064,10 @@ window.deleteInvoiceIssued = deleteInvoiceIssued;
 window.getInvoicesIssuedSync = getInvoicesIssuedSync;
 window.updateInvoiceIssued = updateInvoiceIssued;
 window.updateInvoiceReceived = updateInvoiceReceived;
+window.storeAddInvoiceIssued = addInvoiceIssued;
+window.storeDeleteInvoiceIssued = deleteInvoiceIssued;
+window.storeUpdateInvoiceIssued = updateInvoiceIssued;
+window.storeUpdateInvoiceReceived = updateInvoiceReceived;
 
 window.getExpenses = getExpenses;
 window.addExpense = addExpense;
@@ -916,6 +1079,9 @@ window.addBudget = addBudget;
 window.updateBudget = updateBudget;
 window.deleteBudget = deleteBudget;
 window.getBudgetsSync = getBudgetsSync;
+window.storeAddBudget = addBudget;
+window.storeUpdateBudget = updateBudget;
+window.storeDeleteBudget = deleteBudget;
 
 window.getTotals = getTotals;
 window.getTotalsAsync = getTotalsAsync;

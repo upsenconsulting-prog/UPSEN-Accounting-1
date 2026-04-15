@@ -77,6 +77,28 @@ function getAllInvoicesIssued() {
   return getUserInvoicesIssued();
 }
 
+function getInvoiceStatusValue(invoice) {
+  if (window.StatusEngine && typeof window.StatusEngine.getEffectiveInvoiceState === 'function') {
+    return window.StatusEngine.getEffectiveInvoiceState(invoice || {});
+  }
+  return (invoice && invoice.state) || 'Pendiente';
+}
+
+function getInvoiceStatusLabel(invoice) {
+  var status = getInvoiceStatusValue(invoice);
+  if (window.StatusEngine && typeof window.StatusEngine.getStatusLabel === 'function') {
+    return window.StatusEngine.getStatusLabel('invoice', status);
+  }
+  return status;
+}
+
+function getInvoiceStatusClass(invoice) {
+  var status = getInvoiceStatusValue(invoice);
+  if (status === 'Pagada') return 'status-paid';
+  if (status === 'Vencida') return 'status-overdue';
+  return 'status-pending';
+}
+
 // ========== GUARDAR FACTURA (Wrapper local) ==========
 // Renomeado para evitar conflito com window.addInvoiceIssued do store.js
 function processInvoiceIssued(invoice) {
@@ -106,7 +128,7 @@ function processInvoiceIssued(invoice) {
     ivaRate: ivaRate,
     ivaAmount: ivaAmount,
     totalAmount: totalAmount,
-    state: invoice.state || 'Pendiente',
+    state: getInvoiceStatusValue(invoice),
     description: invoice.description || '',
     createdAt: invoice.createdAt || new Date().toISOString()
   };
@@ -148,7 +170,15 @@ function processInvoiceIssued(invoice) {
   return newInvoice;
 }
 
-function deleteInvoiceIssued(id) {
+async function deleteInvoiceIssued(id) {
+  if (window.storeDeleteInvoiceIssued && typeof window.storeDeleteInvoiceIssued === 'function') {
+    await window.storeDeleteInvoiceIssued(id);
+    renderInvoices();
+    renderChart();
+    renderSummaryCards();
+    return;
+  }
+
   var invoices = getUserInvoicesIssued();
   var filtered = invoices.filter(function(inv) { return inv.id !== id; });
   var key = 'upsen_invoices_issued_' + getUserId();
@@ -156,17 +186,19 @@ function deleteInvoiceIssued(id) {
     localStorage.setItem(key, JSON.stringify(filtered));
   } catch (e) {}
   
-  // Tentar eliminar do Firebase usando store.js se disponível
-  if (window.deleteInvoiceIssued && typeof window.deleteInvoiceIssued === 'function') {
-    window.deleteInvoiceIssued(id).catch(err => console.warn(err));
-  }
-  
   renderInvoices();
   renderChart();
   renderSummaryCards();
 }
 
-function updateInvoiceIssued(id, updates) {
+async function updateInvoiceIssued(id, updates) {
+  if (window.storeUpdateInvoiceIssued && typeof window.storeUpdateInvoiceIssued === 'function') {
+    var updatedInvoice = await window.storeUpdateInvoiceIssued(id, updates);
+    renderInvoices();
+    renderSummaryCards();
+    return updatedInvoice;
+  }
+
   var invoices = getUserInvoicesIssued();
   for (var i = 0; i < invoices.length; i++) {
     if (invoices[i].id === id) {
@@ -196,11 +228,9 @@ async function renderSummaryCards() {
     totalAmount += amount;
     
     // Existing stats
-    if (inv.state === 'Pendiente') pendingTotal += amount;
-    if (inv.dueDate && inv.state === 'Pendiente') {
-      var dueDate = new Date(inv.dueDate);
-      if (dueDate < now) overdueTotal += amount;
-    }
+    var status = getInvoiceStatusValue(inv);
+    if (status === 'Pendiente') pendingTotal += amount;
+    if (status === 'Vencida') overdueTotal += amount;
     if (inv.invoiceDate) {
       var parts = inv.invoiceDate.split('-');
       if (parts.length >= 2) {
@@ -211,7 +241,7 @@ async function renderSummaryCards() {
     }
     
     // NEW: Payment method totals (only paid invoices)
-    if (inv.state === 'Pagada' && inv.paymentMethod && paymentTotals[inv.paymentMethod]) {
+    if (status === 'Pagada' && inv.paymentMethod && paymentTotals[inv.paymentMethod]) {
       paymentTotals[inv.paymentMethod] += amount;
     }
   }
@@ -413,16 +443,8 @@ async function renderInvoices() {
 
   for (var i = 0; i < list.length; i++) {
     var inv = list[i];
-    var statusClass = 'status-pending';
-    var statusText = 'Pendiente';
-    
-    if (inv.state === 'Pagada') {
-      statusClass = 'status-paid';
-      statusText = 'Pagada';
-    } else if (inv.state === 'Vencida') {
-      statusClass = 'status-overdue';
-      statusText = 'Vencida';
-    }
+    var statusClass = getInvoiceStatusClass(inv);
+    var statusText = getInvoiceStatusLabel(inv);
     
     // Veri*Factu status
     var vfStatus = getVeriFactuStatus(inv);
@@ -475,7 +497,7 @@ async function renderInvoices() {
 // Confirmar pagamento - MELHORADO
   var confirmBtn = document.getElementById('confirmMarkPaid');
   if (confirmBtn) {
-    confirmBtn.addEventListener('click', function() {
+    confirmBtn.addEventListener('click', async function() {
       var form = document.getElementById('formMarkPaid');
       var paymentMethod = form.querySelector('[name="paymentMethod"]').value;
       var paymentDate = form.querySelector('[name="paymentDate"]').value;
@@ -498,7 +520,12 @@ async function renderInvoices() {
       };
       var invoiceId = $('#markPaidInvoiceId').value;
       
-      updateInvoiceIssued(invoiceId, formData);
+      try {
+        await updateInvoiceIssued(invoiceId, formData);
+      } catch (error) {
+        alert(error && error.message ? error.message : 'No se pudo actualizar el estado.');
+        return;
+      }
       
       var modal = bootstrap.Modal.getInstance(document.getElementById('modalMarkPaid'));
       modal.hide();
@@ -529,7 +556,7 @@ window.viewInvoice = function(id) {
 
   var content = document.getElementById('viewInvoiceContent');
   if (content) {
-    var statusLabels = { Pendiente: 'Pendiente', Pagada: 'Pagada', Vencida: 'Vencida' };
+    var statusLabel = getInvoiceStatusLabel(invoice);
     content.innerHTML = '<div class="row mb-3">' +
       '<div class="col-md-6"><strong>Numero:</strong> ' + (invoice.invoiceNumber || '-') + '</div>' +
       '<div class="col-md-6"><strong>Cliente:</strong> ' + (invoice.customer || '-') + '</div>' +
@@ -545,7 +572,7 @@ window.viewInvoice = function(id) {
       '</div>' +
       '<div class="row mb-3">' +
       '<div class="col-md-6"><strong>Total:</strong> <span class="fs-4 fw-bold text-success">' + moneyEUR(invoice.totalAmount || invoice.amount) + '</span></div>' +
-      '<div class="col-md-6"><strong>Estado:</strong> <span class="badge bg-primary">' + (statusLabels[invoice.state] || 'Pendiente') + '</span></div>' +
+      '<div class="col-md-6"><strong>Estado:</strong> <span class="badge bg-primary">' + statusLabel + '</span></div>' +
       '</div>' +
       '<div class="text-muted mt-3 text-end"><small>Creado: ' + new Date(invoice.createdAt || '').toLocaleString() + '</small></div>';
   }
@@ -1051,7 +1078,7 @@ function exportToPDF(list) {
     doc.text((inv.customer || '-').substring(0, 20), 50, y);
     doc.text(formatDate(inv.invoiceDate), 105, y);
     doc.text(moneyEUR(inv.amount), 155, y);
-    doc.text(inv.state || 'Pendiente', 185, y);
+    doc.text(getInvoiceStatusLabel(inv), 185, y);
     y += 8;
   }
   
@@ -1080,7 +1107,7 @@ function exportToCSV(list) {
     csv += '"' + (inv.invoiceDate || '') + '",';
     csv += '"' + (inv.dueDate || '') + '",';
     csv += '"' + (inv.amount || 0) + '",';
-    csv += '"' + (inv.state || 'Pendiente') + '"\n';
+    csv += '"' + getInvoiceStatusLabel(inv) + '"\n';
   }
   
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -1103,7 +1130,7 @@ function exportToExcel(list) {
     html += '<td>' + (inv.invoiceDate || '') + '</td>';
     html += '<td>' + (inv.dueDate || '') + '</td>';
     html += '<td>' + (inv.amount || 0) + '</td>';
-    html += '<td>' + (inv.state || 'Pendiente') + '</td>';
+    html += '<td>' + getInvoiceStatusLabel(inv) + '</td>';
     html += '</tr>';
   }
   html += '</table>';

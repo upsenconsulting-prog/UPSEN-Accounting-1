@@ -11,6 +11,25 @@
   const normalizeString = (value) => (value || '').toString().trim();
   const normalizeDate = (value) => normalizeString(value);
   const isValidIsoDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(new Date(value + 'T00:00:00').getTime());
+  const SIMPLE_INVOICE_STATUS = {
+    defaultValue: 'pendiente',
+    labels: {
+      pendiente: 'Pendiente',
+      parcial: 'Parcial',
+      pagada: 'Pagada'
+    },
+    aliases: {
+      free: 'pendiente',
+      emit: 'pendiente',
+      paid: 'pagada',
+      partial: 'parcial'
+    },
+    transitions: {
+      pendiente: ['pendiente', 'parcial', 'pagada'],
+      parcial: ['parcial', 'pagada'],
+      pagada: ['pagada']
+    }
+  };
 
   const getUserCollection = () => {
     const db = getDb();
@@ -30,10 +49,28 @@
       clientId: normalizeString(invoiceData.clientId),
       providerId: normalizeString(invoiceData.providerId),
       total: Number(invoiceData.total || 0),
-      estado: normalizeString(invoiceData.estado || 'pendiente') || 'pendiente',
+      estado: normalizeInvoiceStatus(invoiceData.estado),
       descripcion: normalizeString(invoiceData.descripcion),
       fecha: normalizeDate(invoiceData.fecha)
     };
+  }
+
+  function normalizeInvoiceStatus(value) {
+    const raw = normalizeString(value).toLowerCase();
+    if (!raw) return SIMPLE_INVOICE_STATUS.defaultValue;
+    if (SIMPLE_INVOICE_STATUS.labels[raw]) return raw;
+    if (SIMPLE_INVOICE_STATUS.aliases[raw]) return SIMPLE_INVOICE_STATUS.aliases[raw];
+    throw new Error('Estado de factura invalido');
+  }
+
+  function ensureAllowedInvoiceTransition(currentValue, nextValue) {
+    const currentStatus = normalizeInvoiceStatus(currentValue);
+    const nextStatus = normalizeInvoiceStatus(nextValue);
+    const allowedTransitions = SIMPLE_INVOICE_STATUS.transitions[currentStatus] || [currentStatus];
+    if (!allowedTransitions.includes(nextStatus)) {
+      throw new Error('Transicion de estado no permitida');
+    }
+    return nextStatus;
   }
 
   function validateInvoiceData(invoiceData) {
@@ -49,6 +86,14 @@
     return null;
   }
 
+  async function ensureUniqueInvoiceNumber(numero, excludeId) {
+    const snapshot = await getUserCollection().where('numero', '==', numero).get();
+    const duplicate = snapshot.docs.find((doc) => doc.id !== excludeId);
+    if (duplicate) {
+      throw new Error('Ya existe una factura con ese numero');
+    }
+  }
+
   window.InvoiceService = {
     async createInvoice(invoiceData) {
       try {
@@ -57,6 +102,7 @@
         if (validationError) {
           return { success: false, message: validationError };
         }
+        await ensureUniqueInvoiceNumber(normalizedData.numero);
 
         const now = getFieldValue() ? getFieldValue().serverTimestamp() : new Date().toISOString();
         const docRef = await getUserCollection().add({
@@ -89,6 +135,13 @@
         if (validationError) {
           return { success: false, message: validationError };
         }
+        await ensureUniqueInvoiceNumber(normalizedData.numero, id);
+        const currentDoc = await getUserCollection().doc(id).get();
+        const currentData = currentDoc.exists ? currentDoc.data() : null;
+        if (!currentData) {
+          return { success: false, message: 'Factura no encontrada' };
+        }
+        normalizedData.estado = ensureAllowedInvoiceTransition(currentData.estado, normalizedData.estado);
 
         await getUserCollection().doc(id).update({
           ...normalizedData,
