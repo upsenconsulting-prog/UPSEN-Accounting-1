@@ -186,28 +186,34 @@ if (itemsTable) {
 
 window.updateTotals = function() {
   const rows = document.querySelectorAll('#itemsTable tbody tr');
-  let grandTotal = 0;
+  const lines = [];
   let retentionRate = parseFloat($('retention')?.value) || 0;
   
   rows.forEach(row => {
     const qty = parseFloat(row.querySelector('.qty')?.value) || 0;
     const unit = parseFloat(row.querySelector('.unit')?.value) || 0;
-    const total = qty * unit;
+    const total = window.CalculationEngine
+      ? window.CalculationEngine.calculateLineSubtotal(unit, qty)
+      : qty * unit;
     
     const lineTotalEl = row.querySelector('.line-total');
     if (lineTotalEl) lineTotalEl.textContent = total.toFixed(2);
-    grandTotal += total;
+    lines.push({ qty, unit });
   });
   
   // Aplicar retenção se houver
-  const totalWithRetention = grandTotal - (grandTotal * (retentionRate / 100));
+  const totals = window.CalculationEngine
+    ? window.CalculationEngine.calculateBudgetTotals(lines, retentionRate)
+    : {
+        totalAmount: lines.reduce((sum, line) => sum + (line.qty * line.unit), 0) - (lines.reduce((sum, line) => sum + (line.qty * line.unit), 0) * (retentionRate / 100))
+      };
   
   const grandTotalEl = document.getElementById('grandTotal');
   if (grandTotalEl) {
-    grandTotalEl.textContent = 'Total: ' + moneyEUR(totalWithRetention);
+    grandTotalEl.textContent = 'Total: ' + moneyEUR(totals.totalAmount);
   }
   
-  return grandTotal;
+  return totals.totalAmount;
 };
 
 // ========== FORMULÁRIO ==========

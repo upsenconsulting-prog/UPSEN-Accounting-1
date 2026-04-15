@@ -80,6 +80,41 @@ function validateBudgetItems(items) {
   });
 }
 
+window.CalculationEngine = {
+  roundMoney: roundMoney,
+  calculateLineSubtotal: function(price, quantity) {
+    return roundMoney(Number(price || 0) * Number(quantity || 0));
+  },
+  calculateSubtotalFromLines: function(lines) {
+    return roundMoney((lines || []).reduce(function(sum, line) {
+      var qty = Number(line.qty ?? line.quantity ?? 0);
+      var unit = Number(line.unit ?? line.price ?? 0);
+      return sum + (Number(qty) * Number(unit));
+    }, 0));
+  },
+  calculateVatAmount: function(subtotal, vatRate) {
+    return roundMoney(Number(subtotal || 0) * (Number(vatRate || 0) / 100));
+  },
+  calculateInvoiceTotals: function(baseAmount, vatRate) {
+    var subtotal = roundMoney(baseAmount);
+    var ivaAmount = this.calculateVatAmount(subtotal, vatRate);
+    return {
+      subtotal: subtotal,
+      ivaAmount: ivaAmount,
+      totalAmount: roundMoney(subtotal + ivaAmount)
+    };
+  },
+  calculateBudgetTotals: function(lines, retentionRate) {
+    var subtotal = this.calculateSubtotalFromLines(lines);
+    var retentionAmount = roundMoney(subtotal * (Number(retentionRate || 0) / 100));
+    return {
+      subtotal: subtotal,
+      retentionAmount: retentionAmount,
+      totalAmount: roundMoney(subtotal - retentionAmount)
+    };
+  }
+};
+
 // ===== Keys =====
 const KEYS = {
   invoicesReceived: "upsen_invoices_received",
@@ -232,6 +267,9 @@ async function addInvoiceReceived(invoice) {
   var supplierNif = normalizeNif(invoice.supplierNif);
   var amount = roundMoney(invoice.amount);
   var ivaRate = Number(invoice.ivaRate ?? 0);
+  var receivedTotals = window.CalculationEngine
+    ? window.CalculationEngine.calculateInvoiceTotals(amount, ivaRate)
+    : { ivaAmount: roundMoney(amount * (ivaRate / 100)), totalAmount: roundMoney(amount + roundMoney(amount * (ivaRate / 100))) };
   if (!invoiceNumber) throw new Error('Numero de factura obligatorio');
   if (!invoiceDate || !isValidIsoDate(invoiceDate)) throw new Error('Fecha de factura invalida');
   if (!supplier) throw new Error('Proveedor obligatorio');
@@ -249,8 +287,8 @@ const item = {
     supplierNif: supplierNif,
     amount: amount,
     ivaRate: ivaRate,
-    ivaAmount: roundMoney(invoice.ivaAmount ?? (amount * (ivaRate / 100))),
-    totalAmount: roundMoney(invoice.totalAmount ?? (amount + roundMoney(invoice.ivaAmount ?? (amount * (ivaRate / 100))))),
+    ivaAmount: roundMoney(invoice.ivaAmount ?? receivedTotals.ivaAmount),
+    totalAmount: roundMoney(invoice.totalAmount ?? receivedTotals.totalAmount),
     state: invoice.state ?? "Pendiente",
     description: invoice.description ?? "",
     paymentMethod: invoice.paymentMethod ?? null,  // efectivo|tarjeta|transferencia|recibo|cheque|paypal  
@@ -325,6 +363,9 @@ async function addInvoiceIssued(invoice) {
   var dueDate = normalizeString(invoice.dueDate);
   var amount = roundMoney(invoice.amount);
   var ivaRate = Number(invoice.ivaRate ?? 0);
+  var issuedTotals = window.CalculationEngine
+    ? window.CalculationEngine.calculateInvoiceTotals(amount, ivaRate)
+    : { ivaAmount: roundMoney(amount * (ivaRate / 100)), totalAmount: roundMoney(amount + roundMoney(amount * (ivaRate / 100))) };
   if (!invoiceNumber) throw new Error('Numero de factura obligatorio');
   if (!customer) throw new Error('Cliente obligatorio');
   if (!customerNif || !isValidNifNie(customerNif)) throw new Error('NIF de cliente invalido');
@@ -345,8 +386,8 @@ const item = {
     dueDate: dueDate,
     amount: amount,
     ivaRate: ivaRate,
-    ivaAmount: roundMoney(invoice.ivaAmount ?? (amount * (ivaRate / 100))),
-    totalAmount: roundMoney(invoice.totalAmount ?? (amount + roundMoney(invoice.ivaAmount ?? (amount * (ivaRate / 100))))),
+    ivaAmount: roundMoney(invoice.ivaAmount ?? issuedTotals.ivaAmount),
+    totalAmount: roundMoney(invoice.totalAmount ?? issuedTotals.totalAmount),
     state: invoice.state ?? "Pendiente",
     paymentMethod: invoice.paymentMethod ?? null,  // efectivo|tarjeta|transferencia|recibo|cheque|paypal
     paymentDate: invoice.paymentDate ?? null,     // YYYY-MM-DD
@@ -406,6 +447,9 @@ async function updateInvoiceIssued(id, updates) {
     if (!(amount > 0)) throw new Error('Importe invalido');
     if (!isValidVatRate(ivaRate)) throw new Error('IVA invalido');
     if (merged.paymentDate && !isValidIsoDate(merged.paymentDate)) throw new Error('Fecha de pago invalida');
+    var issuedTotals = window.CalculationEngine
+      ? window.CalculationEngine.calculateInvoiceTotals(amount, ivaRate)
+      : { ivaAmount: roundMoney(amount * (ivaRate / 100)), totalAmount: roundMoney(amount + roundMoney(amount * (ivaRate / 100))) };
     ensureUniqueValue(list, 'invoiceNumber', invoiceNumber, 'Numero de factura', id);
     list[index] = {
       ...merged,
@@ -416,8 +460,8 @@ async function updateInvoiceIssued(id, updates) {
       dueDate: dueDate,
       amount: amount,
       ivaRate: ivaRate,
-      ivaAmount: roundMoney(merged.ivaAmount ?? (amount * (ivaRate / 100))),
-      totalAmount: roundMoney(merged.totalAmount ?? (amount + roundMoney(merged.ivaAmount ?? (amount * (ivaRate / 100)))))
+      ivaAmount: roundMoney(merged.ivaAmount ?? issuedTotals.ivaAmount),
+      totalAmount: roundMoney(merged.totalAmount ?? issuedTotals.totalAmount)
     };
     write(KEYS.invoicesIssued, list);
     
@@ -453,6 +497,9 @@ async function updateInvoiceReceived(id, updates) {
     if (!(amount > 0)) throw new Error('Importe invalido');
     if (!isValidVatRate(ivaRate)) throw new Error('IVA invalido');
     if (merged.paymentDate && !isValidIsoDate(merged.paymentDate)) throw new Error('Fecha de pago invalida');
+    var receivedTotals = window.CalculationEngine
+      ? window.CalculationEngine.calculateInvoiceTotals(amount, ivaRate)
+      : { ivaAmount: roundMoney(amount * (ivaRate / 100)), totalAmount: roundMoney(amount + roundMoney(amount * (ivaRate / 100))) };
     ensureUniqueValue(list, 'invoiceNumber', invoiceNumber, 'Numero de factura', id);
     list[index] = {
       ...merged,
@@ -462,8 +509,8 @@ async function updateInvoiceReceived(id, updates) {
       supplierNif: supplierNif,
       amount: amount,
       ivaRate: ivaRate,
-      ivaAmount: roundMoney(merged.ivaAmount ?? (amount * (ivaRate / 100))),
-      totalAmount: roundMoney(merged.totalAmount ?? (amount + roundMoney(merged.ivaAmount ?? (amount * (ivaRate / 100)))))
+      ivaAmount: roundMoney(merged.ivaAmount ?? receivedTotals.ivaAmount),
+      totalAmount: roundMoney(merged.totalAmount ?? receivedTotals.totalAmount)
     };
     write(KEYS.invoicesReceived, list);
     
@@ -501,6 +548,9 @@ async function addExpense(expense) {
   var description = normalizeString(expense.description);
   var amount = roundMoney(expense.amount);
   var ivaRate = Number(expense.ivaRate ?? 0);
+  var expenseTotals = window.CalculationEngine
+    ? window.CalculationEngine.calculateInvoiceTotals(amount, ivaRate)
+    : { ivaAmount: roundMoney(amount * (ivaRate / 100)), totalAmount: roundMoney(amount + roundMoney(amount * (ivaRate / 100))) };
   var supplierNif = normalizeNif(expense.supplierNif);
   if (!date || !isValidIsoDate(date)) throw new Error('Fecha de gasto invalida');
   if (!description) throw new Error('Descripcion de gasto obligatoria');
@@ -516,8 +566,8 @@ async function addExpense(expense) {
     amount: amount,
     // Guardar campos adicionais do expense
     ivaRate: ivaRate,
-    ivaAmount: roundMoney(expense.ivaAmount ?? (amount * (ivaRate / 100))),
-    totalAmount: roundMoney(expense.totalAmount ?? (amount + roundMoney(expense.ivaAmount ?? (amount * (ivaRate / 100))))),
+    ivaAmount: roundMoney(expense.ivaAmount ?? expenseTotals.ivaAmount),
+    totalAmount: roundMoney(expense.totalAmount ?? expenseTotals.totalAmount),
     notes: expense.notes ?? "",
     paymentMethod: expense.paymentMethod ?? "",
     supplierNif: supplierNif,
@@ -589,7 +639,9 @@ async function addBudget(budget) {
   if (validity && new Date(validity + 'T00:00:00') < new Date(date + 'T00:00:00')) throw new Error('La validez no puede ser anterior a la fecha');
   if (!customer) throw new Error('Cliente obligatorio');
   ensureUniqueValue(list, 'number', number, 'Numero de presupuesto');
-  var total = roundMoney(items.reduce(function(sum, item) { return sum + item.total; }, 0) - (items.reduce(function(sum, item) { return sum + item.total; }, 0) * (retention / 100)));
+  var budgetTotals = window.CalculationEngine
+    ? window.CalculationEngine.calculateBudgetTotals(items, retention)
+    : { totalAmount: roundMoney(items.reduce(function(sum, item) { return sum + item.total; }, 0) - (items.reduce(function(sum, item) { return sum + item.total; }, 0) * (retention / 100))) };
 
   const item = {
     id: uid(),
@@ -603,7 +655,7 @@ async function addBudget(budget) {
     status: budget.status ?? "pending",
     tags: budget.tags ?? "",
     items: items,
-    total: total,
+    total: budgetTotals.totalAmount,
     createdAt: new Date().toISOString(),
   };
   
@@ -639,7 +691,9 @@ async function updateBudget(id, updates) {
     if (validity && new Date(validity + 'T00:00:00') < new Date(date + 'T00:00:00')) throw new Error('La validez no puede ser anterior a la fecha');
     if (!customer) throw new Error('Cliente obligatorio');
     ensureUniqueValue(list, 'number', number, 'Numero de presupuesto', id);
-    var subtotal = items.reduce(function(sum, item) { return sum + item.total; }, 0);
+    var budgetTotals = window.CalculationEngine
+      ? window.CalculationEngine.calculateBudgetTotals(items, retention)
+      : { totalAmount: roundMoney(items.reduce(function(sum, item) { return sum + item.total; }, 0) - (items.reduce(function(sum, item) { return sum + item.total; }, 0) * (retention / 100))) };
     list[index] = {
       ...merged,
       number: number,
@@ -648,7 +702,7 @@ async function updateBudget(id, updates) {
       customer: customer,
       retention: retention,
       items: items,
-      total: roundMoney(subtotal - (subtotal * (retention / 100)))
+      total: budgetTotals.totalAmount
     };
     write(KEYS.budgets, list);
     

@@ -85,8 +85,15 @@ function processInvoiceIssued(invoice) {
   // Calcular IVA
   var baseImponible = Number(invoice.amount || 0);
   var ivaRate = Number(invoice.ivaRate || 0);
-  var ivaAmount = baseImponible * (ivaRate / 100);
-  var totalAmount = baseImponible + ivaAmount;
+  var totals = window.CalculationEngine
+    ? window.CalculationEngine.calculateInvoiceTotals(baseImponible, ivaRate)
+    : {
+        subtotal: baseImponible,
+        ivaAmount: baseImponible * (ivaRate / 100),
+        totalAmount: baseImponible + (baseImponible * (ivaRate / 100))
+      };
+  var ivaAmount = totals.ivaAmount;
+  var totalAmount = totals.totalAmount;
   
   var newInvoice = {
     id: invoice.id || generateId(),
