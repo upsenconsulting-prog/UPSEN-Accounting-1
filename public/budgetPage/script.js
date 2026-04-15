@@ -301,9 +301,14 @@ if (saveBtn) {
       return;
     }
     
-    await saveUserBudget(data);
-    alert('Presupuesto guardado correctamente!');
-    clearForm();
+    try {
+      await saveUserBudget(data);
+      alert('Presupuesto guardado correctamente!');
+      clearForm();
+    } catch (error) {
+      alert(error && error.message ? error.message : 'Error guardando presupuesto.');
+      return;
+    }
     
     // Atualizar lista se modal estiver aberto
     if (window.loadSavedBudgets) {

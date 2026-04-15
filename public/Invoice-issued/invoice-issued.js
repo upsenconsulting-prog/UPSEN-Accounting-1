@@ -704,14 +704,49 @@ async function saveInvoiceIssued() {
     return false;
   }
 
+  var numericAmount = Number(amount || 0);
+  var numericIvaRate = Number(ivaRate || 0);
+  var nifRegex = /^(?:[0-9]{8}[A-Z]|[XYZ][0-9]{7}[A-Z]|[ABCDEFGHJNPQRSW][0-9]{7}[0-9A-J])$/i;
+  if (!(numericAmount > 0)) {
+    alert('El importe debe ser mayor que cero.');
+    return false;
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(invoiceDate) || Number.isNaN(new Date(invoiceDate + 'T00:00:00').getTime())) {
+    alert('La fecha de factura no es valida.');
+    return false;
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate) || Number.isNaN(new Date(dueDate + 'T00:00:00').getTime())) {
+    alert('La fecha de vencimiento no es valida.');
+    return false;
+  }
+  if (new Date(dueDate + 'T00:00:00') < new Date(invoiceDate + 'T00:00:00')) {
+    alert('La fecha de vencimiento no puede ser anterior a la fecha de factura.');
+    return false;
+  }
+  if (!nifRegex.test(customerNif || '')) {
+    alert('El NIF del cliente no es valido.');
+    return false;
+  }
+  if (!(numericIvaRate >= 0 && numericIvaRate <= 100)) {
+    alert('El IVA no es valido.');
+    return false;
+  }
+  var duplicateInvoice = getAllInvoicesIssued().some(function(inv) {
+    return (inv.invoiceNumber || '').trim().toLowerCase() === invoiceNumber.trim().toLowerCase();
+  });
+  if (duplicateInvoice) {
+    alert('Ya existe una factura con ese numero.');
+    return false;
+  }
+
   var invoiceData = {
     invoiceNumber: invoiceNumber,
     customer: customer,
     customerNif: customerNif,
     invoiceDate: invoiceDate,
     dueDate: dueDate,
-    amount: amount,
-    ivaRate: ivaRate || 0,
+    amount: numericAmount,
+    ivaRate: numericIvaRate,
     state: state,
     paymentMethod: form.querySelector('[name="paymentMethod"]').value || null,
     paymentDate: form.querySelector('[name="paymentDate"]').value || null

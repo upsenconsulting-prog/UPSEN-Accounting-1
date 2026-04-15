@@ -19,6 +19,67 @@ function uid() {
   return "id-" + Date.now() + "-" + Math.random().toString(16).slice(2);
 }
 
+function normalizeString(value) {
+  return (value ?? "").toString().trim();
+}
+
+function normalizeNif(value) {
+  return normalizeString(value).toUpperCase();
+}
+
+function roundMoney(value) {
+  return Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
+}
+
+function isValidIsoDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "")) return false;
+  var date = new Date(value + "T00:00:00");
+  return !Number.isNaN(date.getTime());
+}
+
+function isValidNifNie(value) {
+  return /^(?:[0-9]{8}[A-Z]|[XYZ][0-9]{7}[A-Z]|[ABCDEFGHJNPQRSW][0-9]{7}[0-9A-J])$/i.test(value || "");
+}
+
+function isValidVatRate(value) {
+  var rate = Number(value);
+  return Number.isFinite(rate) && rate >= 0 && rate <= 100;
+}
+
+function ensureUniqueValue(list, field, value, label, excludeId) {
+  if (!value) return;
+  var normalizedValue = normalizeString(value).toLowerCase();
+  var duplicate = list.find(function(item) {
+    if (excludeId && item.id === excludeId) return false;
+    return normalizeString(item[field]).toLowerCase() === normalizedValue;
+  });
+  if (duplicate) throw new Error(label + " duplicado");
+}
+
+function validateBudgetItems(items) {
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error("Presupuesto sin lineas");
+  }
+
+  return items.map(function(item) {
+    var desc = normalizeString(item.desc || item.description);
+    var qty = Number(item.qty ?? item.quantity ?? 0);
+    var unit = Number(item.unit ?? item.price ?? 0);
+    var total = roundMoney(qty * unit);
+
+    if (!desc) throw new Error("Presupuesto con linea sin descripcion");
+    if (!(qty > 0)) throw new Error("Presupuesto con cantidad invalida");
+    if (!(unit >= 0)) throw new Error("Presupuesto con precio invalido");
+
+    return {
+      desc: desc,
+      qty: qty,
+      unit: roundMoney(unit),
+      total: total
+    };
+  });
+}
+
 // ===== Keys =====
 const KEYS = {
   invoicesReceived: "upsen_invoices_received",
@@ -165,16 +226,31 @@ async function addInvoiceReceived(invoice) {
     verifactuStatus: invoice.verifactuStatus ?? "draft"
   };
 
+  var invoiceNumber = normalizeString(invoice.invoiceNumber);
+  var invoiceDate = normalizeString(invoice.invoiceDate);
+  var supplier = normalizeString(invoice.supplier);
+  var supplierNif = normalizeNif(invoice.supplierNif);
+  var amount = roundMoney(invoice.amount);
+  var ivaRate = Number(invoice.ivaRate ?? 0);
+  if (!invoiceNumber) throw new Error('Numero de factura obligatorio');
+  if (!invoiceDate || !isValidIsoDate(invoiceDate)) throw new Error('Fecha de factura invalida');
+  if (!supplier) throw new Error('Proveedor obligatorio');
+  if (!supplierNif || !isValidNifNie(supplierNif)) throw new Error('NIF de proveedor invalido');
+  if (!(amount > 0)) throw new Error('Importe invalido');
+  if (!isValidVatRate(ivaRate)) throw new Error('IVA invalido');
+  if (invoice.paymentDate && !isValidIsoDate(invoice.paymentDate)) throw new Error('Fecha de pago invalida');
+  ensureUniqueValue(list, 'invoiceNumber', invoiceNumber, 'Numero de factura');
+
 const item = {
     id: uid(),
-    invoiceNumber: invoice.invoiceNumber ?? "",
-    invoiceDate: invoice.invoiceDate ?? "",
-    supplier: invoice.supplier ?? "",
-    supplierNif: invoice.supplierNif ?? "",
-    amount: Number(invoice.amount ?? 0),
-    ivaRate: Number(invoice.ivaRate ?? 0),
-    ivaAmount: Number(invoice.ivaAmount ?? 0),
-    totalAmount: Number(invoice.totalAmount ?? 0),
+    invoiceNumber: invoiceNumber,
+    invoiceDate: invoiceDate,
+    supplier: supplier,
+    supplierNif: supplierNif,
+    amount: amount,
+    ivaRate: ivaRate,
+    ivaAmount: roundMoney(invoice.ivaAmount ?? (amount * (ivaRate / 100))),
+    totalAmount: roundMoney(invoice.totalAmount ?? (amount + roundMoney(invoice.ivaAmount ?? (amount * (ivaRate / 100))))),
     state: invoice.state ?? "Pendiente",
     description: invoice.description ?? "",
     paymentMethod: invoice.paymentMethod ?? null,  // efectivo|tarjeta|transferencia|recibo|cheque|paypal  
@@ -242,17 +318,35 @@ async function addInvoiceIssued(invoice) {
     verifactuStatus: invoice.verifactuStatus ?? "draft" // draft, registered, error
   };
 
+  var invoiceNumber = normalizeString(invoice.invoiceNumber);
+  var customer = normalizeString(invoice.customer);
+  var customerNif = normalizeNif(invoice.customerNif);
+  var invoiceDate = normalizeString(invoice.invoiceDate);
+  var dueDate = normalizeString(invoice.dueDate);
+  var amount = roundMoney(invoice.amount);
+  var ivaRate = Number(invoice.ivaRate ?? 0);
+  if (!invoiceNumber) throw new Error('Numero de factura obligatorio');
+  if (!customer) throw new Error('Cliente obligatorio');
+  if (!customerNif || !isValidNifNie(customerNif)) throw new Error('NIF de cliente invalido');
+  if (!invoiceDate || !isValidIsoDate(invoiceDate)) throw new Error('Fecha de factura invalida');
+  if (!dueDate || !isValidIsoDate(dueDate)) throw new Error('Fecha de vencimiento invalida');
+  if (new Date(dueDate + 'T00:00:00') < new Date(invoiceDate + 'T00:00:00')) throw new Error('La fecha de vencimiento no puede ser anterior a la factura');
+  if (!(amount > 0)) throw new Error('Importe invalido');
+  if (!isValidVatRate(ivaRate)) throw new Error('IVA invalido');
+  if (invoice.paymentDate && !isValidIsoDate(invoice.paymentDate)) throw new Error('Fecha de pago invalida');
+  ensureUniqueValue(list, 'invoiceNumber', invoiceNumber, 'Numero de factura');
+
 const item = {
     id: uid(),
-    invoiceNumber: invoice.invoiceNumber ?? "",
-    customer: invoice.customer ?? "",
-    customerNif: invoice.customerNif ?? "",
-    invoiceDate: invoice.invoiceDate ?? "",
-    dueDate: invoice.dueDate ?? "",
-    amount: Number(invoice.amount ?? 0),
-    ivaRate: Number(invoice.ivaRate ?? 0),
-    ivaAmount: Number(invoice.ivaAmount ?? 0),
-    totalAmount: Number(invoice.totalAmount ?? 0),
+    invoiceNumber: invoiceNumber,
+    customer: customer,
+    customerNif: customerNif,
+    invoiceDate: invoiceDate,
+    dueDate: dueDate,
+    amount: amount,
+    ivaRate: ivaRate,
+    ivaAmount: roundMoney(invoice.ivaAmount ?? (amount * (ivaRate / 100))),
+    totalAmount: roundMoney(invoice.totalAmount ?? (amount + roundMoney(invoice.ivaAmount ?? (amount * (ivaRate / 100))))),
     state: invoice.state ?? "Pendiente",
     paymentMethod: invoice.paymentMethod ?? null,  // efectivo|tarjeta|transferencia|recibo|cheque|paypal
     paymentDate: invoice.paymentDate ?? null,     // YYYY-MM-DD
@@ -295,7 +389,36 @@ async function updateInvoiceIssued(id, updates) {
   let list = getInvoicesIssuedSync();
   const index = list.findIndex((x) => x.id === id);
   if (index !== -1) {
-    list[index] = { ...list[index], ...updates };
+    var merged = { ...list[index], ...updates };
+    var invoiceNumber = normalizeString(merged.invoiceNumber);
+    var customer = normalizeString(merged.customer);
+    var customerNif = normalizeNif(merged.customerNif);
+    var invoiceDate = normalizeString(merged.invoiceDate);
+    var dueDate = normalizeString(merged.dueDate);
+    var amount = roundMoney(merged.amount);
+    var ivaRate = Number(merged.ivaRate ?? 0);
+    if (!invoiceNumber) throw new Error('Numero de factura obligatorio');
+    if (!customer) throw new Error('Cliente obligatorio');
+    if (!customerNif || !isValidNifNie(customerNif)) throw new Error('NIF de cliente invalido');
+    if (!invoiceDate || !isValidIsoDate(invoiceDate)) throw new Error('Fecha de factura invalida');
+    if (!dueDate || !isValidIsoDate(dueDate)) throw new Error('Fecha de vencimiento invalida');
+    if (new Date(dueDate + 'T00:00:00') < new Date(invoiceDate + 'T00:00:00')) throw new Error('La fecha de vencimiento no puede ser anterior a la factura');
+    if (!(amount > 0)) throw new Error('Importe invalido');
+    if (!isValidVatRate(ivaRate)) throw new Error('IVA invalido');
+    if (merged.paymentDate && !isValidIsoDate(merged.paymentDate)) throw new Error('Fecha de pago invalida');
+    ensureUniqueValue(list, 'invoiceNumber', invoiceNumber, 'Numero de factura', id);
+    list[index] = {
+      ...merged,
+      invoiceNumber: invoiceNumber,
+      customer: customer,
+      customerNif: customerNif,
+      invoiceDate: invoiceDate,
+      dueDate: dueDate,
+      amount: amount,
+      ivaRate: ivaRate,
+      ivaAmount: roundMoney(merged.ivaAmount ?? (amount * (ivaRate / 100))),
+      totalAmount: roundMoney(merged.totalAmount ?? (amount + roundMoney(merged.ivaAmount ?? (amount * (ivaRate / 100)))))
+    };
     write(KEYS.invoicesIssued, list);
     
     // Atualizar no Firebase se disponível
@@ -316,7 +439,32 @@ async function updateInvoiceReceived(id, updates) {
   let list = getInvoicesReceivedSync();
   const index = list.findIndex((x) => x.id === id);
   if (index !== -1) {
-    list[index] = { ...list[index], ...updates };
+    var merged = { ...list[index], ...updates };
+    var invoiceNumber = normalizeString(merged.invoiceNumber);
+    var invoiceDate = normalizeString(merged.invoiceDate);
+    var supplier = normalizeString(merged.supplier);
+    var supplierNif = normalizeNif(merged.supplierNif);
+    var amount = roundMoney(merged.amount);
+    var ivaRate = Number(merged.ivaRate ?? 0);
+    if (!invoiceNumber) throw new Error('Numero de factura obligatorio');
+    if (!invoiceDate || !isValidIsoDate(invoiceDate)) throw new Error('Fecha de factura invalida');
+    if (!supplier) throw new Error('Proveedor obligatorio');
+    if (!supplierNif || !isValidNifNie(supplierNif)) throw new Error('NIF de proveedor invalido');
+    if (!(amount > 0)) throw new Error('Importe invalido');
+    if (!isValidVatRate(ivaRate)) throw new Error('IVA invalido');
+    if (merged.paymentDate && !isValidIsoDate(merged.paymentDate)) throw new Error('Fecha de pago invalida');
+    ensureUniqueValue(list, 'invoiceNumber', invoiceNumber, 'Numero de factura', id);
+    list[index] = {
+      ...merged,
+      invoiceNumber: invoiceNumber,
+      invoiceDate: invoiceDate,
+      supplier: supplier,
+      supplierNif: supplierNif,
+      amount: amount,
+      ivaRate: ivaRate,
+      ivaAmount: roundMoney(merged.ivaAmount ?? (amount * (ivaRate / 100))),
+      totalAmount: roundMoney(merged.totalAmount ?? (amount + roundMoney(merged.ivaAmount ?? (amount * (ivaRate / 100)))))
+    };
     write(KEYS.invoicesReceived, list);
     
     // Atualizar no Firebase se disponível
@@ -349,19 +497,30 @@ async function addExpense(expense) {
     list = [];
   }
 
+  var date = normalizeString(expense.date);
+  var description = normalizeString(expense.description);
+  var amount = roundMoney(expense.amount);
+  var ivaRate = Number(expense.ivaRate ?? 0);
+  var supplierNif = normalizeNif(expense.supplierNif);
+  if (!date || !isValidIsoDate(date)) throw new Error('Fecha de gasto invalida');
+  if (!description) throw new Error('Descripcion de gasto obligatoria');
+  if (!(amount >= 0)) throw new Error('Importe de gasto invalido');
+  if (!isValidVatRate(ivaRate)) throw new Error('IVA invalido');
+  if (supplierNif && !isValidNifNie(supplierNif)) throw new Error('NIF de proveedor invalido');
+
   const item = {
     id: uid(),
-    date: expense.date ?? "",
+    date: date,
     category: expense.category ?? "",
-    description: expense.description ?? "",
-    amount: Number(expense.amount ?? 0),
+    description: description,
+    amount: amount,
     // Guardar campos adicionais do expense
-    ivaRate: Number(expense.ivaRate ?? 0),
-    ivaAmount: Number(expense.ivaAmount ?? 0),
-    totalAmount: Number(expense.totalAmount ?? 0),
+    ivaRate: ivaRate,
+    ivaAmount: roundMoney(expense.ivaAmount ?? (amount * (ivaRate / 100))),
+    totalAmount: roundMoney(expense.totalAmount ?? (amount + roundMoney(expense.ivaAmount ?? (amount * (ivaRate / 100))))),
     notes: expense.notes ?? "",
     paymentMethod: expense.paymentMethod ?? "",
-    supplierNif: expense.supplierNif ?? "",
+    supplierNif: supplierNif,
     supplierName: expense.supplierName ?? "",
     createdAt: new Date().toISOString(),
   };
@@ -418,19 +577,33 @@ async function addBudget(budget) {
     list = [];
   }
 
+  var items = validateBudgetItems(budget.items);
+  var number = normalizeString(budget.number);
+  var date = normalizeString(budget.date);
+  var validity = normalizeString(budget.validity);
+  var customer = normalizeString(budget.customer);
+  var retention = Number(budget.retention || 0);
+  if (!number) throw new Error('Numero de presupuesto obligatorio');
+  if (!date || !isValidIsoDate(date)) throw new Error('Fecha de presupuesto invalida');
+  if (validity && !isValidIsoDate(validity)) throw new Error('Fecha de validez invalida');
+  if (validity && new Date(validity + 'T00:00:00') < new Date(date + 'T00:00:00')) throw new Error('La validez no puede ser anterior a la fecha');
+  if (!customer) throw new Error('Cliente obligatorio');
+  ensureUniqueValue(list, 'number', number, 'Numero de presupuesto');
+  var total = roundMoney(items.reduce(function(sum, item) { return sum + item.total; }, 0) - (items.reduce(function(sum, item) { return sum + item.total; }, 0) * (retention / 100)));
+
   const item = {
     id: uid(),
-    number: budget.number ?? "",
+    number: number,
     series: budget.series ?? "Presupuestos",
-    date: budget.date ?? "",
-    validity: budget.validity ?? "",
-    customer: budget.customer ?? "",
+    date: date,
+    validity: validity,
+    customer: customer,
     notes: budget.notes ?? "",
-    retention: budget.retention ?? "",
+    retention: retention,
     status: budget.status ?? "pending",
     tags: budget.tags ?? "",
-    items: budget.items ?? [],
-    total: Number(budget.total ?? 0),
+    items: items,
+    total: total,
     createdAt: new Date().toISOString(),
   };
   
@@ -453,7 +626,30 @@ async function updateBudget(id, updates) {
   let list = await getBudgets();
   const index = list.findIndex((x) => x.id === id);
   if (index !== -1) {
-    list[index] = { ...list[index], ...updates };
+    var merged = { ...list[index], ...updates };
+    var items = validateBudgetItems(merged.items);
+    var number = normalizeString(merged.number);
+    var date = normalizeString(merged.date);
+    var validity = normalizeString(merged.validity);
+    var customer = normalizeString(merged.customer);
+    var retention = Number(merged.retention || 0);
+    if (!number) throw new Error('Numero de presupuesto obligatorio');
+    if (!date || !isValidIsoDate(date)) throw new Error('Fecha de presupuesto invalida');
+    if (validity && !isValidIsoDate(validity)) throw new Error('Fecha de validez invalida');
+    if (validity && new Date(validity + 'T00:00:00') < new Date(date + 'T00:00:00')) throw new Error('La validez no puede ser anterior a la fecha');
+    if (!customer) throw new Error('Cliente obligatorio');
+    ensureUniqueValue(list, 'number', number, 'Numero de presupuesto', id);
+    var subtotal = items.reduce(function(sum, item) { return sum + item.total; }, 0);
+    list[index] = {
+      ...merged,
+      number: number,
+      date: date,
+      validity: validity,
+      customer: customer,
+      retention: retention,
+      items: items,
+      total: roundMoney(subtotal - (subtotal * (retention / 100)))
+    };
     write(KEYS.budgets, list);
     
     // Atualizar no Firebase se disponível
