@@ -114,6 +114,20 @@ function getUserInvoicesReceived() {
   return [];
 }
 
+function getDashboardSummary() {
+  if (window.getDashboardSummarySync) {
+    return window.getDashboardSummarySync();
+  }
+  return null;
+}
+
+function getInvoiceDashboardState(invoice) {
+  if (window.StatusEngine && typeof window.StatusEngine.getEffectiveInvoiceState === 'function') {
+    return window.StatusEngine.getEffectiveInvoiceState(invoice || {});
+  }
+  return (invoice && invoice.state) || '';
+}
+
 // ========== KPI HELPERS ==========
 function sumInvoicesReceivedMonthYear(year, month) {
   var total = 0;
@@ -328,6 +342,7 @@ function renderDashboardKPIs() {
   var now = new Date();
   var y = now.getFullYear();
   var m = now.getMonth();
+  var summary = getDashboardSummary();
 
   var totalReceived = sumInvoicesReceivedMonthYear(y, m);
   var countReceived = countInvoicesReceivedMonthYear(y, m);
@@ -352,6 +367,15 @@ function renderDashboardKPIs() {
   if ($('kpi-expenses-total')) $('kpi-expenses-total').textContent = formatEUR(totalExpenses);
   if ($('kpi-expenses-count')) $('kpi-expenses-count').textContent = String(countExpenses);
   if ($('kpi-expenses-category')) $('kpi-expenses-category').textContent = topCategory || '-';
+
+  if (summary) {
+    if ($('kpi-issued-total')) $('kpi-issued-total').textContent = formatEUR(summary.incomeTotal);
+    if ($('kpi-issued-pending')) $('kpi-issued-pending').textContent = String(summary.pendingDocuments);
+    if ($('kpi-received-total')) $('kpi-received-total').textContent = formatEUR(summary.expenseInvoicesTotal);
+    if ($('kpi-received-pending')) $('kpi-received-pending').textContent = String(summary.overdueDocuments);
+    if ($('kpi-expenses-total')) $('kpi-expenses-total').textContent = formatEUR(summary.expenseTotal);
+    if ($('kpi-expenses-count')) $('kpi-expenses-count').textContent = String(summary.pendingBudgets);
+  }
 }
 
 // ========== CHARTS ==========
@@ -533,8 +557,8 @@ function renderPaymentsForecastChart() {
         var invMonth = parseInt(parts[1]) - 1;
         
         if (invYear === year && invMonth === month) {
-          var state = (inv.state || '').toLowerCase();
-          if (state === 'pendiente' || state === 'vencida') {
+          var state = getInvoiceDashboardState(inv);
+          if (state === 'Pendiente' || state === 'Vencida') {
             pendingTotal += Number(inv.amount) || 0;
           }
           issuedTotal += Number(inv.amount) || 0;

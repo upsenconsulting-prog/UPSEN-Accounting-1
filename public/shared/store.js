@@ -1012,6 +1012,77 @@ async function getTotalsAsync() {
 // ======================================================
 // DASHBOARD KPI FUNCTIONS - Versão Síncrona
 // ======================================================
+function getDocumentAmount(item) {
+  return roundMoney(item && (item.totalAmount ?? item.total ?? item.amount) || 0);
+}
+
+function buildDashboardSummary(invoicesIssued, invoicesReceived, expenses, budgets) {
+  var issued = Array.isArray(invoicesIssued) ? invoicesIssued : [];
+  var received = Array.isArray(invoicesReceived) ? invoicesReceived : [];
+  var expenseList = Array.isArray(expenses) ? expenses : [];
+  var budgetList = Array.isArray(budgets) ? budgets : [];
+
+  var incomeTotal = roundMoney(issued.reduce(function(sum, invoice) {
+    return sum + getDocumentAmount(invoice);
+  }, 0));
+
+  var expenseInvoicesTotal = roundMoney(received.reduce(function(sum, invoice) {
+    return sum + getDocumentAmount(invoice);
+  }, 0));
+
+  var operationalExpensesTotal = roundMoney(expenseList.reduce(function(sum, expense) {
+    return sum + getDocumentAmount(expense);
+  }, 0));
+
+  var pendingInvoices = issued.filter(function(invoice) {
+    return getEffectiveInvoiceState(invoice) === "Pendiente";
+  });
+  var overdueInvoices = issued.filter(function(invoice) {
+    return getEffectiveInvoiceState(invoice) === "Vencida";
+  });
+  var pendingBudgets = budgetList.filter(function(budget) {
+    return normalizeStatusValue("budget", budget.status) === "pending";
+  });
+
+  return {
+    incomeTotal: incomeTotal,
+    expenseTotal: roundMoney(expenseInvoicesTotal + operationalExpensesTotal),
+    expenseInvoicesTotal: expenseInvoicesTotal,
+    operationalExpensesTotal: operationalExpensesTotal,
+    balance: roundMoney(incomeTotal - expenseInvoicesTotal - operationalExpensesTotal),
+    pendingDocuments: pendingInvoices.length + pendingBudgets.length,
+    overdueDocuments: overdueInvoices.length,
+    pendingAmount: roundMoney(pendingInvoices.reduce(function(sum, invoice) {
+      return sum + getDocumentAmount(invoice);
+    }, 0)),
+    overdueAmount: roundMoney(overdueInvoices.reduce(function(sum, invoice) {
+      return sum + getDocumentAmount(invoice);
+    }, 0)),
+    pendingBudgets: pendingBudgets.length,
+    paidInvoices: issued.filter(function(invoice) {
+      return getEffectiveInvoiceState(invoice) === "Pagada";
+    }).length
+  };
+}
+
+function getDashboardSummarySync() {
+  return buildDashboardSummary(
+    getInvoicesIssuedSync(),
+    getInvoicesReceivedSync(),
+    getExpensesSync(),
+    getBudgetsSync()
+  );
+}
+
+async function getDashboardSummaryAsync() {
+  return buildDashboardSummary(
+    await getInvoicesIssued(),
+    await getInvoicesReceived(),
+    await getExpenses(),
+    await getBudgets()
+  );
+}
+
 function sumInvoicesReceivedMonth(year, month) {
   const invoices = getInvoicesReceivedSync();
   return invoices.reduce((sum, inv) => {
@@ -1173,6 +1244,8 @@ window.storeDeleteBudget = deleteBudget;
 
 window.getTotals = getTotals;
 window.getTotalsAsync = getTotalsAsync;
+window.getDashboardSummarySync = getDashboardSummarySync;
+window.getDashboardSummaryAsync = getDashboardSummaryAsync;
 
 window.sumInvoicesReceivedMonth = sumInvoicesReceivedMonth;
 window.countInvoicesReceivedMonth = countInvoicesReceivedMonth;
