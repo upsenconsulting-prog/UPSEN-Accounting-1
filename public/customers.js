@@ -149,7 +149,7 @@
           const data = JSON.parse(session);
           user = (data && data.user) ? data.user : null;
         }
-      } catch (ignore) {}
+      } catch (ignore) { }
     }
 
     if (!user) return null;

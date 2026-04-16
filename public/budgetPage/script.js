@@ -30,6 +30,59 @@ function getBudgetStatusClass(budget) {
   return 'badge-pending';
 }
 
+function clampBudgetNumber(value, minimum, maximum) {
+  var numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return minimum;
+  if (typeof minimum === 'number') numericValue = Math.max(minimum, numericValue);
+  if (typeof maximum === 'number') numericValue = Math.min(maximum, numericValue);
+  return numericValue;
+}
+
+function sanitizeBudgetRow(row) {
+  if (!row) return { qty: 0, unit: 0 };
+  var qtyInput = row.querySelector('.qty');
+  var unitInput = row.querySelector('.unit');
+  var rawQtyValue = qtyInput ? qtyInput.value : 0;
+  var rawUnitValue = unitInput ? unitInput.value : 0;
+  var qty = clampBudgetNumber(rawQtyValue, 0);
+  var unit = clampBudgetNumber(rawUnitValue, 0);
+
+  if (qtyInput && Number(rawQtyValue) < 0) qtyInput.value = String(qty);
+  if (unitInput && Number(rawUnitValue) < 0) unitInput.value = String(unit);
+
+  return { qty: qty, unit: unit };
+}
+
+function sanitizeRetentionInput() {
+  var retentionInput = $('retention');
+  if (!retentionInput) return 0;
+  var retention = clampBudgetNumber(retentionInput.value, 0, 100);
+  retentionInput.value = retention.toFixed(2).replace(/\.00$/, '');
+  return retention;
+}
+
+function createBudgetItemRowHtml() {
+  return '<td><input type="text" class="form-control desc" placeholder="Articulo"></td>' +
+    '<td><input type="number" class="form-control qty" value="1" min="0" step="0.01" oninput="updateTotals()"></td>' +
+    '<td><input type="number" class="form-control unit" value="0.00" min="0" step="0.01" oninput="updateTotals()"></td>' +
+    '<td class="line-total">0.00 EUR</td>' +
+    '<td><button type="button" class="btn btn-danger btn-sm remove-btn">X</button></td>';
+}
+
+function validateBudgetFormData(data) {
+  if (!data.date || !data.customer) return 'Por favor complete: fecha y cliente.';
+  if (data.items.length === 0) return 'Por favor anada al menos un articulo.';
+  if (Number(data.retention) < 0 || Number(data.retention) > 100) return 'La retencion debe estar entre 0 y 100.';
+
+  for (var i = 0; i < data.items.length; i++) {
+    var item = data.items[i];
+    if (!(Number(item.qty) > 0)) return 'La cantidad debe ser mayor que cero.';
+    if (!(Number(item.unit) >= 0)) return 'El precio no puede ser negativo.';
+  }
+
+  return null;
+}
+
 // ========== ID DO USUÁRIO ==========
 // Use the global getUserId from store.js
 const getUserId = window.getUserId;
@@ -188,6 +241,7 @@ if (addItemBtn) {
       '<td><input type="number" class="form-control unit" value="0" step="0.01" oninput="updateTotals()"></td>' +
       '<td class="line-total">0.00</td>' +
       '<td><button type="button" class="btn btn-danger btn-sm remove-btn">X</button></td>';
+    newRow.innerHTML = createBudgetItemRowHtml();
     tbody.appendChild(newRow);
     updateTotals();
   });
@@ -209,17 +263,18 @@ if (itemsTable) {
 window.updateTotals = function() {
   const rows = document.querySelectorAll('#itemsTable tbody tr');
   const lines = [];
-  let retentionRate = parseFloat($('retention')?.value) || 0;
+  let retentionRate = sanitizeRetentionInput();
   
   rows.forEach(row => {
-    const qty = parseFloat(row.querySelector('.qty')?.value) || 0;
-    const unit = parseFloat(row.querySelector('.unit')?.value) || 0;
+    const sanitizedRow = sanitizeBudgetRow(row);
+    const qty = sanitizedRow.qty;
+    const unit = sanitizedRow.unit;
     const total = window.CalculationEngine
       ? window.CalculationEngine.calculateLineSubtotal(unit, qty)
       : qty * unit;
     
     const lineTotalEl = row.querySelector('.line-total');
-    if (lineTotalEl) lineTotalEl.textContent = total.toFixed(2);
+    if (lineTotalEl) lineTotalEl.textContent = moneyEUR(total);
     lines.push({ qty, unit });
   });
   
@@ -268,6 +323,10 @@ function clearForm() {
   if (statusSelect) {
     statusSelect.value = 'pending';
   }
+  const retentionInput = $('retention');
+  if (retentionInput) {
+    retentionInput.value = '0';
+  }
   
   const tbody = document.querySelector('#itemsTable tbody');
   if (tbody) {
@@ -277,6 +336,7 @@ function clearForm() {
       '<td><input type="number" class="form-control unit" value="0" step="0.01" oninput="updateTotals()"></td>' +
       '<td class="line-total">0.00</td>' +
       '<td><button type="button" class="btn btn-danger btn-sm remove-btn">X</button></td></tr>';
+    tbody.innerHTML = '<tr>' + createBudgetItemRowHtml() + '</tr>';
   }
   updateTotals();
 }
@@ -298,8 +358,9 @@ if (saveBtn) {
     
     rows.forEach(row => {
       const desc = row.querySelector('.desc')?.value || '';
-      const qty = parseFloat(row.querySelector('.qty')?.value) || 0;
-      const unit = parseFloat(row.querySelector('.unit')?.value) || 0;
+      const sanitizedRow = sanitizeBudgetRow(row);
+      const qty = sanitizedRow.qty;
+      const unit = sanitizedRow.unit;
       
       if (desc.trim()) {
         items.push({ desc, qty, unit, total: qty * unit });
@@ -312,15 +373,16 @@ if (saveBtn) {
       validity: ($('validity')?.value || '').toString().trim(),
       customer: ($('customer')?.value || '').toString().trim(),
       notes: ($('notes')?.value || '').toString().trim(),
-      retention: ($('retention')?.value || '').toString().trim(),
+      retention: sanitizeRetentionInput().toString(),
       status: ($('status')?.value || 'pending').toString().trim(),
       tags: ($('tags')?.value || '').toString().trim(),
       items,
       total: updateTotals()
     };
+    const validationMessage = validateBudgetFormData(data);
     
-    if (!data.date || !data.customer) {
-      alert('Por favor complete: fecha y cliente.');
+    if (validationMessage) {
+      alert(validationMessage);
       return;
     }
     
