@@ -144,24 +144,31 @@ const STATUS_RULES = {
     }
   },
   budget: {
-    defaultValue: "pending",
+    defaultValue: "draft",
     aliases: {
-      pending: "pending",
-      free: "pending",
-      enviado: "pending",
-      approved: "approved",
-      aceptado: "approved",
+      draft: "draft",
+      borrador: "draft",
+      pending: "draft",
+      free: "draft",
+      sent: "sent",
+      enviado: "sent",
+      emit: "sent",
+      approved: "accepted",
+      aceptado: "accepted",
+      accepted: "accepted",
       rejected: "rejected",
       rechazado: "rejected"
     },
     labels: {
-      pending: "Pendiente",
-      approved: "Aprobado",
+      draft: "Draft",
+      sent: "Sent",
+      accepted: "Accepted",
       rejected: "Rechazado"
     },
     transitions: {
-      pending: ["pending", "approved", "rejected"],
-      approved: ["approved"],
+      draft: ["draft", "sent"],
+      sent: ["sent", "accepted", "rejected"],
+      accepted: ["accepted"],
       rejected: ["rejected"]
     }
   },
@@ -1049,7 +1056,8 @@ function buildDashboardSummary(invoicesIssued, invoicesReceived, expenses, budge
     return isInvoiceOverdue(invoice);
   });
   var pendingBudgets = budgetList.filter(function(budget) {
-    return normalizeStatusValue("budget", budget.status) === "pending";
+    var status = normalizeStatusValue("budget", budget.status);
+    return status === "draft" || status === "sent";
   });
 
   return {

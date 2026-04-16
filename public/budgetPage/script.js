@@ -12,7 +12,7 @@ function getBudgetStatusValue(budget) {
   if (window.StatusEngine && typeof window.StatusEngine.normalizeStatusValue === 'function') {
     return window.StatusEngine.normalizeStatusValue('budget', budget && budget.status);
   }
-  return (budget && budget.status) || 'pending';
+  return (budget && budget.status) || 'draft';
 }
 
 function getBudgetStatusLabel(budget) {
@@ -25,7 +25,7 @@ function getBudgetStatusLabel(budget) {
 
 function getBudgetStatusClass(budget) {
   var status = getBudgetStatusValue(budget);
-  if (status === 'approved') return 'badge-paid';
+  if (status === 'accepted') return 'badge-paid';
   if (status === 'rejected') return 'badge-late';
   return 'badge-pending';
 }
@@ -121,7 +121,7 @@ async function saveUserBudget(budget) {
     customer: budget.customer || '',
     notes: budget.notes || '',
     retention: budget.retention || '',
-    status: budget.status || 'pending',
+    status: budget.status || 'draft',
     tags: budget.tags || '',
     items: budget.items || [],
     total: Number(budget.total || 0),
@@ -321,7 +321,7 @@ function clearForm() {
   }
   const statusSelect = $('status');
   if (statusSelect) {
-    statusSelect.value = 'pending';
+    statusSelect.value = 'draft';
   }
   const retentionInput = $('retention');
   if (retentionInput) {
@@ -374,7 +374,7 @@ if (saveBtn) {
       customer: ($('customer')?.value || '').toString().trim(),
       notes: ($('notes')?.value || '').toString().trim(),
       retention: sanitizeRetentionInput().toString(),
-      status: ($('status')?.value || 'pending').toString().trim(),
+      status: ($('status')?.value || 'draft').toString().trim(),
       tags: ($('tags')?.value || '').toString().trim(),
       items,
       total: updateTotals()
