@@ -232,12 +232,12 @@ function renderPaymentSummaryCards(totals) {
   if (!container) return;
   
   var methods = [
-    {key: 'efectivo', icon: '💵', label: 'Efectivo'},
-    {key: 'tarjeta', icon: '💳', label: 'Tarjeta'},
-    {key: 'transferencia', icon: '🏦', label: 'Transferencia'},
-    {key: 'recibo', icon: '📄', label: 'Recibo'},
-    {key: 'cheque', icon: '✉️', label: 'Cheque'},
-    {key: 'paypal', icon: '💸', label: 'Paypal'}
+    {key: 'efectivo', icon: 'EF', label: 'Efectivo'},
+    {key: 'tarjeta', icon: 'TJ', label: 'Tarjeta'},
+    {key: 'transferencia', icon: 'TR', label: 'Transferencia'},
+    {key: 'recibo', icon: 'RB', label: 'Recibo'},
+    {key: 'cheque', icon: 'CH', label: 'Cheque'},
+    {key: 'paypal', icon: 'PP', label: 'Paypal'}
   ];
   
   var html = '';
@@ -475,7 +475,7 @@ async function renderInvoices() {
       var paymentNotes = form.querySelector('[name="paymentNotes"]').value;
       
       if (!paymentMethod) {
-        alert('Por favor, selecciona el método de pago.');
+        alert('Por favor, selecciona el método de cobro.');
         return;
       }
       if (!paymentDate) {

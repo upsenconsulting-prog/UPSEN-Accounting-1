@@ -104,7 +104,12 @@
       background: var(--metric3-bg); color: var(--metric3-text); font-weight: 600; box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     }
     /* MAIN CONTENT */
-    .main-content { margin-left: 260px; padding: 32px; min-height: 100vh; }
+    .main-content {
+      margin-left: 260px;
+      padding: 16px 18px;
+      min-height: 100vh;
+      width: calc(100% - 260px);
+    }
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
     .page-title { font-size: 1.8em; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 15px; margin: 0; }
     .page-title i { color: var(--metric3-text); }
@@ -237,6 +242,11 @@
       overflow: visible;
     }
     @media (max-width: 992px) {
+      .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 12px;
+      }
       table { font-size: 0.85rem; }
       th {
         font-size: 0.8rem;
@@ -287,14 +297,19 @@
     /* RESPONSIVE */
     @media (max-width: 992px) {
       .sidebar { position: relative; width: 100%; min-height: auto; border-right: none; border-bottom: 1px solid var(--border); }
-      .main-content { margin-left: 0; padding: 20px; }
+      .main-content { margin-left: 0; width: 100%; padding: 12px; }
     }
   </style>
 </head>
 <body>
   <style>
     /* MAIN CONTENT */
-    .main-content { margin-left: 260px; padding: 32px; min-height: 100vh; }
+    .main-content {
+      margin-left: 260px;
+      padding: 16px 18px;
+      min-height: 100vh;
+      width: calc(100% - 260px);
+    }
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
     .page-title { font-size: 1.8em; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 15px; margin: 0; }
     .page-title i { color: var(--metric3-text); }
@@ -509,7 +524,7 @@
     /* RESPONSIVE */
     @media (max-width: 992px) {
       .sidebar { position: relative; width: 100%; min-height: auto; border-right: none; border-bottom: 1px solid var(--border); }
-      .main-content { margin-left: 0; padding: 20px; }
+      .main-content { margin-left: 0; width: 100%; padding: 12px; }
       .table { font-size: 0.85rem; }
       .table th { font-size: 0.8rem; padding: 8px 4px !important; }
       .table td { padding: 8px 4px !important; font-size: 0.85rem; }
@@ -645,12 +660,12 @@
              <label class="form-label">Método Pago</label>
              <select id="paymentFilter" class="form-select">
                <option value="todas">Todas</option>
-               <option value="efectivo">💵 Efectivo</option>
-               <option value="tarjeta">💳 Tarjeta</option>
-               <option value="transferencia">🏦 Transferencia</option>
-               <option value="recibo">📄 Recibo</option>
-               <option value="cheque">✉️ Cheque</option>
-               <option value="paypal">💸 Paypal</option>
+               <option value="efectivo">Efectivo</option>
+               <option value="tarjeta">Tarjeta</option>
+               <option value="transferencia">Transferencia</option>
+               <option value="recibo">Recibo</option>
+               <option value="cheque">Cheque</option>
+               <option value="paypal">Paypal</option>
              </select>
            </div>
            <div class="col-md-2">
@@ -759,12 +774,12 @@
              <label class="form-label">Método de pago <small>(si Pagada)</small></label>
              <select name="paymentMethod" class="form-select">
                <option value="">-- Seleccionar --</option>
-               <option value="efectivo">💵 Efectivo</option>
-               <option value="tarjeta">💳 Tarjeta</option>
-               <option value="transferencia">🏦 Ingreso/Transferencia</option>
-               <option value="recibo">📄 Recibo Bancario</option>
-               <option value="cheque">✉️ Pagaré/Cheque</option>
-               <option value="paypal">💸 Paypal</option>
+               <option value="efectivo">Efectivo</option>
+               <option value="tarjeta">Tarjeta</option>
+               <option value="transferencia">Ingreso/Transferencia</option>
+               <option value="recibo">Recibo Bancario</option>
+               <option value="cheque">Pagaré/Cheque</option>
+               <option value="paypal">Paypal</option>
              </select>
            </div>
            <div class="mb-3">
@@ -800,12 +815,12 @@
              <label class="form-label">Método de pago <span class="text-danger">*</span></label>
              <select name="paymentMethod" class="form-select" required>
                <option value="">-- Seleccionar método --</option>
-               <option value="efectivo">💵 Efectivo</option>
-               <option value="tarjeta">💳 Tarjeta</option>
-               <option value="transferencia">🏦 Ingreso/Transferencia</option>
-               <option value="recibo">📄 Recibo Bancario</option>
-               <option value="cheque">✉️ Pagaré/Cheque</option>
-               <option value="paypal">💸 Paypal</option>
+               <option value="efectivo">Efectivo</option>
+               <option value="tarjeta">Tarjeta</option>
+               <option value="transferencia">Ingreso/Transferencia</option>
+               <option value="recibo">Recibo Bancario</option>
+               <option value="cheque">Pagaré/Cheque</option>
+               <option value="paypal">Paypal</option>
              </select>
            </div>
            <div class="mb-3">
