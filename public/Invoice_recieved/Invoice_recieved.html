@@ -217,8 +217,24 @@
     }
     th:first-child { border-radius: 8px 0 0 0; }
     th:last-child { border-radius: 0 8px 0 0; }
+    .modern-card {
+      position: relative;
+      overflow: visible;
+    }
+    .modern-card.dropdown-open {
+      z-index: 4000;
+    }
     .table-responsive {
+      position: relative;
+      overflow-x: auto;
+      overflow-y: visible;
       -webkit-overflow-scrolling: touch;
+      z-index: 10;
+    }
+    .table-responsive .dropdown-menu {
+      z-index: 5000;
+      max-height: none;
+      overflow: visible;
     }
     @media (max-width: 992px) {
       table { font-size: 0.85rem; }
@@ -427,6 +443,10 @@
       padding: 12px 8px;
       font-size: 0.85rem;
       white-space: nowrap;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: var(--card-bg);
     }
     .table td {
       background: transparent;

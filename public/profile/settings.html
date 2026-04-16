@@ -90,7 +90,7 @@
             <input type="text" class="form-control" id="companyWebsite" placeholder="www.ejemplo.com">
           </div>
         </div>
-        <button class="btn btn-primary" onclick="saveCompanySettings()"><i class="fas fa-save me-2"></i>Guardar Empresa</button>
+        <button class="btn btn-primary" onclick="saveCompanySettings()"><i class="fas fa-save me-2"></i>Guarda PERFIL</button>
       </div>
       <div class="modern-card">
         <h5 class="section-title"><i class="fas fa-sliders-h"></i> Preferencias</h5>
@@ -107,8 +107,8 @@
           <div class="col-md-4 mb-3">
             <label class="form-label">Idioma</label>
             <select class="form-select" id="settingLanguage">
-              <option value="es">Espanol</option>
-              <option value="pt">Portugues</option>
+              <option value="es">Español</option>
+              <option value="pt">Portugués</option>
               <option value="en">English</option>
             </select>
           </div>
@@ -118,6 +118,34 @@
               <option value="light">Claro</option>
               <option value="dark">Oscuro</option>
             </select>
+          </div>
+        </div>
+        <hr>
+        <h6 class="mb-3" style="color:#2a4d9c;"><i class="fas fa-file-invoice me-2"></i>Resumen de facturacion (Dashboard)</h6>
+        <div class="row">
+          <div class="col-md-6 mb-2">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="billingShowPlan">
+              <label class="form-check-label" for="billingShowPlan">Mostrar estado del plan</label>
+            </div>
+          </div>
+          <div class="col-md-6 mb-2">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="billingShowMonthUsage">
+              <label class="form-check-label" for="billingShowMonthUsage">Mostrar uso del mes</label>
+            </div>
+          </div>
+          <div class="col-md-6 mb-2">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="billingShowPending">
+              <label class="form-check-label" for="billingShowPending">Mostrar pendientes</label>
+            </div>
+          </div>
+          <div class="col-md-6 mb-2">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="billingShowUpgradeWarning">
+              <label class="form-check-label" for="billingShowUpgradeWarning">Mostrar aviso de mejora de plan</label>
+            </div>
           </div>
         </div>
         <button class="btn btn-success" onclick="savePreferences()"><i class="fas fa-check me-2"></i>Guardar Preferencias</button>
@@ -132,7 +160,7 @@
           <input class="form-check-input" type="checkbox" id="notifyBrowser" style="width: 3em; height: 1.5em;">
           <label class="form-check-label ms-2" for="notifyBrowser">Notificaciones en el navegador</label>
         </div>
-        <button class="btn btn-primary" onclick="saveNotifications()"><i class="fas fa-bell me-2"></i>Guardar Notificaciones</button>
+        <button class="btn btn-primary" onclick="saveNotifications()"><i class="fas fa-bell me-2"></i>Guardar perfil</button>
       </div>
     </main>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -239,6 +267,12 @@ function loadSettings() {
   var notifications = settings.notifications || {};
   if (getEl('notifyEmail')) getEl('notifyEmail').checked = notifications.email !== false;
   if (getEl('notifyBrowser')) getEl('notifyBrowser').checked = notifications.browser || false;
+
+  var billingSettings = settings.billingSummaryCard || {};
+  if (getEl('billingShowPlan')) getEl('billingShowPlan').checked = billingSettings.showPlan !== false;
+  if (getEl('billingShowMonthUsage')) getEl('billingShowMonthUsage').checked = billingSettings.showMonthUsage !== false;
+  if (getEl('billingShowPending')) getEl('billingShowPending').checked = billingSettings.showPending !== false;
+  if (getEl('billingShowUpgradeWarning')) getEl('billingShowUpgradeWarning').checked = billingSettings.showUpgradeWarning !== false;
 }
 function saveCompanySettings() {
   var userId = getUserId();
@@ -283,7 +317,13 @@ function savePreferences() {
   var settings = {
     currency: getEl('settingCurrency')?.value || 'EUR',
     language: getEl('settingLanguage')?.value || 'es',
-    theme: getEl('settingTheme')?.value || 'light'
+    theme: getEl('settingTheme')?.value || 'light',
+    billingSummaryCard: {
+      showPlan: getEl('billingShowPlan')?.checked !== false,
+      showMonthUsage: getEl('billingShowMonthUsage')?.checked !== false,
+      showPending: getEl('billingShowPending')?.checked !== false,
+      showUpgradeWarning: getEl('billingShowUpgradeWarning')?.checked !== false
+    }
   };
 
   localStorage.setItem(THEME_STORAGE_KEY, settings.theme);
@@ -293,7 +333,8 @@ function savePreferences() {
     if (session) {
       var data = JSON.parse(session);
       if (data && data.user) {
-        data.user.settings = Object.assign({}, data.user.settings || {}, settings);
+        settings = Object.assign({}, data.user.settings || {}, settings);
+        data.user.settings = settings;
         localStorage.setItem('upsen_current_user', JSON.stringify(data));
       }
     }
@@ -333,7 +374,7 @@ function saveNotifications() {
   } catch (e) {}
   
   AuthSystem.updateUserProfile({ settings: settings }).then(function(result) {
-    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-bell me-2"></i>Guardar Notificaciones'; }
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-bell me-2"></i>Guardar perfil'; }
     showAlert(result.message || 'Notificaciones guardadas!', 'success');
   });
 }

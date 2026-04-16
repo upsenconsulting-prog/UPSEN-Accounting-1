@@ -883,8 +883,11 @@
         <div class="col-md-6 mb-3">
           <div class="modern-card billing-card">
             <h5><i class="fas fa-file-invoice me-2"></i>Resumen de facturación</h5>
-            <p>Has alcanzado el número máximo de documentos permitidos.</p>
-            <span class="billing-warning"><i class="fas fa-exclamation-triangle me-2"></i>Para aumentar los límites, contrata un plan superior.</span>
+            <div id="billingSummaryContent">
+              <p id="billingSummaryPrimary">Has alcanzado el número máximo de documentos permitidos.</p>
+              <div id="billingSummaryDetails"></div>
+              <span id="billingSummaryWarning" class="billing-warning"><i class="fas fa-exclamation-triangle me-2"></i>Para aumentar los límites, contrata un plan superior.</span>
+            </div>
           </div>
         </div>
       </div>

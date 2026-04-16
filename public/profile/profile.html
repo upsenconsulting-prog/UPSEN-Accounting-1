@@ -530,11 +530,11 @@ function loadProfileFromLocal(user) {
   setText('displayEmail', user.email || '-');
   setText('displayRole', user.role === 'admin' ? 'Administrador' : 'Usuario');
   var curr = {'EUR':'Euro (EUR)','USD':'Dolar (USD)','GBP':'Libra (GBP)','BRL':'Real (BRL)'};
-  var lang = {'es':'Espanol','pt':'Portugues','en':'English'};
+  var lang = {'es':'Español','pt':'Portugués','en':'English'};
   var them = {'light':'Claro','dark':'Oscuro'};
   var s = user.settings || {};
   setText('displayCurrency', curr[s.currency] || 'Euro (EUR)');
-  setText('displayLanguage', lang[s.language] || 'Espanol');
+  setText('displayLanguage', lang[s.language] || 'Español');
   setText('displayTheme', them[s.theme] || 'Claro');
   setText('displayCreatedAt', formatDate(user.createdAt));
   setText('displayLastLogin', user.lastLogin ? formatDate(user.lastLogin) : 'Primera sesion');

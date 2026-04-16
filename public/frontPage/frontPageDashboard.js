@@ -8,6 +8,43 @@ function formatEUR(n) {
   return "EUR " + Number(n || 0).toFixed(2);
 }
 
+function getCurrentUserData() {
+  var auth = window.AuthService || window.AuthSystem || window.Auth;
+  if (auth && typeof auth.getCurrentUser === 'function') {
+    var authUser = auth.getCurrentUser();
+    if (authUser) return authUser;
+  }
+
+  if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+    return window.firebaseAuth.currentUser;
+  }
+
+  try {
+    var session = localStorage.getItem('upsen_current_user');
+    if (session) {
+      var data = JSON.parse(session);
+      if (data && data.user) return data.user;
+    }
+  } catch (e) {}
+
+  return null;
+}
+
+function getBillingSummaryConfig() {
+  var defaults = {
+    showPlan: true,
+    showMonthUsage: true,
+    showPending: true,
+    showUpgradeWarning: true
+  };
+
+  var user = getCurrentUserData();
+  var userSettings = user && user.settings ? user.settings : {};
+  var savedConfig = userSettings.billingSummaryCard || {};
+
+  return Object.assign({}, defaults, savedConfig);
+}
+
 // Chart instances
 var dashboardChart = null;
 var expensesChart = null;
@@ -352,6 +389,63 @@ function renderDashboardKPIs() {
   if ($('kpi-expenses-total')) $('kpi-expenses-total').textContent = formatEUR(totalExpenses);
   if ($('kpi-expenses-count')) $('kpi-expenses-count').textContent = String(countExpenses);
   if ($('kpi-expenses-category')) $('kpi-expenses-category').textContent = topCategory || '-';
+}
+
+function renderBillingSummaryCard() {
+  var primaryEl = $('billingSummaryPrimary');
+  var detailsEl = $('billingSummaryDetails');
+  var warningEl = $('billingSummaryWarning');
+
+  if (!primaryEl || !detailsEl || !warningEl) return;
+
+  var config = getBillingSummaryConfig();
+  var now = new Date();
+  var y = now.getFullYear();
+  var m = now.getMonth();
+
+  var totalMonthDocs =
+    countInvoicesIssuedMonthYear(y, m) +
+    countInvoicesReceivedMonthYear(y, m) +
+    countExpensesMonthYear(y, m);
+
+  var pendingIssued = countInvoicesIssuedPending();
+  var pendingReceived = countInvoicesReceivedPending();
+
+  var user = getCurrentUserData();
+  var planName = (user && user.plan) ? String(user.plan) : 'basico gratuito';
+
+  var primaryText = 'No hay informacion activa para mostrar en esta tarjeta.';
+  if (config.showMonthUsage) {
+    primaryText = 'Este mes has registrado ' + totalMonthDocs + ' documentos en total.';
+  } else if (config.showPlan) {
+    primaryText = 'Plan actual: ' + planName + '.';
+  } else if (config.showPending) {
+    primaryText = 'Pendientes actuales: ' + (pendingIssued + pendingReceived) + ' facturas.';
+  }
+
+  primaryEl.textContent = primaryText;
+
+  var detailLines = [];
+  if (config.showPlan) {
+    detailLines.push('<p class="mb-1"><strong>Plan:</strong> ' + planName + '</p>');
+  }
+  if (config.showMonthUsage) {
+    detailLines.push(
+      '<p class="mb-1"><strong>Uso del mes:</strong> ' +
+      countInvoicesIssuedMonthYear(y, m) + ' emitidas, ' +
+      countInvoicesReceivedMonthYear(y, m) + ' recibidas, ' +
+      countExpensesMonthYear(y, m) + ' gastos.</p>'
+    );
+  }
+  if (config.showPending) {
+    detailLines.push(
+      '<p class="mb-0"><strong>Pendientes:</strong> ' +
+      pendingIssued + ' emitidas y ' + pendingReceived + ' recibidas.</p>'
+    );
+  }
+
+  detailsEl.innerHTML = detailLines.join('');
+  warningEl.style.display = config.showUpgradeWarning ? 'inline-flex' : 'none';
 }
 
 // ========== CHARTS ==========
@@ -858,6 +952,7 @@ function renderDashboardContent() {
   var m = now.getMonth();
 
   renderDashboardKPIs();
+  renderBillingSummaryCard();
   renderExpensesChart();
   renderForecastChart();
   renderPaymentsForecastChart();

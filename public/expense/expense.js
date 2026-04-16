@@ -650,7 +650,52 @@ function exportExpensesFallback(format) {
   exportExpenses(format);
 }
 
-function exportExpensesToPDF(list) {
+function getProfileImageForExport() {
+  if (window.UPSEN_getProfileImage) {
+    return window.UPSEN_getProfileImage() || '';
+  }
+  try {
+    var session = localStorage.getItem('upsen_current_user');
+    if (!session) return '';
+    var data = JSON.parse(session);
+    var user = data && data.user ? data.user : null;
+    if (!user) return '';
+    return user.profileImage || (user.companyData && user.companyData.logo) || '';
+  } catch (e) {
+    return '';
+  }
+}
+
+function addLogoToPdfHeader(doc, imageData, x, y, w, h) {
+  return new Promise(function(resolve) {
+    if (!imageData) {
+      resolve(false);
+      return;
+    }
+
+    var imageFormat = 'JPEG';
+    if (typeof imageData === 'string' && imageData.indexOf('data:image/') === 0) {
+      var mime = imageData.substring(5, imageData.indexOf(';')).toLowerCase();
+      if (mime.indexOf('png') !== -1 || mime.indexOf('webp') !== -1) {
+        imageFormat = 'PNG';
+      }
+    }
+
+    var img = new Image();
+    img.onload = function() {
+      try {
+        doc.addImage(img, imageFormat, x, y, w, h);
+        resolve(true);
+      } catch (e) {
+        resolve(false);
+      }
+    };
+    img.onerror = function() { resolve(false); };
+    img.src = imageData;
+  });
+}
+
+async function exportExpensesToPDF(list) {
   if (typeof window.jspdf === 'undefined') {
     alert('Biblioteca PDF no disponible.');
     return;
@@ -665,6 +710,7 @@ function exportExpensesToPDF(list) {
   doc.text('UPSEN Accounting', 105, 18, {align: 'center'});
   doc.setFontSize(12);
   doc.text('Gastos', 105, 28, {align: 'center'});
+  await addLogoToPdfHeader(doc, getProfileImageForExport(), 15, 7, 22, 22);
   
   doc.setTextColor(100);
   doc.setFontSize(10);
