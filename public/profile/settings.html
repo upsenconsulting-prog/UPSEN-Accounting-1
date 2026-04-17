@@ -36,6 +36,58 @@
     .form-check-input:checked { background-color: #2a4d9c; border-color: #2a4d9c; }
     .form-switch .form-check-input { width: 3em; height: 1.5em; cursor: pointer; }
 
+    /* LOGO SECTION STYLES */
+    .logo-preview {
+      width: 100%;
+      min-height: 250px;
+      border: 3px dashed #2a4d9c;
+      border-radius: 12px;
+      padding: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f8f9fa 0%, #eef1f7 100%);
+      margin-bottom: 0;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    .logo-preview:hover {
+      border-color: #3a6cd6;
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    }
+    .logo-preview * {
+      pointer-events: none;
+    }
+    .logo-preview img {
+      max-width: 90%;
+      max-height: 90%;
+      object-fit: contain;
+    }
+    .logo-preview.empty {
+      color: #999;
+      font-size: 1em;
+    }
+    .file-input-label {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 16px;
+      background: linear-gradient(135deg, #2a4d9c, #3a6cd6);
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 500;
+      font-size: 0.9rem;
+      gap: 8px;
+      border: none;
+    }
+    .file-input-label:hover {
+      background: linear-gradient(135deg, #1a3f8c, #2a5cc6);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(42, 77, 156, 0.4);
+    }
+    input[type="file"] { display: none; }
+
     body.theme-dark { background-color: #0f172a; color: #e2e8f0; }
     body.theme-dark .main-content { background: #0f172a; }
     body.theme-dark .modern-card { background: #1e293b; border-color: #334155; box-shadow: 0 4px 20px rgba(0,0,0,0.35); }
@@ -91,6 +143,44 @@
           </div>
         </div>
         <button class="btn btn-primary" onclick="saveCompanySettings()"><i class="fas fa-save me-2"></i>Guarda PerfilL</button>
+      </div>
+      <div class="modern-card">
+        <h5 class="section-title"><i class="fas fa-image"></i> Logo de la Empresa</h5>
+        <div class="row">
+          <div class="col-md-6">
+            <p style="color: #666; font-size: 0.9em; margin-bottom: 20px;">Sube el logo de tu empresa. Se mostrará en todas las páginas.</p>
+            <div class="logo-preview empty" id="logoPreview" onclick="document.getElementById('logoUpload').click();">
+              <div style="text-align: center;">
+                <i class="fas fa-image" style="font-size: 3em; color: #ccc; margin-bottom: 10px;"></i>
+                <p style="margin: 0; color: #999;">Sin logo cargado</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div style="background: #f8f9fa; border-radius: 10px; padding: 20px; height: 100%; display: flex; flex-direction: column; justify-content: center;">
+              <h6 style="margin-top: 0; color: #2a4d9c; font-weight: 600;">Formatos soportados</h6>
+              <ul style="margin-bottom: 20px; padding-left: 20px; color: #666; font-size: 0.9em;">
+                <li>PNG (recomendado)</li>
+                <li>JPG / JPEG</li>
+                <li>WebP</li>
+              </ul>
+              <h6 style="color: #2a4d9c; font-weight: 600;">Recomendaciones</h6>
+              <ul style="margin-bottom: 0; padding-left: 20px; color: #666; font-size: 0.9em;">
+                <li>Tamaño máximo: 5MB</li>
+                <li>Mejor: 200x80px</li>
+                <li>Fondo transparente</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top: 25px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+          <label class="file-input-label" for="logoUpload" style="margin: 0;">
+            <i class="fas fa-cloud-upload-alt me-2"></i>Cargar Logo
+          </label>
+          <input type="file" id="logoUpload" accept="image/*">
+          <button class="btn btn-success" onclick="saveLogo()"><i class="fas fa-save me-2"></i>Guardar Logo</button>
+          <button class="btn btn-danger" id="deleteLogoBtn" onclick="deleteLogo()" style="display: none;"><i class="fas fa-trash me-2"></i>Eliminar</button>
+        </div>
       </div>
       <div class="modern-card">
         <h5 class="section-title"><i class="fas fa-sliders-h"></i> Preferencias</h5>
@@ -245,6 +335,9 @@ function loadSettings() {
   if (getEl('billingShowMonthUsage')) getEl('billingShowMonthUsage').checked = billingSettings.showMonthUsage !== false;
   if (getEl('billingShowPending')) getEl('billingShowPending').checked = billingSettings.showPending !== false;
   if (getEl('billingShowUpgradeWarning')) getEl('billingShowUpgradeWarning').checked = billingSettings.showUpgradeWarning !== false;
+
+  // Load logo preview
+  loadLogoPreview();
 }
 function saveCompanySettings() {
   var userId = getUserId();
@@ -357,6 +450,114 @@ function applyTheme(theme) {
   } else {
     document.body.classList.remove('theme-dark');
   }
+}
+
+// LOGO FUNCTIONS
+var logoFileData = null;
+
+function loadLogoPreview() {
+  try {
+    var session = localStorage.getItem('upsen_current_user');
+    if (session) {
+      var data = JSON.parse(session);
+      if (data && data.user && data.user.companyData && data.user.companyData.logo) {
+        var preview = getEl('logoPreview');
+        var deleteBtn = getEl('deleteLogoBtn');
+        if (preview) {
+          preview.innerHTML = '<img src="' + data.user.companyData.logo + '" alt="Logo">';
+          preview.classList.remove('empty');
+        }
+        if (deleteBtn) deleteBtn.style.display = 'inline-block';
+      }
+    }
+  } catch (e) { console.log('Error loading logo preview:', e); }
+}
+
+getEl('logoUpload')?.addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  
+  if (file.size > 5 * 1024 * 1024) {
+    showAlert('Logo muy grande. Máximo 5MB.', 'error');
+    return;
+  }
+  
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    logoFileData = e.target.result;
+    var preview = getEl('logoPreview');
+    if (preview) {
+      preview.innerHTML = '<img src="' + logoFileData + '" alt="Logo">';
+      preview.classList.remove('empty');
+    }
+    showAlert('Logo cargado! Clica "Guardar Logo" para confirmar.', 'success');
+  };
+  reader.readAsDataURL(file);
+});
+
+function saveLogo() {
+  if (!logoFileData) {
+    showAlert('Selecciona un logo primero.', 'error');
+    return;
+  }
+  
+  var userId = getUserId();
+  if (!userId) { showAlert('Error: No hay usuario.', 'error'); return; }
+  
+  var saveBtn = getEl('saveLogo');
+  
+  try {
+    var session = localStorage.getItem('upsen_current_user');
+    if (session) {
+      var data = JSON.parse(session);
+      if (data && data.user) {
+        if (!data.user.companyData) data.user.companyData = {};
+        data.user.companyData.logo = logoFileData;
+        localStorage.setItem('upsen_current_user', JSON.stringify(data));
+      }
+    }
+  } catch (e) {}
+  
+  AuthSystem.updateUserProfile({ 
+    companyData: { logo: logoFileData } 
+  }).then(function(result) {
+    showAlert('Logo guardado!', 'success');
+    logoFileData = null;
+    var deleteBtn = getEl('deleteLogoBtn');
+    if (deleteBtn) deleteBtn.style.display = 'inline-block';
+  });
+}
+
+function deleteLogo() {
+  if (!confirm('¿Eliminar el logo?')) return;
+  
+  var userId = getUserId();
+  if (!userId) { showAlert('Error: No hay usuario.', 'error'); return; }
+  
+  try {
+    var session = localStorage.getItem('upsen_current_user');
+    if (session) {
+      var data = JSON.parse(session);
+      if (data && data.user && data.user.companyData) {
+        delete data.user.companyData.logo;
+        localStorage.setItem('upsen_current_user', JSON.stringify(data));
+      }
+    }
+  } catch (e) {}
+  
+  AuthSystem.updateUserProfile({ 
+    companyData: { logo: null } 
+  }).then(function(result) {
+    showAlert('Logo eliminado!', 'success');
+    logoFileData = null;
+    var preview = getEl('logoPreview');
+    if (preview) {
+      preview.innerHTML = '<i class="fas fa-image me-2"></i>Sin logo';
+      preview.classList.add('empty');
+    }
+    var deleteBtn = getEl('deleteLogoBtn');
+    if (deleteBtn) deleteBtn.style.display = 'none';
+  });
 }
 // Logout function with Firebase sign out
 function doLogout() {
