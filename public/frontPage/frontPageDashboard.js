@@ -426,24 +426,8 @@ function renderBillingSummaryCard() {
   primaryEl.textContent = primaryText;
 
   var detailLines = [];
-  if (config.showPlan) {
-    detailLines.push('<p class="mb-1"><strong>Plan:</strong> ' + planName + '</p>');
-  }
-  if (config.showMonthUsage) {
-    detailLines.push(
-      '<p class="mb-1"><strong>Uso del mes:</strong> ' +
-      countInvoicesIssuedMonthYear(y, m) + ' emitidas, ' +
-      countInvoicesReceivedMonthYear(y, m) + ' recibidas, ' +
-      countExpensesMonthYear(y, m) + ' gastos.</p>'
-    );
-  }
-  if (config.showPending) {
-    detailLines.push(
-      '<p class="mb-0"><strong>Pendientes:</strong> ' +
-      pendingIssued + ' emitidas y ' + pendingReceived + ' recibidas.</p>'
-    );
-  }
-
+  // Details hidden - user request to remove detailed breakdown
+  
   detailsEl.innerHTML = detailLines.join('');
   warningEl.style.display = config.showUpgradeWarning ? 'inline-flex' : 'none';
 }
