@@ -266,6 +266,50 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .hidden { display: none !important; }
 
+    /* USER AVATAR SECTION */
+    .user-avatar {
+      width: 120px; height: 120px;
+      margin: 0 auto 15px;
+      background: linear-gradient(135deg, var(--metric3-bg), var(--metric1-bg));
+      color: var(--metric3-text);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5em;
+      font-weight: 700;
+      position: relative;
+      transition: all 0.3s;
+      object-fit: contain;
+    }
+    .user-avatar img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .avatar-edit-btn {
+      position: absolute;
+      bottom: 12px;
+      right: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--btn-primary-bg);
+      color: white;
+      border: 3px solid var(--card-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 1.1em;
+    }
+    .avatar-edit-btn:hover {
+      background: var(--metric1-text);
+      transform: scale(1.1);
+    }
+
     /* RESPONSIVE */
     @media (max-width: 992px) {
       .sidebar { position: relative; width: 100%; min-height: auto; border-right: none; border-bottom: 1px solid var(--border); }
@@ -284,7 +328,16 @@
       </div>
       <div id="alertMessage" class="alert hidden"></div>
       <div class="modern-card" style="text-align: center;">
-        <div class="user-avatar" id="userAvatar">U</div>
+        <div style="position: relative; display: inline-block; margin-bottom: 10px;">
+          <div class="user-avatar" id="userAvatar">
+            <span id="avatarInitials">U</span>
+            <img id="avatarImage" style="display: none;">
+          </div>
+          <label for="personalLogoUploadTop" class="avatar-edit-btn" title="Cambiar logo">
+            <i class="fas fa-plus"></i>
+          </label>
+          <input type="file" id="personalLogoUploadTop" accept="image/*" style="display: none;">
+        </div>
         <div class="user-name" id="userName">Usuario</div>
         <div class="user-email" id="userEmail">-</div>
         <span class="user-role" id="userRole">Usuario</span>
@@ -449,6 +502,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 var editModal = null;
 var passwordModal = null;
+var personalLogoFileData = null;
+
 function hideLoading() { var o = document.getElementById('loadingOverlay'); if (o) o.style.display = 'none'; }
 function getUserId() { try { var s = localStorage.getItem('upsen_current_user'); if (s) { var d = JSON.parse(s); if (d && d.user) return d.user.uid || d.user.id || 'demo'; } } catch (e) {} return 'demo'; }
 function getUserData(k) { try { var d = localStorage.getItem(k); if (d) return JSON.parse(d); } catch (e) {} return []; }
@@ -463,6 +518,28 @@ function formatDate(ds) {
   if (isNaN(d.getTime())) return '-';
   return d.toLocaleDateString('es-ES', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 }
+
+// Personal Logo Functions
+function loadPersonalLogo() {
+  try {
+    var session = localStorage.getItem('upsen_current_user');
+    if (!session) return;
+    
+    var data = JSON.parse(session);
+    var logo = data && data.user && data.user.personalData && data.user.personalData.logo;
+    
+    if (!logo) return;
+    
+    var avatarImg = document.getElementById('avatarImage');
+    var avatarInitials = document.getElementById('avatarInitials');
+    if (avatarImg) {
+      avatarImg.src = logo;
+      avatarImg.style.display = 'block';
+      if (avatarInitials) avatarInitials.style.display = 'none';
+    }
+  } catch (e) { console.log('Error loading personal logo:', e); }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   editModal = new bootstrap.Modal(document.getElementById('editProfileModal'));
   passwordModal = new bootstrap.Modal(document.getElementById('passwordModal'));
@@ -521,7 +598,11 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 function loadProfileFromLocal(user) {
   var initials = (user.name || user.email || 'U').substring(0,2).toUpperCase();
-  setText('userAvatar', initials);
+  
+  // Set initials first
+  var avatarInitials = document.getElementById('avatarInitials');
+  if (avatarInitials) avatarInitials.textContent = initials;
+  
   setText('userName', user.name || 'Usuario');
   setText('userEmail', user.email || '-');
   setText('userRole', user.role === 'admin' ? 'Administrador' : 'Usuario');
@@ -539,6 +620,7 @@ function loadProfileFromLocal(user) {
   setText('displayCreatedAt', formatDate(user.createdAt));
   setText('displayLastLogin', user.lastLogin ? formatDate(user.lastLogin) : 'Primera sesion');
   loadStats();
+  loadPersonalLogo();
 }
 function loadStats() {
   // Usar store.js para obter estatísticas
@@ -671,6 +753,118 @@ function logout() {
     }
 
     window.location.href = '../login.html';
+  }
+}
+
+// Personal Logo Upload Handler
+document.addEventListener('DOMContentLoaded', function() {
+  // Handle both upload inputs
+  var logoUploadInputs = ['personalLogoUpload', 'personalLogoUploadTop'];
+  
+  logoUploadInputs.forEach(function(inputId) {
+    var input = document.getElementById(inputId);
+    if (input) {
+      input.addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        
+        if (file.size > 5 * 1024 * 1024) {
+          showAlert('alertMessage', 'Logo muy grande. Máximo 5MB.', 'error');
+          return;
+        }
+        
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          personalLogoFileData = e.target.result;
+          
+          // Show preview in avatar
+          var avatarImg = document.getElementById('avatarImage');
+          var avatarInitials = document.getElementById('avatarInitials');
+          if (avatarImg) {
+            avatarImg.src = personalLogoFileData;
+            avatarImg.style.display = 'block';
+            if (avatarInitials) avatarInitials.style.display = 'none';
+          }
+          
+          showAlert('alertMessage', 'Logo cargado!', 'success');
+          // Auto-save immediately
+          savePersonalLogo();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  });
+});
+
+function savePersonalLogo() {
+  if (!personalLogoFileData) {
+    showAlert('alertMessage', 'Selecciona un logo primero.', 'error');
+    return;
+  }
+  
+  try {
+    var session = localStorage.getItem('upsen_current_user');
+    if (session) {
+      var data = JSON.parse(session);
+      if (data && data.user) {
+        if (!data.user.personalData) data.user.personalData = {};
+        data.user.personalData.logo = personalLogoFileData;
+        localStorage.setItem('upsen_current_user', JSON.stringify(data));
+      }
+    }
+  } catch (e) {}
+  
+  if (window.AuthSystem && window.AuthSystem.updateUserProfile) {
+    window.AuthSystem.updateUserProfile({ 
+      personalData: { logo: personalLogoFileData } 
+    }).then(function(result) {
+      showAlert('alertMessage', 'Logo guardado!', 'success');
+      personalLogoFileData = null;
+    });
+  } else {
+    showAlert('alertMessage', 'Logo guardado localmente!', 'success');
+    personalLogoFileData = null;
+  }
+}
+
+function deletePersonalLogo() {
+  if (!confirm('¿Eliminar el logo personal?')) return;
+  
+  try {
+    var session = localStorage.getItem('upsen_current_user');
+    if (session) {
+      var data = JSON.parse(session);
+      if (data && data.user && data.user.personalData) {
+        delete data.user.personalData.logo;
+        localStorage.setItem('upsen_current_user', JSON.stringify(data));
+      }
+    }
+  } catch (e) {}
+  
+  if (window.AuthSystem && window.AuthSystem.updateUserProfile) {
+    window.AuthSystem.updateUserProfile({ 
+      personalData: { logo: null } 
+    }).then(function(result) {
+      showAlert('alertMessage', 'Logo eliminado!', 'success');
+      personalLogoFileData = null;
+      // Reset avatar to initials
+      var avatarImg = document.getElementById('avatarImage');
+      var avatarInitials = document.getElementById('avatarInitials');
+      if (avatarImg && avatarInitials) {
+        avatarImg.style.display = 'none';
+        avatarInitials.style.display = 'block';
+      }
+    });
+  } else {
+    showAlert('alertMessage', 'Logo eliminado!', 'success');
+    personalLogoFileData = null;
+    // Reset avatar to initials
+    var avatarImg = document.getElementById('avatarImage');
+    var avatarInitials = document.getElementById('avatarInitials');
+    if (avatarImg && avatarInitials) {
+      avatarImg.style.display = 'none';
+      avatarInitials.style.display = 'block';
+    }
   }
 }
 </script>
