@@ -8,6 +8,43 @@ function formatEUR(n) {
   return "EUR " + Number(n || 0).toFixed(2);
 }
 
+function getCurrentUserData() {
+  var auth = window.AuthService || window.AuthSystem || window.Auth;
+  if (auth && typeof auth.getCurrentUser === 'function') {
+    var authUser = auth.getCurrentUser();
+    if (authUser) return authUser;
+  }
+
+  if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+    return window.firebaseAuth.currentUser;
+  }
+
+  try {
+    var session = localStorage.getItem('upsen_current_user');
+    if (session) {
+      var data = JSON.parse(session);
+      if (data && data.user) return data.user;
+    }
+  } catch (e) {}
+
+  return null;
+}
+
+function getBillingSummaryConfig() {
+  var defaults = {
+    showPlan: true,
+    showMonthUsage: true,
+    showPending: true,
+    showUpgradeWarning: true
+  };
+
+  var user = getCurrentUserData();
+  var userSettings = user && user.settings ? user.settings : {};
+  var savedConfig = userSettings.billingSummaryCard || {};
+
+  return Object.assign({}, defaults, savedConfig);
+}
+
 // Chart instances
 var dashboardChart = null;
 var expensesChart = null;
@@ -354,9 +391,50 @@ function renderDashboardKPIs() {
   if ($('kpi-expenses-category')) $('kpi-expenses-category').textContent = topCategory || '-';
 }
 
+function renderBillingSummaryCard() {
+  var primaryEl = $('billingSummaryPrimary');
+  var detailsEl = $('billingSummaryDetails');
+  var warningEl = $('billingSummaryWarning');
+
+  if (!primaryEl || !detailsEl || !warningEl) return;
+
+  var config = getBillingSummaryConfig();
+  var now = new Date();
+  var y = now.getFullYear();
+  var m = now.getMonth();
+
+  var totalMonthDocs =
+    countInvoicesIssuedMonthYear(y, m) +
+    countInvoicesReceivedMonthYear(y, m) +
+    countExpensesMonthYear(y, m);
+
+  var pendingIssued = countInvoicesIssuedPending();
+  var pendingReceived = countInvoicesReceivedPending();
+
+  var user = getCurrentUserData();
+  var planName = (user && user.plan) ? String(user.plan) : 'basico gratuito';
+
+  var primaryText = 'No hay informacion activa para mostrar en esta tarjeta.';
+  if (config.showMonthUsage) {
+    primaryText = 'Este mes has registrado ' + totalMonthDocs + ' documentos en total.';
+  } else if (config.showPlan) {
+    primaryText = 'Plan actual: ' + planName + '.';
+  } else if (config.showPending) {
+    primaryText = 'Pendientes actuales: ' + (pendingIssued + pendingReceived) + ' facturas.';
+  }
+
+  primaryEl.textContent = primaryText;
+
+  var detailLines = [];
+  // Details hidden - user request to remove detailed breakdown
+  
+  detailsEl.innerHTML = detailLines.join('');
+  warningEl.style.display = config.showUpgradeWarning ? 'inline-flex' : 'none';
+}
+
 // ========== CHARTS ==========
 function renderExpensesChart() {
-  var chartContainer = $('expensesChart');
+  var chartContainer = $('expensesDonutChart');
   if (!chartContainer) return;
 
   var ctx = chartContainer.getContext('2d');
@@ -369,7 +447,22 @@ function renderExpensesChart() {
   var labels = Object.keys(categoryData);
   var data = Object.values(categoryData);
 
-  var colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c'];
+  var legendContainerLeft = $('expenses-legend-left');
+  var legendContainerRight = $('expenses-legend');
+  var palette = [
+    '#3E74B5', '#4E84BF', '#5D92C7', '#6CA0CF',
+    '#2F8C88', '#3D9A95', '#4AA8A2', '#58B5AE',
+    '#699F4D', '#77AA5A', '#85B567', '#93C074',
+    '#C48E3A', '#CF9B47', '#D9A855', '#E2B462',
+    '#C25151', '#CC5E5E', '#D66B6B', '#DF7878',
+    '#6C58B3', '#7A66BD', '#8873C5', '#9581CD',
+    '#5763B7', '#6671BF', '#7580C7', '#848ECE',
+    '#BC5F95', '#C86EA1', '#D37DAC', '#DD8DB8'
+  ];
+
+  var chartLabels = labels.length > 0 ? labels : ['Sin datos'];
+  var chartData = data.length > 0 ? data : [1];
+  var chartColors = chartLabels.map(function(_, i) { return palette[i % palette.length]; });
 
   if (expensesChart) {
     expensesChart.destroy();
@@ -378,25 +471,110 @@ function renderExpensesChart() {
   expensesChart = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: labels.length > 0 ? labels : ['Sin datos'],
+      labels: chartLabels,
       datasets: [{
-        data: data.length > 0 ? data : [1],
-        backgroundColor: labels.map(function(_, i) { return colors[i % colors.length]; }),
-        borderWidth: 0
+        data: chartData,
+        backgroundColor: chartColors,
+        borderWidth: 0,
+        hoverOffset: 6
       }]
     },
     options: {
       responsive: true,
-      maintainAspectRatio: false,
+      maintainAspectRatio: true,
+      cutout: '55%',
+      layout: {
+        padding: 12
+      },
       plugins: {
-        legend: { position: 'right' },
-        title: {
-          display: true,
-          text: 'Gastos por categoria (mes actual)',
-          font: { size: 14, weight: '600' }
+        legend: {
+          display: false
+        },
+        tooltip: {
+          enabled: false
         }
+      },
+      animation: {
+        duration: 300
       }
     }
+  });
+
+  renderCustomLegend(expensesChart, legendContainerLeft, legendContainerRight);
+}
+
+function renderCustomLegend(chart, leftContainer, rightContainer) {
+  if (!chart || !rightContainer) return;
+
+  var labels = chart.data.labels || [];
+  var colors = (chart.data.datasets && chart.data.datasets[0] && chart.data.datasets[0].backgroundColor) || [];
+
+  var useBothSides = !!leftContainer && labels.length >= 12;
+
+  if (leftContainer) {
+    leftContainer.innerHTML = '';
+    leftContainer.style.display = useBothSides ? 'flex' : 'none';
+  }
+
+  rightContainer.innerHTML = '';
+  rightContainer.style.display = 'flex';
+
+  function createLegendItem(label, index, targetContainer) {
+    if (!targetContainer) return;
+
+    var item = document.createElement('div');
+    item.className = 'chart-legend-item';
+    item.setAttribute('role', 'button');
+    item.setAttribute('tabindex', '0');
+    item.setAttribute('aria-label', 'Mostrar u ocultar ' + label);
+    item.title = 'Clic para ocultar o mostrar esta categoria';
+
+    var color = document.createElement('span');
+    color.className = 'chart-legend-color';
+    color.style.backgroundColor = colors[index] || '#1D4ED8';
+
+    var text = document.createElement('span');
+    text.className = 'chart-legend-label';
+    text.textContent = label;
+
+    item.appendChild(color);
+    item.appendChild(text);
+    targetContainer.appendChild(item);
+
+    function syncLegendVisibilityState() {
+      var isVisible = chart.getDataVisibility ? chart.getDataVisibility(index) : true;
+      item.classList.toggle('is-hidden', !isVisible);
+    }
+
+    function toggleCategory() {
+      if (!chart.toggleDataVisibility) return;
+      chart.toggleDataVisibility(index);
+      chart.update();
+      syncLegendVisibilityState();
+    }
+
+    item.addEventListener('click', toggleCategory);
+    item.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleCategory();
+      }
+    });
+
+    syncLegendVisibilityState();
+  }
+
+  if (useBothSides) {
+    var half = Math.ceil(labels.length / 2);
+    labels.forEach(function(label, index) {
+      var target = index < half ? leftContainer : rightContainer;
+      createLegendItem(label, index, target);
+    });
+    return;
+  }
+
+  labels.forEach(function(label, index) {
+    createLegendItem(label, index, rightContainer);
   });
 }
 
@@ -599,13 +777,21 @@ function renderPaymentsForecastChart() {
 
 // ========== MODAL ==========
 function showNewDocumentModal() {
-  var modal = $('modalNewDocument');
-  if (modal) modal.classList.add('show');
+  var modalEl = $('modalNewDocument');
+  if (modalEl) {
+    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+  }
 }
 
 function hideNewDocumentModal() {
-  var modal = $('modalNewDocument');
-  if (modal) modal.classList.remove('show');
+  var modalEl = $('modalNewDocument');
+  if (modalEl) {
+    var modal = bootstrap.Modal.getInstance(modalEl);
+    if (modal) {
+      modal.hide();
+    }
+  }
 }
 
 function navigateToPage(page) {
@@ -750,43 +936,40 @@ function renderDashboardContent() {
   var m = now.getMonth();
 
   renderDashboardKPIs();
+  renderBillingSummaryCard();
   renderExpensesChart();
   renderForecastChart();
   renderPaymentsForecastChart();
 
+  console.log('Dashboard carregado');
+}
+
+// Mover listeners para fora para que funcionem independente da carga de dados
+function initDashboardUI() {
   var newDocBtn = $('newDocumentBtn');
   if (newDocBtn) {
-    newDocBtn.addEventListener('click', showNewDocumentModal);
+    newDocBtn.onclick = showNewDocumentModal;
   }
 
   var btnNewExpense = $('btnNewExpense');
   if (btnNewExpense) {
-    btnNewExpense.addEventListener('click', function() { navigateToPage('../expense/expense.html'); });
+    btnNewExpense.onclick = function() { navigateToPage('../expense/expense.html'); };
   }
 
   var btnNewInvoiceIssued = $('btnNewInvoiceIssued');
   if (btnNewInvoiceIssued) {
-    btnNewInvoiceIssued.addEventListener('click', function() { navigateToPage('../Invoice-issued/invoice-issued.html'); });
+    btnNewInvoiceIssued.onclick = function() { navigateToPage('../Invoice-issued/invoice-issued.html'); };
   }
 
   var btnNewInvoiceReceived = $('btnNewInvoiceReceived');
   if (btnNewInvoiceReceived) {
-    btnNewInvoiceReceived.addEventListener('click', function() { navigateToPage('../Invoice_recieved/Invoice_recieved.html'); });
+    btnNewInvoiceReceived.onclick = function() { navigateToPage('../Invoice_recieved/Invoice_recieved.html'); };
   }
 
   var btnNewBudget = $('btnNewBudget');
   if (btnNewBudget) {
-    btnNewBudget.addEventListener('click', function() { navigateToPage('../budgetPage/budget.html'); });
+    btnNewBudget.onclick = function() { navigateToPage('../budgetPage/budget.html'); };
   }
-
-  window.addEventListener('click', function(e) {
-    var modal = $('modalNewDocument');
-    if (modal && e.target === modal) {
-      hideNewDocumentModal();
-    }
-  });
-  
-  console.log('Dashboard carregado');
 }
 
 // Esperar Auth estar pronto
@@ -857,6 +1040,11 @@ function checkAuthAndInit() {
 
 // Iniciar com um pequeno atraso para garantir que todos os scripts estão carregados
 // Usar o novo sistema waitForAuth do auth-system.js
+document.addEventListener('DOMContentLoaded', function() {
+  // Inicializa a UI imediatamente para que os botões do modal funcionem
+  initDashboardUI();
+});
+
 setTimeout(function() {
   // Primeiro verificar se store.js está disponível
   function checkAndInit() {

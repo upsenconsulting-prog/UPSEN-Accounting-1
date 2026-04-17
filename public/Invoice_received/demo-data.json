@@ -1,0 +1,41 @@
+[
+  {
+    "id": "rec1",
+    "invoiceNumber": "REC-001",
+    "supplier": "Fornecedor Teste",
+    "supplierNif": "123456789",
+    "invoiceDate": "2024-11-01",
+    "amount": 1000.00,
+    "ivaRate": 21,
+    "ivaAmount": 210.00,
+    "totalAmount": 1210.00,
+    "state": "Pagada",
+    "paymentMethod": "efectivo",
+    "paymentDate": "2024-11-05"
+  },
+  {
+    "id": "rec2",
+    "invoiceNumber": "REC-002",
+    "supplier": "Empresa ABC",
+    "supplierNif": "987654321",
+    "invoiceDate": "2024-11-15",
+    "amount": 500.00,
+    "ivaRate": 21,
+    "ivaAmount": 105.00,
+    "totalAmount": 605.00,
+    "state": "Pendiente"
+  },
+  {
+    "id": "rec3",
+    "invoiceNumber": "REC-003",
+    "supplier": "Serviços LTDA",
+    "supplierNif": "456789123",
+    "invoiceDate": "2024-11-10",
+    "amount": 750.00,
+    "ivaRate": 21,
+    "ivaAmount": 157.50,
+    "totalAmount": 907.50,
+    "state": "Vencida",
+    "paymentMethod": "tarjeta"
+  }
+]

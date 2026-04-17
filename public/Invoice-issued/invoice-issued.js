@@ -77,9 +77,10 @@ function getAllInvoicesIssued() {
   return getUserInvoicesIssued();
 }
 
-// ========== GUARDAR FACTURA - Versão corrigida ==========
-function addInvoiceIssued(invoice) {
-  console.log('addInvoiceIssued chamado:', invoice);
+// ========== GUARDAR FACTURA (Wrapper local) ==========
+// Renomeado para evitar conflito com window.addInvoiceIssued do store.js
+function processInvoiceIssued(invoice) {
+  console.log('processInvoiceIssued chamado:', invoice);
   
   // Calcular IVA
   var baseImponible = Number(invoice.amount || 0);
@@ -104,9 +105,16 @@ function addInvoiceIssued(invoice) {
   };
   
   // Se store.js estiver disponível, usar ele (salva no Firebase + localStorage)
-  if (window.addInvoiceIssued && typeof window.addInvoiceIssued === 'function' && window.addInvoiceIssued !== addInvoiceIssued) {
+  if (window.addInvoiceIssued && typeof window.addInvoiceIssued === 'function') {
     console.log('Usando store.js para salvar no Firebase...');
-    return window.addInvoiceIssued(newInvoice);
+    // store.js retorna uma promise
+    window.addInvoiceIssued(newInvoice).then(() => {
+        // Renderizar após sucesso
+        if (typeof renderInvoices === 'function') renderInvoices();
+        if (typeof renderChart === 'function') renderChart();
+        if (typeof renderSummaryCards === 'function') renderSummaryCards();
+    });
+    return newInvoice;
   }
   
   // Fallback: salvar apenas localmente
@@ -114,7 +122,11 @@ function addInvoiceIssued(invoice) {
   var invoices = getUserInvoicesIssued();
   invoices.push(newInvoice);
   var key = 'upsen_invoices_issued_' + getUserId();
-  localStorage.setItem(key, JSON.stringify(invoices));
+  try {
+    localStorage.setItem(key, JSON.stringify(invoices));
+  } catch (e) {
+    console.error('Erro ao salvar localmente:', e);
+  }
   
   console.log('Fatura salva localmente:', newInvoice.invoiceNumber);
   
@@ -133,13 +145,13 @@ function deleteInvoiceIssued(id) {
   var invoices = getUserInvoicesIssued();
   var filtered = invoices.filter(function(inv) { return inv.id !== id; });
   var key = 'upsen_invoices_issued_' + getUserId();
-  localStorage.setItem(key, JSON.stringify(filtered));
+  try {
+    localStorage.setItem(key, JSON.stringify(filtered));
+  } catch (e) {}
   
-  // Tentar eliminar do Firebase
-  if (_storeDeleteInvoiceIssued && _storeDeleteInvoiceIssued !== deleteInvoiceIssued) {
-    _storeDeleteInvoiceIssued(id).catch(function(err) {
-      console.warn('Erro ao eliminar do Firebase:', err);
-    });
+  // Tentar eliminar do Firebase usando store.js se disponível
+  if (window.deleteInvoiceIssued && typeof window.deleteInvoiceIssued === 'function') {
+    window.deleteInvoiceIssued(id).catch(err => console.warn(err));
   }
   
   renderInvoices();
@@ -153,7 +165,9 @@ function updateInvoiceIssued(id, updates) {
     if (invoices[i].id === id) {
       invoices[i] = Object.assign({}, invoices[i], updates);
       var key = 'upsen_invoices_issued_' + getUserId();
-      localStorage.setItem(key, JSON.stringify(invoices));
+      try {
+        localStorage.setItem(key, JSON.stringify(invoices));
+      } catch(e) {}
       break;
     }
   }
@@ -218,12 +232,12 @@ function renderPaymentSummaryCards(totals) {
   if (!container) return;
   
   var methods = [
-    {key: 'efectivo', icon: '💵', label: 'Efectivo'},
-    {key: 'tarjeta', icon: '💳', label: 'Tarjeta'},
-    {key: 'transferencia', icon: '🏦', label: 'Transferencia'},
-    {key: 'recibo', icon: '📄', label: 'Recibo'},
-    {key: 'cheque', icon: '✉️', label: 'Cheque'},
-    {key: 'paypal', icon: '💸', label: 'Paypal'}
+    {key: 'efectivo', icon: 'EF', label: 'Efectivo'},
+    {key: 'tarjeta', icon: 'TJ', label: 'Tarjeta'},
+    {key: 'transferencia', icon: 'TR', label: 'Transferencia'},
+    {key: 'recibo', icon: 'RB', label: 'Recibo'},
+    {key: 'cheque', icon: 'CH', label: 'Cheque'},
+    {key: 'paypal', icon: 'PP', label: 'Paypal'}
   ];
   
   var html = '';
@@ -423,9 +437,10 @@ async function renderInvoices() {
       '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>' +
       '<td>' + getPaymentMethodText(inv.paymentMethod) + (inv.paymentDate ? '<br><small>' + formatDate(inv.paymentDate) + '</small>' : '') + '</td>' +
       '<td class="action-buttons">' +
-        '<button class="btn btn-primary btn-sm py-1 px-2 me-1" style="font-size:0.75rem" data-view="' + inv.id + '"><i class="fas fa-eye"></i></button>' +
-        '<button class="btn btn-success btn-sm py-1 px-2 me-1" style="font-size:0.75rem" data-paid="' + inv.id + '"><i class="fas fa-check"></i></button>' +
-        '<button class="btn btn-danger btn-sm py-1 px-2" style="font-size:0.75rem" data-del="' + inv.id + '"><i class="fas fa-trash"></i></button>' +
+        '<button class="btn btn-primary" data-view="' + inv.id + '" title="Ver detalles"><i class="fas fa-eye"></i></button>' +
+        '<button class="btn btn-info" data-rectify="' + inv.id + '" title="Cambiar a factura rectificativa"><i class="fas fa-redo"></i></button>' +
+        '<button class="btn btn-success" data-paid="' + inv.id + '" title="Marcar como pagada"><i class="fas fa-check"></i></button>' +
+        '<button class="btn btn-danger" data-del="' + inv.id + '" title="Eliminar"><i class="fas fa-trash"></i></button>' +
       '</td>';
     tbody.appendChild(tr);
   }
@@ -461,7 +476,7 @@ async function renderInvoices() {
       var paymentNotes = form.querySelector('[name="paymentNotes"]').value;
       
       if (!paymentMethod) {
-        alert('Por favor, selecciona el método de pago.');
+        alert('Por favor, selecciona el método de cobro.');
         return;
       }
       if (!paymentDate) {
@@ -488,6 +503,15 @@ async function renderInvoices() {
       
       // Dispatch sync event
       window.dispatchEvent(new CustomEvent('dataUpdated-invoicesIssued', { detail: { id: invoiceId, updates: formData } }));
+    });
+  }
+
+  // Credit Note Buttons
+  var rectifyBtns = tbody.querySelectorAll('[data-rectify]');
+  for (var m = 0; m < rectifyBtns.length; m++) {
+    rectifyBtns[m].addEventListener('click', function() {
+      var id = this.getAttribute('data-rectify');
+      window.createCreditNote(id);
     });
   }
 
@@ -720,8 +744,8 @@ async function saveInvoiceIssued() {
       var fallbackFields = computeFallbackVeriFactuFields(invoiceData);
       Object.assign(invoiceData, fallbackFields);
       
-      console.log('💾 Chamando addInvoiceIssued com dados (fallback):', invoiceData);
-      addInvoiceIssued(invoiceData);
+      console.log('💾 Chamando processInvoiceIssued com dados (fallback):', invoiceData);
+      processInvoiceIssued(invoiceData);
       verifactuSuccess = false;
     }
   } else {
@@ -731,8 +755,8 @@ async function saveInvoiceIssued() {
     var fallbackFields = computeFallbackVeriFactuFields(invoiceData);
     Object.assign(invoiceData, fallbackFields);
     
-    console.log('💾 Chamando addInvoiceIssued com dados:', invoiceData);
-    addInvoiceIssued(invoiceData);
+    console.log('💾 Chamando processInvoiceIssued com dados:', invoiceData);
+    processInvoiceIssued(invoiceData);
   }
 
   // Close modal
@@ -748,12 +772,87 @@ async function saveInvoiceIssued() {
   return true;
 }
 
+// ========== CREAR FACTURA RECTIFICATIVA ==========
+window.createCreditNote = function(invoiceId) {
+  var list = getAllInvoicesIssued();
+  var originalInvoice = list.find(function(inv) { return inv.id === invoiceId; });
+  
+  if (!originalInvoice) {
+    alert('No se encontró la factura original.');
+    return;
+  }
+
+  // Pre-fill form with credit note data
+  var form = $('formNewInvoiceIssued');
+  if (!form) return;
+
+  var date = new Date();
+  var rectifyNumber = 'REC-' + originalInvoice.invoiceNumber || 'REC-' + date.getTime();
+  
+  // Populate form fields
+  var invoiceNumberInput = form.querySelector('input[name="invoiceNumber"]');
+  var customerInput = form.querySelector('input[name="customer"]');
+  var customerNifInput = form.querySelector('input[name="customerNif"]');
+  var invoiceDateInput = form.querySelector('input[name="invoiceDate"]');
+  var dueDateInput = form.querySelector('input[name="dueDate"]');
+  var amountInput = form.querySelector('input[name="amount"]');
+  var ivaRateInput = form.querySelector('input[name="ivaRate"]');
+  var stateSelect = form.querySelector('select[name="state"]');
+
+  if (invoiceNumberInput) invoiceNumberInput.value = rectifyNumber;
+  if (customerInput) customerInput.value = originalInvoice.customer || '';
+  if (customerNifInput) customerNifInput.value = originalInvoice.customerNif || '';
+  
+  var currentDate = date.toISOString().split('T')[0];
+  if (invoiceDateInput) invoiceDateInput.value = currentDate;
+  if (dueDateInput) dueDateInput.value = currentDate;
+
+  // Use original invoice amount (user can edit to make it negative or positive)
+  var amount = Number(originalInvoice.amount || 0);
+  if (amountInput) amountInput.value = amount;
+  
+  if (ivaRateInput) ivaRateInput.value = originalInvoice.ivaRate || 21;
+  if (stateSelect) stateSelect.value = 'Pendiente';
+
+  // Store reference to original invoice
+  form.setAttribute('data-credit-note-of', invoiceId);
+  form.setAttribute('data-is-credit-note', 'true');
+
+  // Show credit note alert and update modal title
+  var titleEl = document.getElementById('modalNewInvoiceTitle');
+  var alertEl = document.getElementById('creditNoteAlert');
+  if (titleEl) titleEl.textContent = 'Factura Rectificativa';
+  if (alertEl) alertEl.style.display = 'block';
+
+  // Show modal
+  var modalEl = document.getElementById('modalNewInvoiceIssued');
+  if (modalEl) {
+    var modal = bootstrap.Modal.getInstance(modalEl);
+    if (!modal) {
+      modal = new bootstrap.Modal(modalEl);
+    }
+    modal.show();
+  }
+};
+
 // ========== ABRIR MODAL ==========
 async function openNewInvoiceModal() {
   // Populate customer select first
   if (typeof populateCustomerSelect === 'function') {
     await populateCustomerSelect();
   }
+
+  var form = $('formNewInvoiceIssued');
+  if (form) {
+    form.removeAttribute('data-credit-note-of');
+    form.removeAttribute('data-is-credit-note');
+  }
+
+  // Hide credit note alert and reset modal title
+  var titleEl = document.getElementById('modalNewInvoiceTitle');
+  var alertEl = document.getElementById('creditNoteAlert');
+  if (titleEl) titleEl.textContent = 'Nueva factura';
+  if (alertEl) alertEl.style.display = 'none';
 
   var date = new Date();
   var num = 'INV-' + date.getFullYear() + '-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
@@ -1122,7 +1221,7 @@ function importInvoicesFromCSV(csvContent) {
     }
     
     if (invoice.invoiceNumber && invoice.customer && invoice.amount) {
-      addInvoiceIssued(invoice);
+      processInvoiceIssued(invoice);
       importedCount++;
     }
   }
