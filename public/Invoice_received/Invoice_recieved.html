@@ -231,9 +231,9 @@
     .form-text { color: var(--muted); }
 
     /* TABLE STYLES */
-    .table { color: var(--text); border-color: var(--border); margin-bottom: 0; }
-    .table th { background: transparent; color: var(--text); font-weight: 600; border-bottom: 2px solid var(--border); padding: 15px; }
-    .table td { background: transparent; color: var(--text); border-bottom: 1px solid var(--border); vertical-align: middle; padding: 15px; }
+    .table { color: var(--text); border-color: var(--border); margin-bottom: 0; font-size: 0.9rem; }
+    .table th { background: transparent; color: var(--text); font-weight: 600; border-bottom: 2px solid var(--border); padding: 10px 8px; }
+    .table td { background: transparent; color: var(--text); border-bottom: 1px solid var(--border); vertical-align: middle; padding: 10px 8px; }
     .table tbody tr { transition: all 0.2s ease; }
     .table tbody tr:hover { transform: translateY(-2px); background: rgba(0,0,0,0.02); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     body.dark .table tbody tr:hover { background: rgba(255,255,255,0.03); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
@@ -275,6 +275,40 @@
     body.dark .modal-header .btn-close { filter: invert(1); }
     .modal-body { padding: 25px; background: var(--card-bg); }
     .modal-footer { padding: 20px; border-top: 1px solid var(--border); background: var(--card-bg); }
+
+    /* STANDARDIZED MODAL SIZING */
+    #modalNewInvoiceReceived .modal-dialog,
+    #modalNewInvoiceOCR .modal-dialog {
+      max-width: calc(100vw - 300px);
+    }
+    #modalNewInvoiceReceived .modal-body,
+    #modalNewInvoiceOCR .modal-body {
+      padding: 12px 14px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    #modalNewInvoiceReceived .modal-header,
+    #modalNewInvoiceReceived .modal-footer,
+    #modalNewInvoiceOCR .modal-header,
+    #modalNewInvoiceOCR .modal-footer {
+      padding: 10px 14px;
+    }
+    #modalNewInvoiceReceived .form-label,
+    #modalNewInvoiceOCR .form-label {
+      margin-bottom: 3px;
+      font-size: 0.80rem;
+    }
+    #modalNewInvoiceReceived .form-control,
+    #modalNewInvoiceReceived .form-select,
+    #modalNewInvoiceOCR .form-control,
+    #modalNewInvoiceOCR .form-select {
+      padding: 6px 9px;
+      font-size: 0.85rem;
+    }
+    #modalNewInvoiceReceived .row,
+    #modalNewInvoiceOCR .row {
+      margin-bottom: 8px;
+    }
 
     /* CHART CONTAINER */
     .chart-container { position: relative; height: 300px; }
@@ -519,23 +553,25 @@
             </select>
           </div>
 
-          <!-- NEW: Payment Method for New Invoice -->
-          <div class="mb-3">
-            <label class="form-label">Método de pago <small>(si Pagada)</small></label>
-            <select name="paymentMethod" class="form-select">
-              <option value="">-- Seleccionar --</option>
-              <option value="efectivo">Efectivo</option>
-              <option value="tarjeta">Tarjeta</option>
-              <option value="transferencia">Ingreso/Transferencia</option>
-              <option value="recibo">Recibo Bancario</option>
-              <option value="cheque">Pagaré/Cheque</option>
-              <option value="paypal">Paypal</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Fecha de pago <small>(si Pagada)</small></label>
-            <input type="date" name="paymentDate" class="form-control" />
-            <div class="form-text">Se deja vacío, se usará la fecha actual</div>
+          <!-- NEW: Payment Method and Date in same row -->
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label payment-label">Método de pago <small>(si Pagada)</small></label>
+              <select name="paymentMethod" class="form-select">
+                <option value="">-- Seleccionar --</option>
+                <option value="efectivo">Efectivo</option>
+                <option value="tarjeta">Tarjeta</option>
+                <option value="transferencia">Ingreso/Transferencia</option>
+                <option value="recibo">Recibo Bancario</option>
+                <option value="cheque">Pagaré/Cheque</option>
+                <option value="paypal">Paypal</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label date-label">Fecha de pago <small>(si Pagada)</small></label>
+              <input type="date" name="paymentDate" class="form-control" />
+              <div class="form-text">Se deja vacío, se usará la fecha actual</div>
+            </div>
           </div>
         </form>
 

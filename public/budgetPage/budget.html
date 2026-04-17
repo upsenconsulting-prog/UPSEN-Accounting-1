@@ -163,6 +163,27 @@ body.dark .badge-late { background: #374151; color: #9CA3AF; }
 body.dark .modal-header .btn-close { filter: invert(1); }
 .modal-body { padding: 25px; }
 
+/* STANDARDIZED MODAL SIZING */
+.modal-dialog {
+  max-width: 980px;
+}
+.modal-body {
+  padding: 16px 18px;
+}
+.modal-header,
+.modal-footer {
+  padding: 14px 18px;
+}
+.form-label {
+  margin-bottom: 4px;
+  font-size: 0.84rem;
+}
+.form-control,
+.form-select {
+  padding: 8px 11px;
+  font-size: 0.9rem;
+}
+
 @media (max-width: 992px) {
   .sidebar { position: relative; width: 100%; min-height: auto; border-right: none; border-bottom: 1px solid var(--border); }
   .main-content { margin-left: 0; width: 100%; padding: 12px; }
