@@ -125,7 +125,52 @@
             color: var(--text);
         }
 
-        .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .action-buttons { 
+          display: flex; 
+          gap: 10px; 
+          flex-wrap: wrap; 
+          align-items: center;
+          justify-content: flex-start;
+        }
+
+        /* Top page-header buttons - keep normal size */
+        .page-header .action-buttons .btn {
+          padding: 8px 16px !important;
+          font-size: 0.9rem !important;
+          min-width: auto;
+          height: auto;
+          margin: 0 !important;
+        }
+        
+        .page-header .action-buttons .btn i {
+          margin-right: 6px !important;
+          font-size: 0.9em !important;
+        }
+        
+        /* Table row action buttons - keep small */
+        tbody td.action-buttons {
+          white-space: normal !important;
+          padding: 4px 2px !important;
+          gap: 2px !important;
+        }
+        
+        tbody td.action-buttons .btn {
+          padding: 4px 6px !important;
+          font-size: 0.7rem !important;
+          min-width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 !important;
+          line-height: 1;
+          gap: 2px;
+        }
+        
+        tbody td.action-buttons .btn i {
+          margin: 0 !important;
+          font-size: 0.8em !important;
+        }
 
         .dark-toggle-btn {
             background: var(--btn-sec-bg);
@@ -250,14 +295,19 @@
         .form-label { color: var(--text); font-weight: 500; margin-bottom: 8px; }
 
         /* TABLE */
-        .table { color: var(--text); border-color: var(--border); margin-bottom: 0; }
+        .table { 
+          color: var(--text); 
+          border-color: var(--border); 
+          margin-bottom: 0;
+          font-size: 0.85rem;
+        }
         .table th {
             background: transparent;
             color: var(--text);
             font-weight: 600;
             border-bottom: 2px solid var(--border);
-            padding: 12px 8px;
-            font-size: 0.85rem;
+            padding: 10px 6px;
+            font-size: 0.8rem;
             white-space: nowrap;
           position: sticky;
           top: 0;
@@ -269,8 +319,8 @@
             color: var(--text);
             border-bottom: 1px solid var(--border);
             vertical-align: middle;
-            padding: 12px 8px;
-            font-size: 0.9rem;
+            padding: 8px 5px;
+            font-size: 0.8rem;
             white-space: nowrap;
         }
 
@@ -377,10 +427,10 @@
         @media (max-width: 992px) {
             .sidebar { position: relative; width: 100%; min-height: auto; border-right: none; border-bottom: 1px solid var(--border); }
             .main-content { margin-left: 0; width: 100%; padding: 12px; }
-            .table { font-size: 0.85rem; }
-            .table th { font-size: 0.8rem; padding: 8px 4px !important; }
-            .table td { padding: 8px 4px !important; font-size: 0.85rem; }
-            .btn-sm { padding: 4px 6px !important; font-size: 0.7rem !important; margin: 0 1px; }
+            .table { font-size: 0.75rem; }
+            .table th { font-size: 0.7rem; padding: 8px 4px !important; }
+            .table td { padding: 6px 3px !important; font-size: 0.75rem; }
+            .action-buttons .btn { min-width: 24px; height: 24px; padding: 3px 5px !important; }
         }
 
         @media (max-width: 767px) {
@@ -552,8 +602,18 @@
     <div class="modal fade" id="modalNewInvoiceIssued">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>Nueva factura</h5>
+                <div class="modal-header" id="modalNewInvoiceHeader">
+                    <div style="flex: 1;">
+                        <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i><span id="modalNewInvoiceTitle">Nueva factura</span></h5>
+                        <div id="creditNoteAlert" style="display: none; margin-top: 8px;">
+                            <span class="badge" style="background: var(--metric3-bg); color: var(--metric3-text); padding: 6px 12px; font-size: 0.85rem;">
+                                <i class="fas fa-redo me-1"></i>Factura Rectificativa
+                            </span>
+                            <p style="font-size: 0.9rem; color: var(--muted); margin-top: 6px; margin-bottom: 0;">
+                                Base imponible en negativo para cancelar la factura original.
+                            </p>
+                        </div>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
