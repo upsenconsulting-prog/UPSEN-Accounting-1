@@ -1054,7 +1054,102 @@ function exportInvoices(format, period) {
   }
 }
 
-function exportToPDF(list) {
+function getCompanyLogoForExport() {
+  try {
+    var auth = window.AuthSystem || window.AuthService || window.Auth;
+    var user = auth && typeof auth.getCurrentUser === 'function' ? auth.getCurrentUser() : null;
+    if (user && user.companyData && user.companyData.logo) {
+      return user.companyData.logo;
+    }
+  } catch (e) {}
+
+  try {
+    var session = localStorage.getItem('upsen_current_user');
+    if (!session) return '';
+    var data = JSON.parse(session);
+    var user = data && data.user ? data.user : null;
+    return (user && user.companyData && user.companyData.logo) || '';
+  } catch (e) {
+    return '';
+  }
+}
+
+function normalizeImageToPngDataUrl(source) {
+  return new Promise(function(resolve, reject) {
+    if (!source) {
+      reject(new Error('Missing image source'));
+      return;
+    }
+
+    var img = new Image();
+    if (typeof source === 'string' && source.indexOf('data:image') !== 0) {
+      img.crossOrigin = 'anonymous';
+    }
+
+    img.onload = function() {
+      try {
+        var naturalWidth = img.naturalWidth || img.width;
+        var naturalHeight = img.naturalHeight || img.height;
+        var canvas = document.createElement('canvas');
+        canvas.width = naturalWidth;
+        canvas.height = naturalHeight;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        resolve({
+          dataUrl: canvas.toDataURL('image/png'),
+          width: naturalWidth,
+          height: naturalHeight
+        });
+      } catch (err) {
+        reject(err);
+      }
+    };
+
+    img.onerror = function() {
+      reject(new Error('Could not load logo image'));
+    };
+
+    img.src = source;
+  });
+}
+
+async function addCompanyLogoToPdfHeader(doc, x, y, w, h) {
+  var logoSource = getCompanyLogoForExport();
+  if (!logoSource) return false;
+
+  try {
+    var logoImage = await normalizeImageToPngDataUrl(logoSource);
+    var logoDataUrl = logoImage.dataUrl;
+    var logoWidth = logoImage.width || 1;
+    var logoHeight = logoImage.height || 1;
+
+    // Soft layered badge to keep logo readable over blue header.
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(x - 2.6, y - 2.6, w + 5.2, h + 5.2, 2.2, 2.2, 'F');
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(x - 1.2, y - 1.2, w + 2.4, h + 2.4, 1.8, 1.8, 'F');
+    doc.setDrawColor(214, 223, 236);
+    doc.setLineWidth(0.25);
+    doc.roundedRect(x - 1.2, y - 1.2, w + 2.4, h + 2.4, 1.8, 1.8, 'S');
+
+    var innerPadding = 1.0;
+    var fitW = Math.max(1, w - innerPadding * 2);
+    var fitH = Math.max(1, h - innerPadding * 2);
+    var scale = Math.min(fitW / logoWidth, fitH / logoHeight);
+    var drawW = logoWidth * scale;
+    var drawH = logoHeight * scale;
+    var drawX = x + (w - drawW) / 2;
+    var drawY = y + (h - drawH) / 2;
+
+    doc.addImage(logoDataUrl, 'PNG', drawX, drawY, drawW, drawH);
+    return true;
+  } catch (e) {
+    console.log('Could not render company logo in emitted invoices PDF:', e);
+    return false;
+  }
+}
+
+async function exportToPDF(list) {
   if (typeof window.jspdf === 'undefined') {
     alert('Biblioteca PDF no disponible.');
     return;
@@ -1069,6 +1164,7 @@ function exportToPDF(list) {
   doc.text('UPSEN Accounting', 105, 18, {align: 'center'});
   doc.setFontSize(12);
   doc.text('Facturas Emitidas', 105, 28, {align: 'center'});
+  await addCompanyLogoToPdfHeader(doc, 13, 5, 55, 25);
   
   doc.setTextColor(100);
   doc.setFontSize(10);
