@@ -59,6 +59,7 @@
     a, button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"], summary, select, .clickable, .sidebar-link, .sidebar-toggle, .menu-item, .card-action, .icon-button, .menu-link { cursor: pointer; }
     body, p, span, div, h1, h2, h3, h4, h5, h6, label, td, th { cursor: default; }
     h1.clickable, h2.clickable, h3.clickable, h4.clickable, h5.clickable, h6.clickable, div.clickable, span.clickable { cursor: pointer; }
+    .clickable, .clickable *, a[href], a[href] *, [role="button"], [role="button"] *, .btn, .btn * { cursor: pointer !important; }
     .section-title.clickable { display: inline-flex; align-items: center; gap: 8px; transition: opacity 0.2s ease; }
     .section-title.clickable:hover { opacity: 0.85; }
     .dashboard-card.clickable { transition: transform 0.15s ease, box-shadow 0.15s ease; }

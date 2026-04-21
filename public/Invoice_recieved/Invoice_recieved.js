@@ -287,6 +287,21 @@ async function renderChart() {
 
   var labels = Object.keys(supplierTotals);
   var data = Object.values(supplierTotals);
+  var palette = [
+    '#3E74B5', '#4E84BF', '#5D92C7', '#6CA0CF',
+    '#2F8C88', '#3D9A95', '#4AA8A2', '#58B5AE',
+    '#699F4D', '#77AA5A', '#85B567', '#93C074',
+    '#C48E3A', '#CF9B47', '#D9A855', '#E2B462',
+    '#C25151', '#CC5E5E', '#D66B6B', '#DF7878',
+    '#6C58B3', '#7A66BD', '#8873C5', '#9581CD',
+    '#5763B7', '#6671BF', '#7580C7', '#848ECE',
+    '#BC5F95', '#C86EA1', '#D37DAC', '#DD8DB8'
+  ];
+  var chartLabels = labels.length ? labels : ['Sin datos'];
+  var chartData = data.length ? data : [1];
+  var chartColors = chartLabels.map(function (_, i) {
+    return palette[i % palette.length];
+  });
   var ctx = chartContainer.getContext('2d');
 
   if (receivedChart) receivedChart.destroy();
@@ -294,10 +309,10 @@ async function renderChart() {
   receivedChart = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: labels.length ? labels : ['Sin datos'],
+      labels: chartLabels,
       datasets: [{
-        data: data.length ? data : [1],
-        backgroundColor: ['#2a4d9c', '#3a6cd6', '#1abc9c', '#e74c3c', '#f39c12'],
+        data: chartData,
+        backgroundColor: chartColors,
         borderWidth: 0,
         hoverOffset: 6
       }]
@@ -333,7 +348,7 @@ function renderReceivedChartLegends(chart) {
   var labels = chart.data.labels;
   var dataset = chart.data.datasets && chart.data.datasets[0] ? chart.data.datasets[0] : { backgroundColor: [] };
   var colors = dataset.backgroundColor || [];
-  var splitIndex = Math.ceil(labels.length / 2);
+  var splitIndex = Math.min(labels.length, 15);
 
   labels.forEach(function (label, index) {
     var item = document.createElement('div');

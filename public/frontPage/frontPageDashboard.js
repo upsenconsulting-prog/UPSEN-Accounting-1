@@ -508,8 +508,10 @@ function renderCustomLegend(chart, leftContainer, rightContainer) {
 
   var labels = chart.data.labels || [];
   var colors = (chart.data.datasets && chart.data.datasets[0] && chart.data.datasets[0].backgroundColor) || [];
+  var maxItemsPerSide = 15;
+  var firstSideCount = Math.min(labels.length, maxItemsPerSide);
 
-  var useBothSides = !!leftContainer && labels.length >= 12;
+  var useBothSides = !!leftContainer && labels.length > maxItemsPerSide;
 
   if (leftContainer) {
     leftContainer.innerHTML = '';
@@ -565,9 +567,8 @@ function renderCustomLegend(chart, leftContainer, rightContainer) {
   }
 
   if (useBothSides) {
-    var half = Math.ceil(labels.length / 2);
     labels.forEach(function(label, index) {
-      var target = index < half ? leftContainer : rightContainer;
+      var target = index < firstSideCount ? leftContainer : rightContainer;
       createLegendItem(label, index, target);
     });
     return;

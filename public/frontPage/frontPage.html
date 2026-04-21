@@ -251,6 +251,17 @@
       cursor: pointer;
     }
 
+    .clickable,
+    .clickable *,
+    a[href],
+    a[href] *,
+    [role="button"],
+    [role="button"] *,
+    .btn,
+    .btn * {
+      cursor: pointer !important;
+    }
+
     /* Ensure full clickable pointer only for KPI cards */
     .kpi-card.clickable,
     .kpi-card.clickable * {

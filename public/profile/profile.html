@@ -212,6 +212,19 @@
       border: 1px solid var(--border);
       transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
     }
+    .stat-card.clickable,
+    .stat-card.clickable * {
+      cursor: pointer !important;
+    }
+    .stat-card.clickable:hover {
+      background: rgba(9, 88, 178, 0.06);
+      box-shadow: 0 12px 28px rgba(9, 88, 178, 0.22);
+      transform: translateY(-4px);
+    }
+    body.dark .stat-card.clickable:hover {
+      background: rgba(147, 197, 253, 0.08);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.42);
+    }
     .stat-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgb(0,0,0,0.08); }
     body.dark .stat-card:hover { box-shadow: 0 10px 25px rgb(0,0,0,0.3); }
 
@@ -441,28 +454,28 @@
         <h5 class="section-title"><i class="fas fa-chart-bar"></i> Estadisticas</h5>
         <div class="row">
           <div class="col-md-3 col-6 mb-3">
-            <div class="stat-card">
+            <div class="stat-card clickable" role="button" tabindex="0" onclick="window.location.href='../Invoice_recieved/Invoice_recieved.html'" aria-label="Ir a Facturas Recibidas">
               <div class="stat-icon blue"><i class="fas fa-file-invoice"></i></div>
               <div class="stat-value" id="statInvoices">0</div>
               <div class="stat-label">Facturas Recibidas</div>
             </div>
           </div>
           <div class="col-md-3 col-6 mb-3">
-            <div class="stat-card">
+            <div class="stat-card clickable" role="button" tabindex="0" onclick="window.location.href='../Invoice-issued/invoice-issued.html'" aria-label="Ir a Facturas Emitidas">
               <div class="stat-icon green"><i class="fas fa-file-export"></i></div>
               <div class="stat-value" id="statIssued">0</div>
               <div class="stat-label">Facturas Emitidas</div>
             </div>
           </div>
           <div class="col-md-3 col-6 mb-3">
-            <div class="stat-card">
+            <div class="stat-card clickable" role="button" tabindex="0" onclick="window.location.href='../expense/expense.html'" aria-label="Ir a Gastos">
               <div class="stat-icon red"><i class="fas fa-shopping-cart"></i></div>
               <div class="stat-value" id="statExpenses">0</div>
               <div class="stat-label">Gastos</div>
             </div>
           </div>
           <div class="col-md-3 col-6 mb-3">
-            <div class="stat-card">
+            <div class="stat-card clickable" role="button" tabindex="0" onclick="window.location.href='../budgetPage/budget.html'" aria-label="Ir a Presupuestos">
               <div class="stat-icon purple"><i class="fas fa-calculator"></i></div>
               <div class="stat-value" id="statBudgets">0</div>
               <div class="stat-label">Presupuestos</div>
@@ -669,6 +682,15 @@ function loadPersonalLogo() {
 document.addEventListener('DOMContentLoaded', function() {
   editModal = new bootstrap.Modal(document.getElementById('editProfileModal'));
   passwordModal = new bootstrap.Modal(document.getElementById('passwordModal'));
+
+  document.querySelectorAll('.stat-card[role="button"]').forEach(function(card) {
+    card.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        card.click();
+      }
+    });
+  });
 
   function checkAuth() {
     // Check Firebase Auth directly first
