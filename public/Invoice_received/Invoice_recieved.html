@@ -313,6 +313,140 @@
     /* CHART CONTAINER */
     .chart-container { position: relative; height: 300px; }
 
+    .chart-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      min-height: 320px;
+    }
+
+    .chart-content-title {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      text-align: center;
+    }
+
+    .chart-content-hint {
+      margin: -10px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .chart-main-layout {
+      width: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      column-gap: 28px;
+    }
+
+    .chart-canvas-wrap {
+      grid-column: 2;
+      width: 420px;
+      max-width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 8px;
+      justify-self: center;
+    }
+
+    .chart-canvas-wrap canvas {
+      max-width: 340px;
+      max-height: 340px;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .chart-canvas-wrap canvas:hover {
+      transform: scale(1.01);
+    }
+
+    .chart-legend {
+      width: auto;
+      max-width: none;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
+      gap: 10px;
+    }
+
+    .chart-legend-left {
+      grid-column: 1;
+      justify-self: start;
+      margin-left: 25px;
+    }
+
+    .chart-legend-right {
+      grid-column: 3;
+      justify-self: end;
+      margin-right: 25px;
+    }
+
+    .chart-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text);
+      opacity: 0.85;
+      cursor: pointer !important;
+      user-select: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .chart-legend-item.is-hidden {
+      opacity: 0.45;
+    }
+
+    .chart-legend-label {
+      text-decoration: none;
+      transition: text-decoration 0.2s ease;
+    }
+
+    .chart-legend-item.is-hidden .chart-legend-label {
+      text-decoration: line-through;
+    }
+
+    .chart-legend-color {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+      .chart-main-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .chart-canvas-wrap {
+        order: 1;
+      }
+
+      .chart-legend-left {
+        order: 2;
+      }
+
+      .chart-legend-right {
+        order: 3;
+      }
+
+      .chart-legend {
+        width: 100%;
+        align-items: center;
+        margin-left: 0;
+        margin-right: 0;
+      }
+    }
+
     /* FILTER CARD */
     .filter-card {
       background: var(--card-bg);
@@ -501,8 +635,20 @@
       <!-- Chart Card -->
       <div class="modern-card">
         <h5 class="section-title"><i class="fas fa-chart-pie"></i> Distribución por proveedor</h5>
-        <div class="chart-container">
-          <canvas id="receivedChartCanvas"></canvas>
+
+        <div class="chart-content">
+          <p class="chart-content-title">Distribución por proveedor (mes actual)</p>
+          <p class="chart-content-hint">Haz clic en un proveedor para ocultarlo o mostrarlo; los ocultos no se muestran en el círculo.</p>
+
+          <div class="chart-main-layout">
+            <div id="received-legend-left" class="chart-legend chart-legend-left"></div>
+
+            <div class="chart-canvas-wrap">
+              <canvas id="receivedChartCanvas"></canvas>
+            </div>
+
+            <div id="received-legend-right" class="chart-legend chart-legend-right"></div>
+          </div>
         </div>
       </div>
     </main>

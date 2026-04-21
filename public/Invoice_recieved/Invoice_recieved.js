@@ -297,13 +297,83 @@ async function renderChart() {
       labels: labels.length ? labels : ['Sin datos'],
       datasets: [{
         data: data.length ? data : [1],
-        backgroundColor: ['#2a4d9c', '#3a6cd6', '#1abc9c', '#e74c3c', '#f39c12']
+        backgroundColor: ['#2a4d9c', '#3a6cd6', '#1abc9c', '#e74c3c', '#f39c12'],
+        borderWidth: 0,
+        hoverOffset: 6
       }]
     },
     options: {
       responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { position: 'right' } }
+      maintainAspectRatio: true,
+      cutout: '55%',
+      layout: {
+        padding: 12
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: false }
+      },
+      animation: {
+        duration: 300
+      }
+    }
+  });
+
+  renderReceivedChartLegends(receivedChart);
+}
+
+function renderReceivedChartLegends(chart) {
+  var leftLegend = document.getElementById('received-legend-left');
+  var rightLegend = document.getElementById('received-legend-right');
+  if (!leftLegend || !rightLegend || !chart || !chart.data || !chart.data.labels) return;
+
+  leftLegend.innerHTML = '';
+  rightLegend.innerHTML = '';
+
+  var labels = chart.data.labels;
+  var dataset = chart.data.datasets && chart.data.datasets[0] ? chart.data.datasets[0] : { backgroundColor: [] };
+  var colors = dataset.backgroundColor || [];
+  var splitIndex = Math.ceil(labels.length / 2);
+
+  labels.forEach(function (label, index) {
+    var item = document.createElement('div');
+    item.className = 'chart-legend-item';
+
+    if (!chart.getDataVisibility(index)) {
+      item.classList.add('is-hidden');
+    }
+
+    var color = document.createElement('span');
+    color.className = 'chart-legend-color';
+    color.style.backgroundColor = colors[index] || '#9ca3af';
+
+    var text = document.createElement('span');
+    text.className = 'chart-legend-label';
+    text.textContent = label;
+
+    item.appendChild(color);
+    item.appendChild(text);
+
+    item.addEventListener('click', function () {
+      chart.toggleDataVisibility(index);
+      chart.update();
+      item.classList.toggle('is-hidden', !chart.getDataVisibility(index));
+    });
+
+    item.addEventListener('mouseenter', function () {
+      chart.setActiveElements([{ datasetIndex: 0, index: index }]);
+      chart.update();
+    });
+
+    item.addEventListener('mouseleave', function () {
+      chart.setActiveElements([]);
+      chart.update();
+    });
+
+    if (index < splitIndex) {
+      leftLegend.appendChild(item);
+    } else {
+      rightLegend.appendChild(item);
     }
   });
 }
