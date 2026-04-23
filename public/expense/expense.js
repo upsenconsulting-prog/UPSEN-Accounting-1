@@ -574,9 +574,9 @@ function initPage() {
     
     setupRealTimeCalculations();
 
-    // Anexar Listeners (Garante que funcionem mesmo se não estiverem no HTML)
-    var btnNew = document.getElementById('btnNewExpense') || document.getElementById('newExpenseBtn');
-    if (btnNew) btnNew.addEventListener('click', openNewExpenseModal);
+  // Anexar Listeners (Garante que funcionem mesmo se não estiverem no HTML)
+  var btnNew = document.getElementById('btnNewExpense') || document.getElementById('newExpenseBtn');
+  if (btnNew) btnNew.addEventListener('click', function() { showInlineExpenseForm(); });
 
     var btnSave = document.getElementById('saveExpenseBtn');
     if (btnSave) {
@@ -626,6 +626,80 @@ function initPage() {
       renderChart();
       renderSummaryCards();
     });
+  }
+});
+
+// Show inline expense form (instead of modal)
+function showInlineExpenseForm() {
+  try {
+    var date = new Date();
+    var dateInput = document.getElementById('expenseDateInline');
+    if (dateInput && !dateInput.value) dateInput.value = date.toISOString().split('T')[0];
+
+    var inlineCard = document.getElementById('inlineNewExpenseCard');
+    if (inlineCard) {
+      inlineCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(function() { if (dateInput) dateInput.focus(); }, 200);
+    }
+  } catch (e) { console.error('showInlineExpenseForm error', e); }
+}
+
+// Save from inline form
+async function saveInlineExpense() {
+  var date = document.getElementById('expenseDateInline') ? document.getElementById('expenseDateInline').value : '';
+  var category = document.getElementById('expenseCategoryInline') ? document.getElementById('expenseCategoryInline').value : '';
+  var amount = document.getElementById('expenseBaseInline') ? document.getElementById('expenseBaseInline').value : '';
+  var ivaRate = document.getElementById('expenseIVAInline') ? document.getElementById('expenseIVAInline').value : '21';
+  var notes = document.getElementById('expenseNotesInline') ? document.getElementById('expenseNotesInline').value : '';
+  var supplierName = document.getElementById('expenseSupplierNameInline') ? document.getElementById('expenseSupplierNameInline').value : '';
+  var supplierNif = document.getElementById('expenseSupplierNifInline') ? document.getElementById('expenseSupplierNifInline').value : '';
+
+  if (!date || !category || !amount) {
+    alert('Completa: fecha, categoría e importe.');
+    return;
+  }
+
+  var baseImponible = Number(amount || 0);
+  var ivaRateNum = Number(ivaRate || 21);
+  var ivaAmount = baseImponible * (ivaRateNum / 100);
+  var totalAmount = baseImponible + ivaAmount;
+
+  await saveUserExpense({ 
+    date: date, 
+    category: category, 
+    amount: baseImponible, 
+    ivaRate: ivaRateNum, 
+    ivaAmount: ivaAmount,
+    totalAmount: totalAmount,
+    notes: notes, 
+    paymentMethod: '',
+    supplierName: supplierName,
+    supplierNif: supplierNif
+  });
+
+  // Reset inline form (leave visible)
+  var form = document.getElementById('formNewExpenseInline');
+  if (form) form.reset();
+  var inlineCard = document.getElementById('inlineNewExpenseCard');
+  if (inlineCard) inlineCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Scroll to table
+  var tbody = document.getElementById('expenseTBody');
+  if (tbody) tbody.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Wire inline save/cancel buttons and support hash #new
+document.addEventListener('DOMContentLoaded', function() {
+  var saveInline = document.getElementById('saveInlineExpenseBtn');
+  if (saveInline) saveInline.addEventListener('click', saveInlineExpense);
+  var cancelInline = document.getElementById('cancelInlineExpenseBtn');
+  if (cancelInline) cancelInline.addEventListener('click', function() {
+    var f = document.getElementById('formNewExpenseInline'); if (f) f.reset();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  if (window.location && window.location.hash === '#new') {
+    showInlineExpenseForm();
   }
 });
 

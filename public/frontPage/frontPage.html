@@ -912,6 +912,67 @@
       font-size: 0.9rem;
     }
 
+    /* Custom modalNewDocument adjustments for spacing and colors */
+    #modalNewDocument .modal-header .modal-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    /* Convert list-group into vertical stack with gaps; each item becomes a card */
+    #modalNewDocument .list-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 8px;
+      border-radius: 8px;
+      background: transparent;
+      border: none;
+    }
+    #modalNewDocument .list-group-item {
+      padding: 16px 18px;
+      font-size: 1rem;
+      color: var(--text);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--card-bg);
+      border-radius: 10px;
+      transition: background 160ms ease, transform 160ms ease, color 160ms ease, box-shadow 160ms ease;
+      cursor: pointer;
+      margin: 0;
+    }
+    #modalNewDocument .list-group-item i {
+      color: var(--metric3-text);
+      width: 26px;
+      text-align: center;
+      font-size: 1.05rem;
+      transition: color 140ms ease, transform 140ms ease;
+    }
+
+    /* Hover / Focus / Active states */
+    #modalNewDocument .list-group-item:hover,
+    #modalNewDocument .list-group-item:focus,
+    #modalNewDocument .list-group-item:focus-visible {
+      background: var(--metric3-bg);
+      color: var(--metric3-text);
+      transform: translateX(6px);
+      box-shadow: 0 6px 18px rgba(15,21,34,0.06);
+      outline: none;
+    }
+    #modalNewDocument .list-group-item:hover i,
+    #modalNewDocument .list-group-item:focus i,
+    #modalNewDocument .list-group-item:focus-visible i {
+      color: var(--metric3-text);
+      transform: translateX(2px);
+    }
+    #modalNewDocument .list-group-item:active {
+      transform: translateX(2px);
+      box-shadow: none;
+    }
+
+    #modalNewDocument .modal-footer { background: transparent; }
+
     @media (max-width: 992px) {
       .sidebar { position: relative; width: 100%; min-height: auto; height: auto; max-height: none; border-right: none; border-bottom: 1px solid var(--border); overflow: visible; }
       .sidebar-content { max-height: 60vh; }
@@ -1015,8 +1076,8 @@
     <main class="main-content col">
       <div class="page-header">
         <h1 class="page-title clickable" role="button" tabindex="0" onclick="window.location.href='frontPage.html'" aria-label="Ir al Dashboard"><i class="fas fa-tachometer-alt"></i> Panel de control</h1>
-        <div class="action-buttons d-flex gap-2">
-          <button class="btn btn-primary" id="newDocumentBtn"><i class="fas fa-plus me-2"></i>Nuevo documento</button>
+        <div class="action-buttons d-flex gap-2 flex-wrap">
+          <button class="btn btn-primary" id="newBudgetBtn"><i class="fas fa-calculator me-2"></i>Nuevo documento</button>
           <button class="btn btn-secondary" id="refreshBtn"><i class="fas fa-sync-alt me-2"></i>Actualizar</button>
         </div>
       </div>
@@ -1209,30 +1270,6 @@
   </div>
 </div>
 
-<!-- Modal Document Nou -->
-<div class="modal fade" id="modalNewDocument">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title font-weight-bold">Nuevo documento</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <p style="margin-bottom: 20px; color: var(--muted);">Selecciona el tipo de documento:</p>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          <button class="btn btn-secondary text-start p-3" id="btnNewExpense"><i class="fas fa-file-invoice-dollar me-2" style="color: var(--metric2-text);"></i>Nuevo Gasto</button>
-          <button class="btn btn-secondary text-start p-3" id="btnNewInvoiceIssued"><i class="fas fa-file-export me-2" style="color: var(--metric3-text);"></i>Nueva Factura Emitida</button>
-          <button class="btn btn-secondary text-start p-3" id="btnNewInvoiceReceived"><i class="fas fa-file-import me-2" style="color: var(--metric1-text);"></i>Nueva Factura Recibida</button>
-          <button class="btn btn-secondary text-start p-3" id="btnNewBudget"><i class="fas fa-calculator me-2" style="color: var(--metric4-text);"></i>Nuevo Presupuesto</button>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="./frontPageDashboard.js"></script>
 <script>
@@ -1405,5 +1442,37 @@ window.confirmLogout = function() {
 };
  
 </script>
+
+<!-- Modal: Nuevo Documento -->
+<div class="modal fade" id="modalNewDocument" tabindex="-1" aria-labelledby="modalNewDocumentLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalNewDocumentLabel">Nuevo documento</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-3">Selecciona el tipo de documento:</p>
+        <div class="list-group">
+          <button type="button" class="list-group-item list-group-item-action" onclick="navigateToPage('../expense/expense.html#new')">
+            <i class="fas fa-file-invoice-dollar me-2"></i> Nuevo Gasto
+          </button>
+          <button type="button" class="list-group-item list-group-item-action" onclick="navigateToPage('../Invoice-issued/invoice-issued.html#new')">
+            <i class="fas fa-file-export me-2"></i> Nueva Factura Emitida
+          </button>
+          <button type="button" class="list-group-item list-group-item-action" onclick="navigateToPage('../Invoice_recieved/Invoice_recieved.html#new')">
+            <i class="fas fa-file-import me-2"></i> Nueva Factura Recibida
+          </button>
+          <button type="button" class="list-group-item list-group-item-action" onclick="navigateToPage('../budgetPage/budget.html#new')">
+            <i class="fas fa-calculator me-2"></i> Nuevo Presupuesto
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>

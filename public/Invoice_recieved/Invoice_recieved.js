@@ -646,36 +646,29 @@ async function saveInvoiceReceived() {
     }
   }
 
-  var modalEl = document.getElementById('modalNewInvoiceReceived');
-  if (modalEl) {
-    var modal = bootstrap.Modal.getInstance(modalEl);
-    if (modal) {
-      modal.hide();
-    } else {
-      new bootstrap.Modal(modalEl).hide();
-    }
-  }
-
-  form.reset();
+  // Clear inline form (no modal used)
+  var formEl = document.getElementById('formNewInvoiceReceived');
+  if (formEl) formEl.reset();
+  // Optionally scroll to the invoices table
+  var tableEl = document.getElementById('invoiceTBody');
+  if (tableEl) tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   return true;
 }
 
 function openNewInvoiceModal() {
+  // Show and prefill the inline new-received-invoice form
   var date = new Date();
   var num = 'REC-' + date.getFullYear() + '-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
   var numberInput = document.querySelector('#formNewInvoiceReceived input[name="invoiceNumber"]');
   if (numberInput) numberInput.value = num;
-  
+
   var invoiceDate = document.querySelector('#formNewInvoiceReceived input[name="invoiceDate"]');
   if (invoiceDate) invoiceDate.value = new Date().toISOString().split('T')[0];
-  
-  var modalEl = document.getElementById('modalNewInvoiceReceived');
-  if (modalEl) {
-    var modal = bootstrap.Modal.getInstance(modalEl);
-    if (!modal) {
-      modal = new bootstrap.Modal(modalEl);
-    }
-    modal.show();
+
+  var inlineCard = document.getElementById('inlineNewInvoiceReceivedCard');
+  if (inlineCard) {
+    inlineCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(function() { if (numberInput) numberInput.focus(); }, 200);
   }
 }
 
@@ -702,6 +695,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (saveBtn) {
       saveBtn.addEventListener('click', function() {
         saveInvoiceReceived(); // Agora é uma função async
+      });
+    }
+
+    var cancelInline = document.getElementById('cancelInlineReceivedBtn');
+    if (cancelInline) {
+      cancelInline.addEventListener('click', function() {
+        var f = document.getElementById('formNewInvoiceReceived'); if (f) f.reset();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       });
     }
     
@@ -1234,6 +1235,11 @@ function importInvoicesReceivedFromCSV(csvContent) {
       } else {
         current += char;
       }
+    }
+    // If opened with hash #new, show inline form immediately
+    if (window.location && window.location.hash === '#new') {
+      console.log('Hash #new detected - opening inline received invoice form');
+      openNewInvoiceModal();
     }
     values.push(current.trim());
     

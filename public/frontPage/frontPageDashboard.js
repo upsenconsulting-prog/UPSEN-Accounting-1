@@ -927,20 +927,43 @@ function renderPaymentsForecastChart() {
 // ========== MODAL ==========
 function showNewDocumentModal() {
   var modalEl = $('modalNewDocument');
-  if (modalEl) {
+  if (!modalEl) return;
+  // Prefer Bootstrap modal if available
+  if (window.bootstrap && bootstrap.Modal && typeof bootstrap.Modal.getOrCreateInstance === 'function') {
     var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
     modal.show();
+    return;
+  }
+
+  // Fallback: simple show by toggling classes and adding backdrop
+  modalEl.classList.add('show');
+  modalEl.style.display = 'block';
+  modalEl.setAttribute('aria-modal', 'true');
+  modalEl.removeAttribute('aria-hidden');
+  // Add backdrop
+  if (!document.querySelector('.custom-modal-backdrop')) {
+    var backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop fade show custom-modal-backdrop';
+    document.body.appendChild(backdrop);
   }
 }
 
 function hideNewDocumentModal() {
   var modalEl = $('modalNewDocument');
-  if (modalEl) {
+  if (!modalEl) return;
+  if (window.bootstrap && bootstrap.Modal && typeof bootstrap.Modal.getInstance === 'function') {
     var modal = bootstrap.Modal.getInstance(modalEl);
-    if (modal) {
-      modal.hide();
-    }
+    if (modal) modal.hide();
+    return;
   }
+
+  // Fallback hide
+  modalEl.classList.remove('show');
+  modalEl.style.display = 'none';
+  modalEl.setAttribute('aria-hidden', 'true');
+  modalEl.removeAttribute('aria-modal');
+  var existing = document.querySelectorAll('.custom-modal-backdrop');
+  existing.forEach(function(b) { b.parentElement && b.parentElement.removeChild(b); });
 }
 
 function navigateToPage(page) {
@@ -1096,29 +1119,24 @@ function renderDashboardContent() {
 
 // Mover listeners para fora para que funcionem independente da carga de dados
 function initDashboardUI() {
-  var newDocBtn = $('newDocumentBtn');
-  if (newDocBtn) {
-    newDocBtn.onclick = showNewDocumentModal;
+  var newExpenseBtn = $('newExpenseBtn');
+  if (newExpenseBtn) {
+    newExpenseBtn.onclick = function() { window.location.href = '../expense/expense.html'; };
   }
 
-  var btnNewExpense = $('btnNewExpense');
-  if (btnNewExpense) {
-    btnNewExpense.onclick = function() { navigateToPage('../expense/expense.html'); };
+  var newInvoiceIssuedBtn = $('newInvoiceIssuedBtn');
+  if (newInvoiceIssuedBtn) {
+    newInvoiceIssuedBtn.onclick = function() { window.location.href = '../Invoice-issued/invoice-issued.html'; };
   }
 
-  var btnNewInvoiceIssued = $('btnNewInvoiceIssued');
-  if (btnNewInvoiceIssued) {
-    btnNewInvoiceIssued.onclick = function() { navigateToPage('../Invoice-issued/invoice-issued.html'); };
+  var newInvoiceReceivedBtn = $('newInvoiceReceivedBtn');
+  if (newInvoiceReceivedBtn) {
+    newInvoiceReceivedBtn.onclick = function() { window.location.href = '../Invoice_recieved/Invoice_recieved.html'; };
   }
 
-  var btnNewInvoiceReceived = $('btnNewInvoiceReceived');
-  if (btnNewInvoiceReceived) {
-    btnNewInvoiceReceived.onclick = function() { navigateToPage('../Invoice_recieved/Invoice_recieved.html'); };
-  }
-
-  var btnNewBudget = $('btnNewBudget');
-  if (btnNewBudget) {
-    btnNewBudget.onclick = function() { navigateToPage('../budgetPage/budget.html'); };
+  var newBudgetBtn = $('newBudgetBtn');
+  if (newBudgetBtn) {
+    newBudgetBtn.onclick = function() { showNewDocumentModal(); };
   }
 }
 

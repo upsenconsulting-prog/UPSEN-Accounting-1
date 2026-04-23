@@ -290,9 +290,19 @@
         .modal-footer { padding: 20px; border-top: 1px solid var(--border); }
 
         /* STANDARDIZED MODAL SIZING */
-        .modal-dialog {
-          max-width: 980px;
-        }
+                .modal-dialog {
+                    max-width: calc(100vw - 32px);
+                    width: calc(100vw - 32px);
+                    margin: 16px auto;
+                }
+                .modal-dialog.modal-lg {
+                    max-width: calc(100vw - 32px);
+                    width: calc(100vw - 32px);
+                    margin: 16px auto;
+                }
+                .modal-content {
+                    min-height: calc(100vh - 32px);
+                }
         .modal-body {
           padding: 16px 18px;
         }
@@ -355,6 +365,54 @@
                         <i class="fas fa-sync-alt me-2"></i>Actualizar
                     </button>
                 </div>
+            </div>
+
+            <!-- Inline New Expense Form (appears inline, like in Facturas Recibidas) -->
+            <div class="modern-card" id="inlineNewExpenseCard">
+                <h5 class="section-title"><i class="fas fa-plus-circle"></i> Nuevo gasto</h5>
+                <form id="formNewExpenseInline">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Fecha</label>
+                            <input type="date" id="expenseDateInline" name="date" class="form-control" />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Categoría</label>
+                            <input type="text" id="expenseCategoryInline" name="category" class="form-control" placeholder="Ej: Material de oficina" list="categoryList" />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Proveedor</label>
+                            <input type="text" id="expenseSupplierNameInline" name="supplierName" class="form-control" placeholder="Nombre del proveedor" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Base imponible</label>
+                            <input type="number" step="0.01" id="expenseBaseInline" name="base" class="form-control" placeholder="0.00" />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">IVA %</label>
+                            <select id="expenseIVAInline" name="iva" class="form-select">
+                                <option value="21">21%</option>
+                                <option value="10">10%</option>
+                                <option value="4">4%</option>
+                                <option value="0">0%</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Total</label>
+                            <input type="text" id="expenseTotalInline" name="total" class="form-control" readonly />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notas</label>
+                        <input type="text" id="expenseNotesInline" name="notes" class="form-control" placeholder="Descripción opcional" />
+                    </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-secondary" id="cancelInlineExpenseBtn">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="saveInlineExpenseBtn">Guardar</button>
+                    </div>
+                </form>
             </div>
 
             <!-- KPI Cards -->

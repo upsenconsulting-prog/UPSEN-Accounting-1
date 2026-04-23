@@ -278,8 +278,22 @@
 
     /* STANDARDIZED MODAL SIZING */
     #modalNewInvoiceReceived .modal-dialog,
-    #modalNewInvoiceOCR .modal-dialog {
-      max-width: calc(100vw - 300px);
+    #modalNewInvoiceOCR .modal-dialog,
+    #viewInvoiceModal .modal-dialog,
+    #modalImport .modal-dialog,
+    #modalExport .modal-dialog,
+    #modalMarkPaid .modal-dialog {
+      max-width: calc(100vw - 32px);
+      width: calc(100vw - 32px);
+      margin: 16px auto;
+    }
+    #modalNewInvoiceReceived .modal-content,
+    #modalNewInvoiceOCR .modal-content,
+    #viewInvoiceModal .modal-content,
+    #modalImport .modal-content,
+    #modalExport .modal-content,
+    #modalMarkPaid .modal-content {
+      min-height: calc(100vh - 32px);
     }
     #modalNewInvoiceReceived .modal-body,
     #modalNewInvoiceOCR .modal-body {

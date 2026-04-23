@@ -381,7 +381,12 @@
 
         /* COMPACT NEW INVOICE MODAL */
         #modalNewInvoiceIssued .modal-dialog {
-          max-width: 980px;
+          max-width: calc(100vw - 32px);
+          width: calc(100vw - 32px);
+          margin: 16px auto;
+        }
+        #modalNewInvoiceIssued .modal-content {
+          min-height: calc(100vh - 32px);
         }
         #modalNewInvoiceIssued .modal-body {
           padding: 16px 18px;
@@ -464,6 +469,72 @@
                     </button>
                 </div>
             </div>
+
+              <!-- Inline Nueva Factura (visible en la página, como Presupuestos) -->
+              <div class="modern-card" id="inlineNewInvoiceCard">
+                <h5 class="section-title"><i class="fas fa-plus-circle"></i> Nueva factura</h5>
+                <form id="formNewInvoiceIssued">
+                  <div class="invoice-form-grid">
+                    <div>
+                      <label class="form-label">Número de factura</label>
+                      <input type="text" name="invoiceNumber" class="form-control" placeholder="Ej: INV-2025-001" required />
+                    </div>
+                    <div>
+                      <label class="form-label">Cliente</label>
+                      <input type="text" name="customer" class="form-control" placeholder="Nombre del cliente" required />
+                    </div>
+                    <div>
+                      <label class="form-label">NIF Cliente</label>
+                      <input type="text" name="customerNif" class="form-control" placeholder="NIF del cliente" />
+                    </div>
+                    <div>
+                      <label class="form-label">Fecha</label>
+                      <input type="date" name="invoiceDate" class="form-control" required />
+                    </div>
+                    <div>
+                      <label class="form-label">Vence</label>
+                      <input type="date" name="dueDate" class="form-control" required />
+                    </div>
+                    <div>
+                      <label class="form-label">Base Imponible (EUR)</label>
+                      <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required />
+                    </div>
+                    <div>
+                      <label class="form-label">IVA (%)</label>
+                      <input type="number" step="0.01" name="ivaRate" class="form-control" placeholder="21" value="21" />
+                    </div>
+                    <div>
+                      <label class="form-label">Estado</label>
+                      <select name="state" class="form-select">
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Pagada">Pagada</option>
+                        <option value="Vencida">Vencida</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="form-label">Método de cobro <small>(si Cobrada)</small></label>
+                      <select name="paymentMethod" class="form-select">
+                        <option value="">-- Seleccionar --</option>
+                        <option value="efectivo">Efectivo</option>
+                        <option value="tarjeta">Tarjeta</option>
+                        <option value="transferencia">Ingreso/Transferencia</option>
+                        <option value="recibo">Recibo Bancario</option>
+                        <option value="cheque">Pagaré/Cheque</option>
+                        <option value="paypal">Paypal</option>
+                      </select>
+                    </div>
+                    <div class="field-full">
+                      <label class="form-label">Fecha de cobro <small>(si Cobrada)</small></label>
+                      <input type="date" name="paymentDate" class="form-control" />
+                      <div class="form-text" style="color: var(--muted);">Si se deja vacío, se usará la fecha actual</div>
+                    </div>
+                  </div>
+                  <div class="mt-3 text-end">
+                    <button type="button" class="btn btn-secondary" id="cancelInlineInvoiceBtn">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="saveInvoiceIssuedBtn"><i class="fas fa-save me-2"></i>Guardar</button>
+                  </div>
+                </form>
+              </div>
 
             <!-- KPI Cards -->
             <div class="row mb-4">
@@ -598,92 +669,7 @@
             </div>
         </main>
 
-    <!-- Modal Nueva Factura -->
-    <div class="modal fade" id="modalNewInvoiceIssued">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header" id="modalNewInvoiceHeader">
-                    <div style="flex: 1;">
-                        <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i><span id="modalNewInvoiceTitle">Nueva factura</span></h5>
-                        <div id="creditNoteAlert" style="display: none; margin-top: 8px;">
-                            <span class="badge" style="background: var(--metric3-bg); color: var(--metric3-text); padding: 6px 12px; font-size: 0.85rem;">
-                                <i class="fas fa-redo me-1"></i>Factura Rectificativa
-                            </span>
-                            <p style="font-size: 0.9rem; color: var(--muted); margin-top: 6px; margin-bottom: 0;">
-                                Base imponible en negativo para cancelar la factura original.
-                            </p>
-                        </div>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="formNewInvoiceIssued">
-              <div class="invoice-form-grid">
-              <div>
-                            <label class="form-label">Número de factura</label>
-                            <input type="text" name="invoiceNumber" class="form-control" placeholder="Ej: INV-2025-001" required />
-                        </div>
-              <div>
-                            <label class="form-label">Cliente</label>
-                            <input type="text" name="customer" class="form-control" placeholder="Nombre del cliente" required />
-                        </div>
-              <div>
-                            <label class="form-label">NIF Cliente</label>
-                            <input type="text" name="customerNif" class="form-control" placeholder="NIF del cliente" />
-                        </div>
-              <div>
-                <label class="form-label">Fecha</label>
-                <input type="date" name="invoiceDate" class="form-control" required />
-                        </div>
-              <div>
-                <label class="form-label">Vence</label>
-                <input type="date" name="dueDate" class="form-control" required />
-                        </div>
-              <div>
-                <label class="form-label">Base Imponible (EUR)</label>
-                <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required />
-              </div>
-              <div>
-                <label class="form-label">IVA (%)</label>
-                <input type="number" step="0.01" name="ivaRate" class="form-control" placeholder="21" value="21" />
-              </div>
-              <div>
-                            <label class="form-label">Estado</label>
-                            <select name="state" class="form-select">
-                                <option value="Pendiente">Pendiente</option>
-                                <option value="Pagada">Pagada</option>
-                                <option value="Vencida">Vencida</option>
-                            </select>
-                        </div>
-              <div>
-                            <label class="form-label">Método de cobro <small>(si Cobrada)</small></label>
-                            <select name="paymentMethod" class="form-select">
-                                <option value="">-- Seleccionar --</option>
-                              <option value="efectivo">Efectivo</option>
-                              <option value="tarjeta">Tarjeta</option>
-                              <option value="transferencia">Ingreso/Transferencia</option>
-                              <option value="recibo">Recibo Bancario</option>
-                              <option value="cheque">Pagaré/Cheque</option>
-                              <option value="paypal">Paypal</option>
-                            </select>
-                        </div>
-              <div class="field-full">
-                            <label class="form-label">Fecha de cobro <small>(si Cobrada)</small></label>
-                            <input type="date" name="paymentDate" class="form-control" />
-                            <div class="form-text" style="color: var(--muted);">Si se deja vacío, se usará la fecha actual</div>
-                        </div>
-              </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="saveInvoiceIssuedBtn">
-                        <i class="fas fa-save me-2"></i>Guardar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+    
 
     <!-- Modal Ver Factura -->
     <div class="modal fade" id="viewInvoiceModal" tabindex="-1">
@@ -893,53 +879,55 @@
         }
 
         // Modal instances
-        var modalInvoice = null;
         var viewInvoiceModal = null;
         var modalExport = null;
         var modalImport = null;
 
         document.addEventListener('DOMContentLoaded', function() {
-            var modalEl = document.getElementById('modalNewInvoiceIssued');
-            if (modalEl) {
-                modalInvoice = new bootstrap.Modal(modalEl);
-            }
+          var viewModalEl = document.getElementById('viewInvoiceModal');
+          if (viewModalEl) {
+            viewInvoiceModal = new bootstrap.Modal(viewModalEl);
+            window.viewInvoiceModal = viewInvoiceModal;
+          }
 
-            var viewModalEl = document.getElementById('viewInvoiceModal');
-            if (viewModalEl) {
-                viewInvoiceModal = new bootstrap.Modal(viewModalEl);
-                window.viewInvoiceModal = viewInvoiceModal;
-            }
+          var exportModalEl = document.getElementById('modalExport');
+          if (exportModalEl) {
+            modalExport = new bootstrap.Modal(exportModalEl);
+          }
 
-            var exportModalEl = document.getElementById('modalExport');
-            if (exportModalEl) {
-                modalExport = new bootstrap.Modal(exportModalEl);
-            }
+          var importModalEl = document.getElementById('modalImport');
+          if (importModalEl) {
+            modalImport = new bootstrap.Modal(importModalEl);
+          }
 
-            var importModalEl = document.getElementById('modalImport');
-            if (importModalEl) {
-                modalImport = new bootstrap.Modal(importModalEl);
-            }
+          // New Invoice Button: populate inline form and scroll to it (no modal)
+          var newBtn = document.getElementById('newInvoiceBtn');
+          if (newBtn) {
+            newBtn.addEventListener('click', function() {
+              var date = new Date();
+              var num = 'INV-' + date.getFullYear() + '-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+              var numberInput = document.querySelector('#formNewInvoiceIssued input[name="invoiceNumber"]');
+              if (numberInput) numberInput.value = num;
 
-            // New Invoice Button
-            document.getElementById('newInvoiceBtn').addEventListener('click', function() {
-                var date = new Date();
-                var num = 'INV-' + date.getFullYear() + '-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
-                var numberInput = document.querySelector('#formNewInvoiceIssued input[name="invoiceNumber"]');
-                if (numberInput) numberInput.value = num;
+              var invoiceDate = document.querySelector('#formNewInvoiceIssued input[name="invoiceDate"]');
+              var dueDate = document.querySelector('#formNewInvoiceIssued input[name="dueDate"]');
+              if (invoiceDate) invoiceDate.value = new Date().toISOString().split('T')[0];
+              if (dueDate) {
+                var due = new Date();
+                due.setDate(due.getDate() + 30);
+                dueDate.value = due.toISOString().split('T')[0];
+              }
 
-                var invoiceDate = document.querySelector('#formNewInvoiceIssued input[name="invoiceDate"]');
-                var dueDate = document.querySelector('#formNewInvoiceIssued input[name="dueDate"]');
-                if (invoiceDate) invoiceDate.value = new Date().toISOString().split('T')[0];
-                if (dueDate) {
-                    var due = new Date();
-                    due.setDate(due.getDate() + 30);
-                    dueDate.value = due.toISOString().split('T')[0];
-                }
-
-                if (modalInvoice) {
-                    modalInvoice.show();
-                }
+              var inlineCard = document.getElementById('inlineNewInvoiceCard');
+              if (inlineCard) {
+                inlineCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // focus first input
+                setTimeout(function() {
+                  if (numberInput) numberInput.focus();
+                }, 200);
+              }
             });
+          }
 
             // Export Button
             document.getElementById('btnExport').addEventListener('click', function() {

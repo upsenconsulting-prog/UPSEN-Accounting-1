@@ -130,6 +130,14 @@
     }
   }
 
+  function openNewInvoiceTab() {
+    const newTabButton = document.getElementById('new-tab');
+    if (!newTabButton) return;
+
+    const newTab = new bootstrap.Tab(newTabButton);
+    newTab.show();
+  }
+
   function populateForm(invoice) {
     document.getElementById('invoiceId').value = invoice.id;
     document.getElementById('numero').value = invoice.numero || '';
@@ -241,6 +249,16 @@
       // Load dropdowns and list
       await Promise.all([loadClients(), loadProviders()]);
       loadInvoices();
+
+      if (window.location.hash === '#new') {
+        openNewInvoiceTab();
+        const invoiceForm = document.getElementById('invoiceForm');
+        if (invoiceForm) {
+          setTimeout(function() {
+            invoiceForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 100);
+        }
+      }
     });
 
     form.addEventListener('submit', saveInvoice);

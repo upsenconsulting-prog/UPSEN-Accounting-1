@@ -975,13 +975,40 @@ initStoreReferences();
   
   setTimeout(checkAndInit, 500);
   
+  // Show inline form helper (used by UI buttons)
+  function showInlineForm() {
+    try {
+      var date = new Date();
+      var num = 'INV-' + date.getFullYear() + '-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+      var numberInput = document.querySelector('#formNewInvoiceIssued input[name="invoiceNumber"]');
+      if (numberInput) numberInput.value = num;
+
+      var invoiceDate = document.querySelector('#formNewInvoiceIssued input[name="invoiceDate"]');
+      var dueDate = document.querySelector('#formNewInvoiceIssued input[name="dueDate"]');
+      if (invoiceDate) invoiceDate.value = new Date().toISOString().split('T')[0];
+      if (dueDate) {
+        var due = new Date();
+        due.setDate(due.getDate() + 30);
+        dueDate.value = due.toISOString().split('T')[0];
+      }
+
+      var inlineCard = document.getElementById('inlineNewInvoiceCard');
+      if (inlineCard) {
+        inlineCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(function() { if (numberInput) numberInput.focus(); }, 200);
+      }
+    } catch (e) {
+      console.error('Error showing inline form:', e);
+    }
+  }
+  
   function initPage() {
     console.log('Inicializando página de facturas emitidas...');
     
     var newInvoiceBtn = document.getElementById('newInvoiceBtn');
     if (newInvoiceBtn) {
       newInvoiceBtn.addEventListener('click', function() {
-        openNewInvoiceModal();
+        showInlineForm();
       });
     }
     
@@ -989,6 +1016,17 @@ initStoreReferences();
     if (saveBtn) {
       saveBtn.addEventListener('click', function() {
         saveInvoiceIssued();
+      });
+    }
+
+    // Cancel inline form button (clears the form)
+    var cancelBtn = document.getElementById('cancelInlineInvoiceBtn');
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', function() {
+        var form = document.getElementById('formNewInvoiceIssued');
+        if (form) form.reset();
+        // optionally scroll back to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       });
     }
     
@@ -1001,6 +1039,10 @@ initStoreReferences();
       refreshBtn.addEventListener('click', function() {
         location.reload();
       });
+    }
+    // Open inline form when navigated with #new
+    if (window.location && window.location.hash === '#new') {
+      try { showInlineForm(); } catch (e) { console.warn('Could not auto-open inline issued form:', e); }
     }
     
     renderInvoices();
