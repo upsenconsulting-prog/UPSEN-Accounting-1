@@ -450,10 +450,136 @@
     .plan-card p { opacity: 0.9; margin-bottom: 15px; font-size: 0.9em; }
     .plan-card .btn { background: var(--card-bg); color: var(--metric4-text); border: 1px solid var(--border); }
 
-    .billing-card { border-left: 4px solid var(--danger); }
-    .billing-card h5 { font-weight: 600; margin-bottom: 10px; }
-    .billing-card p { font-size: 0.9em; color: var(--muted); margin-bottom: 10px; }
-    .billing-warning { color: var(--danger); font-weight: 600; }
+    .pending-card { border-left: 4px solid var(--metric4-text); }
+    .finance-card { border-left: 4px solid var(--danger); }
+    .summary-card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: 20px 20px 18px;
+    }
+    .summary-card-header {
+      margin-bottom: 12px;
+    }
+    .summary-card-title {
+      margin: 0;
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .summary-card-subtitle {
+      margin: 3px 0 0;
+      font-size: 0.78rem;
+      line-height: 1.2;
+      color: var(--muted);
+    }
+    .summary-card-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 0;
+    }
+    .summary-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 0;
+    }
+    .summary-row-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .summary-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 0.82rem;
+    }
+    .summary-icon--blue { background: #e8f1ff; color: #4b7bec; }
+    .summary-icon--pink { background: #ffe8f3; color: #d66aa4; }
+    .summary-icon--green { background: #def8ef; color: #15a66f; }
+    .summary-icon--violet { background: #e8e5ff; color: #6c5ce7; }
+    body.theme-dark .summary-icon--blue { background: rgba(75, 123, 236, 0.22); color: #93c5fd; }
+    body.theme-dark .summary-icon--pink { background: rgba(214, 106, 164, 0.22); color: #f9a8d4; }
+    body.theme-dark .summary-icon--green { background: rgba(21, 166, 111, 0.22); color: #6ee7b7; }
+    body.theme-dark .summary-icon--violet { background: rgba(108, 92, 231, 0.22); color: #c4b5fd; }
+    .summary-copy {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .summary-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      line-height: 1.15;
+      margin: 0;
+    }
+    .summary-note {
+      font-size: 0.72rem;
+      color: var(--muted);
+      line-height: 1.15;
+      margin: 2px 0 0;
+    }
+    .summary-value {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+      text-align: right;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .summary-count {
+      font-size: 1.02rem;
+      font-weight: 800;
+      line-height: 1;
+      color: var(--text);
+    }
+    .summary-money {
+      font-size: 0.82rem;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--metric3-text);
+    }
+    .summary-money--green { color: var(--success); }
+    .summary-trend {
+      font-size: 1.02rem;
+      font-weight: 800;
+      line-height: 1;
+      color: var(--text);
+    }
+    .summary-trend.is-positive { color: var(--success); }
+    .summary-trend.is-negative { color: var(--danger); }
+    .summary-footer {
+      margin-top: auto;
+      padding-top: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--metric3-text);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      width: fit-content;
+      text-decoration: none;
+    }
+    .summary-footer:hover,
+    .summary-footer:focus,
+    .summary-footer:active {
+      text-decoration: none;
+    }
+    .summary-footer--green { color: var(--success); }
 
     .top-dashboard-cards > [class*="col-"] {
       display: flex;
@@ -899,20 +1025,23 @@
 
       <div class="row mb-4 top-dashboard-cards">
         <div class="col-md-6 mb-3">
-          <div class="modern-card plan-card">
-            <h5><i class="fas fa-rocket me-2"></i>Actualizar plan</h5>
-            <p>Actualmente estás utilizando el plan básico gratuito.</p>
-            <button class="btn"><i class="fas fa-arrow-up me-2"></i>Mejorar plan</button>
+          <div class="modern-card pending-card summary-card">
+            <div class="summary-card-header">
+              <h5 class="summary-card-title"><i class="fas fa-tasks"></i> Tareas pendientes</h5>
+              <p id="pendingSummaryPrimary" class="summary-card-subtitle">Resumen de pendientes del mes actual.</p>
+            </div>
+            <div id="pendingSummaryDetails" class="summary-card-body"></div>
+            <a id="pendingSummaryFooter" class="summary-footer" href="../Invoice-issued/invoice-issued.html" aria-label="Ver pendientes">Ver pendientes <i class="fas fa-arrow-right"></i></a>
           </div>
         </div>
         <div class="col-md-6 mb-3">
-          <div class="modern-card billing-card">
-            <h5><i class="fas fa-file-invoice me-2"></i>Resumen de facturación</h5>
-            <div id="billingSummaryContent">
-              <p id="billingSummaryPrimary">Has alcanzado el número máximo de documentos permitidos.</p>
-              <div id="billingSummaryDetails"></div>
-              <span id="billingSummaryWarning" class="billing-warning"><i class="fas fa-exclamation-triangle me-2"></i>Para aumentar los límites, contrata un plan superior.</span>
+          <div class="modern-card finance-card summary-card">
+            <div class="summary-card-header">
+              <h5 class="summary-card-title"><i class="fas fa-chart-line"></i> Estado financiero</h5>
+              <p id="financeSummaryPrimary" class="summary-card-subtitle">Resumen financiero del mes actual.</p>
             </div>
+            <div id="financeSummaryDetails" class="summary-card-body"></div>
+            <a id="financeSummaryFooter" class="summary-footer summary-footer--green" href="../expense/expense.html" aria-label="Ver informe completo">Ver informe completo <i class="fas fa-arrow-right"></i></a>
           </div>
         </div>
       </div>

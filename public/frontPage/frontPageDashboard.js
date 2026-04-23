@@ -151,6 +151,21 @@ function getUserInvoicesReceived() {
   return [];
 }
 
+  function getUserBudgets() {
+    if (window.getBudgetsSync) {
+      var data = window.getBudgetsSync();
+      if (data && data.length > 0) {
+        return data;
+      }
+    }
+
+    if (window._dashboardBudgets && window._dashboardBudgets.length > 0) {
+      return window._dashboardBudgets;
+    }
+
+    return [];
+  }
+
 // ========== KPI HELPERS ==========
 function sumInvoicesReceivedMonthYear(year, month) {
   var total = 0;
@@ -250,6 +265,46 @@ function countInvoicesIssuedPending() {
   return count;
 }
 
+function sumInvoicesIssuedPendingAmount() {
+  var total = 0;
+  var invoices = getUserInvoicesIssued();
+
+  for (var i = 0; i < invoices.length; i++) {
+    var state = (invoices[i].state || '').toLowerCase();
+    if (state === 'pendiente') {
+      total += Number(invoices[i].amount) || 0;
+    }
+  }
+
+  return total;
+}
+
+function countBudgetsPending() {
+  var count = 0;
+  var budgets = getUserBudgets();
+
+  for (var i = 0; i < budgets.length; i++) {
+    var status = (budgets[i].status || '').toLowerCase();
+    if (status === 'pending') count++;
+  }
+
+  return count;
+}
+
+function sumBudgetsPendingAmount() {
+  var total = 0;
+  var budgets = getUserBudgets();
+
+  for (var i = 0; i < budgets.length; i++) {
+    var status = (budgets[i].status || '').toLowerCase();
+    if (status === 'pending') {
+      total += Number(budgets[i].total) || 0;
+    }
+  }
+
+  return total;
+}
+
 function sumExpensesMonthYear(year, month) {
   var total = 0;
   var expenses = getUserExpenses();
@@ -319,6 +374,20 @@ function getTopExpenseCategory(year, month) {
     }
   }
   return topCat;
+}
+
+function getMonthReference(date, offsetMonths) {
+  var reference = new Date(date.getFullYear(), date.getMonth() + offsetMonths, 1);
+  return {
+    year: reference.getFullYear(),
+    month: reference.getMonth()
+  };
+}
+
+function formatSignedPercent(value) {
+  if (value === null || value === undefined || !isFinite(value)) return 'N/D';
+  var prefix = value > 0 ? '+' : '';
+  return prefix + value.toFixed(1) + '%';
 }
 
 function getExpensesMonthYear(year, month) {
@@ -391,45 +460,124 @@ function renderDashboardKPIs() {
   if ($('kpi-expenses-category')) $('kpi-expenses-category').textContent = topCategory || '-';
 }
 
-function renderBillingSummaryCard() {
-  var primaryEl = $('billingSummaryPrimary');
-  var detailsEl = $('billingSummaryDetails');
-  var warningEl = $('billingSummaryWarning');
-
-  if (!primaryEl || !detailsEl || !warningEl) return;
-
-  var config = getBillingSummaryConfig();
+function getFinancialSummaryData() {
   var now = new Date();
   var y = now.getFullYear();
   var m = now.getMonth();
 
-  var totalMonthDocs =
-    countInvoicesIssuedMonthYear(y, m) +
-    countInvoicesReceivedMonthYear(y, m) +
-    countExpensesMonthYear(y, m);
+  var totalIssuedThisMonth = sumInvoicesIssuedMonthYear(y, m);
+  var totalExpensesThisMonth = sumExpensesMonthYear(y, m);
+  var currentNetResult = totalIssuedThisMonth - totalExpensesThisMonth;
 
-  var pendingIssued = countInvoicesIssuedPending();
-  var pendingReceived = countInvoicesReceivedPending();
-
-  var user = getCurrentUserData();
-  var planName = (user && user.plan) ? String(user.plan) : 'basico gratuito';
-
-  var primaryText = 'No hay informacion activa para mostrar en esta tarjeta.';
-  if (config.showMonthUsage) {
-    primaryText = 'Este mes has registrado ' + totalMonthDocs + ' documentos en total.';
-  } else if (config.showPlan) {
-    primaryText = 'Plan actual: ' + planName + '.';
-  } else if (config.showPending) {
-    primaryText = 'Pendientes actuales: ' + (pendingIssued + pendingReceived) + ' facturas.';
+  var previousRef = getMonthReference(now, -1);
+  var previousNetResult = sumInvoicesIssuedMonthYear(previousRef.year, previousRef.month) - sumExpensesMonthYear(previousRef.year, previousRef.month);
+  var netChangePercent = null;
+  if (previousNetResult === 0) {
+    if (currentNetResult !== 0) {
+      netChangePercent = currentNetResult > 0 ? 100 : -100;
+    }
+  } else {
+    netChangePercent = ((currentNetResult - previousNetResult) / Math.abs(previousNetResult)) * 100;
   }
 
-  primaryEl.textContent = primaryText;
+  var netResultClass = currentNetResult >= 0 ? 'is-positive' : 'is-negative';
+  var trendClass = netChangePercent === null ? 'is-neutral' : (netChangePercent >= 0 ? 'is-positive' : 'is-negative');
+  var netStatusLabel = currentNetResult >= 0 ? 'Positivo' : 'Negativo';
+  var trendLabel = netChangePercent === null ? 'Sin base en el mes anterior' : formatSignedPercent(netChangePercent) + ' vs mes anterior';
 
-  var detailLines = [];
-  // Details hidden - user request to remove detailed breakdown
-  
-  detailsEl.innerHTML = detailLines.join('');
-  warningEl.style.display = config.showUpgradeWarning ? 'inline-flex' : 'none';
+  return {
+    currentNetResult: currentNetResult,
+    netResultClass: netResultClass,
+    trendClass: trendClass,
+    netStatusLabel: netStatusLabel,
+    trendLabel: trendLabel,
+    netChangePercent: netChangePercent
+  };
+}
+
+function renderPendingSummaryCard() {
+  var primaryEl = $('pendingSummaryPrimary');
+  var detailsEl = $('pendingSummaryDetails');
+  var footerEl = $('pendingSummaryFooter');
+
+  if (!primaryEl || !detailsEl || !footerEl) return;
+
+  var issuedPendingCount = countInvoicesIssuedPending();
+  var issuedPendingAmount = sumInvoicesIssuedPendingAmount();
+  var budgetsPendingCount = countBudgetsPending();
+
+  primaryEl.textContent = 'Dos tareas clave del mes.';
+
+  detailsEl.innerHTML = [
+    '<div class="summary-row">',
+      '<div class="summary-row-left">',
+        '<span class="summary-icon summary-icon--blue"><i class="fas fa-clock"></i></span>',
+        '<div class="summary-copy">',
+          '<div class="summary-label">Facturas por cobrar</div>',
+          '<div class="summary-note">Cobro pendiente</div>',
+        '</div>',
+      '</div>',
+      '<div class="summary-value">',
+        '<div><span class="summary-count">' + issuedPendingCount + '</span></div>',
+        '<div class="summary-money">' + formatEUR(issuedPendingAmount) + '</div>',
+      '</div>',
+    '</div>',
+    '<div class="summary-row">',
+      '<div class="summary-row-left">',
+        '<span class="summary-icon summary-icon--pink"><i class="fas fa-file-alt"></i></span>',
+        '<div class="summary-copy">',
+          '<div class="summary-label">Presupuestos sin respuesta</div>',
+          '<div class="summary-note">Pendiente de respuesta del cliente</div>',
+        '</div>',
+      '</div>',
+      '<div class="summary-value">',
+        '<div class="summary-count">' + budgetsPendingCount + '</div>',
+      '</div>',
+    '</div>'
+  ].join('');
+
+  footerEl.innerHTML = 'Ver pendientes <i class="fas fa-arrow-right"></i>';
+}
+
+function renderFinancialSummaryCard() {
+  var primaryEl = $('financeSummaryPrimary');
+  var detailsEl = $('financeSummaryDetails');
+  var footerEl = $('financeSummaryFooter');
+
+  if (!primaryEl || !detailsEl || !footerEl) return;
+
+  var financial = getFinancialSummaryData();
+
+  primaryEl.textContent = 'Resultado y evolución actual.';
+
+  detailsEl.innerHTML = [
+    '<div class="summary-row">',
+      '<div class="summary-row-left">',
+        '<span class="summary-icon summary-icon--green"><i class="fas fa-arrow-trend-up"></i></span>',
+        '<div class="summary-copy">',
+          '<div class="summary-label">Resultado neto</div>',
+          '<div class="summary-note">Ingresos - gastos</div>',
+        '</div>',
+      '</div>',
+      '<div class="summary-value">',
+        '<div class="summary-trend ' + financial.netResultClass + '">' + formatEUR(financial.currentNetResult) + '</div>',
+      '</div>',
+    '</div>',
+    '<div class="summary-row">',
+      '<div class="summary-row-left">',
+        '<span class="summary-icon summary-icon--violet"><i class="fas fa-arrow-up-right-dots"></i></span>',
+        '<div class="summary-copy">',
+          '<div class="summary-label">Comparativa vs mes anterior</div>',
+          '<div class="summary-note">Evolución mensual</div>',
+        '</div>',
+      '</div>',
+      '<div class="summary-value">',
+        '<div class="summary-trend ' + financial.trendClass + '">' + (financial.netChangePercent === null ? 'N/D' : formatSignedPercent(financial.netChangePercent)) + '</div>',
+      '</div>',
+    '</div>'
+  ].join('');
+
+  footerEl.innerHTML = 'Ver informe completo <i class="fas fa-arrow-right"></i>';
 }
 
 // ========== CHARTS ==========
@@ -937,7 +1085,8 @@ function renderDashboardContent() {
   var m = now.getMonth();
 
   renderDashboardKPIs();
-  renderBillingSummaryCard();
+  renderPendingSummaryCard();
+  renderFinancialSummaryCard();
   renderExpensesChart();
   renderForecastChart();
   renderPaymentsForecastChart();
