@@ -69,3 +69,65 @@ users/{userId}/budgets/
 firebase deploy --project upsen-accounting
 ```
 
+## Financial Metrics Endpoint
+
+Backend endpoint for dashboard metrics:
+
+```text
+GET /metrics/financial-summary
+```
+
+Supported query params:
+
+- `start=YYYY-MM-DD`
+- `end=YYYY-MM-DD`
+- `status=pending,paid,overdue`
+
+Authentication:
+
+- Production: `Authorization: Bearer <firebase-id-token>`
+- Emulator fallback: `x-user-id: <uid>` or `?userId=<uid>`
+
+Example:
+
+```text
+/metrics/financial-summary?start=2025-01-01&end=2025-01-31&status=pending
+```
+
+Response shape:
+
+```json
+{
+  "generatedAt": "2026-04-22T10:00:00.000Z",
+  "range": {
+    "start": "2025-01-01",
+    "end": "2025-01-31"
+  },
+  "filters": {
+    "status": ["pending"]
+  },
+  "income": 0,
+  "expenses": 0,
+  "pending": {
+    "to_receive": 0,
+    "to_pay": 0
+  },
+  "overdue": {
+    "count": 0,
+    "amount": 0
+  },
+  "monthly": {
+    "month": "2026-04",
+    "income": 0,
+    "expenses": 0
+  },
+  "documents": {
+    "issued_invoices": 0,
+    "received_invoices": 0,
+    "expenses": 0,
+    "open_receivables": 0,
+    "open_payables": 0,
+    "overdue_issued_invoices": 0
+  }
+}
+```

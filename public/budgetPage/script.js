@@ -38,6 +38,34 @@ function clampBudgetNumber(value, minimum, maximum) {
   return numericValue;
 }
 
+function normalizeBudgetNumericValue(value) {
+  var normalized = (value || '').toString().replace(',', '.');
+  normalized = normalized.replace(/[^0-9.]/g, '');
+  var parts = normalized.split('.');
+  if (parts.length > 2) {
+    normalized = parts.shift() + '.' + parts.join('');
+  }
+  return normalized;
+}
+
+function blockInvalidBudgetNumberKey(event) {
+  if (!event || !event.target) return;
+  if (event.ctrlKey || event.metaKey || event.altKey) return;
+  var allowedKeys = ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+  if (allowedKeys.includes(event.key)) return;
+  if (/^[0-9]$/.test(event.key) || event.key === '.' || event.key === ',') return;
+  event.preventDefault();
+}
+
+function sanitizeBudgetNumericInput(event) {
+  if (!event || !event.target) return;
+  var input = event.target;
+  var normalized = normalizeBudgetNumericValue(input.value);
+  if (input.value !== normalized) {
+    input.value = normalized;
+  }
+}
+
 function sanitizeBudgetRow(row) {
   if (!row) return { qty: 0, unit: 0 };
   var qtyInput = row.querySelector('.qty');
@@ -63,11 +91,14 @@ function sanitizeRetentionInput() {
 
 function createBudgetItemRowHtml() {
   return '<td><input type="text" class="form-control desc" placeholder="Articulo"></td>' +
-    '<td><input type="number" class="form-control qty" value="1" min="0" step="0.01" oninput="updateTotals()"></td>' +
-    '<td><input type="number" class="form-control unit" value="0.00" min="0" step="0.01" oninput="updateTotals()"></td>' +
+    '<td><input type="number" class="form-control qty" value="1" min="0" step="0.01" inputmode="decimal" onkeydown="blockInvalidBudgetNumberKey(event)" oninput="sanitizeBudgetNumericInput(event); updateTotals()"></td>' +
+    '<td><input type="number" class="form-control unit" value="0.00" min="0" step="0.01" inputmode="decimal" onkeydown="blockInvalidBudgetNumberKey(event)" oninput="sanitizeBudgetNumericInput(event); updateTotals()"></td>' +
     '<td class="line-total">0.00 EUR</td>' +
     '<td><button type="button" class="btn btn-danger btn-sm remove-btn">X</button></td>';
 }
+
+window.blockInvalidBudgetNumberKey = blockInvalidBudgetNumberKey;
+window.sanitizeBudgetNumericInput = sanitizeBudgetNumericInput;
 
 function validateBudgetFormData(data) {
   if (!data.date || !data.customer) return 'Por favor complete: fecha y cliente.';
@@ -77,10 +108,43 @@ function validateBudgetFormData(data) {
   for (var i = 0; i < data.items.length; i++) {
     var item = data.items[i];
     if (!(Number(item.qty) > 0)) return 'La cantidad debe ser mayor que cero.';
-    if (!(Number(item.unit) >= 0)) return 'El precio no puede ser negativo.';
+    if (!(Number(item.unit) > 0)) return 'El precio debe ser mayor que cero.';
   }
 
   return null;
+}
+
+function getCompleteBudgetItems() {
+  const rows = document.querySelectorAll('#itemsTable tbody tr');
+  const items = [];
+
+  rows.forEach(row => {
+    const desc = row.querySelector('.desc')?.value || '';
+    const sanitizedRow = sanitizeBudgetRow(row);
+    const qty = sanitizedRow.qty;
+    const unit = sanitizedRow.unit;
+
+    if (desc.trim()) {
+      items.push({ desc: desc.trim(), qty, unit, total: qty * unit });
+    }
+  });
+
+  return items;
+}
+
+function updateBudgetSaveState(items) {
+  const saveButton = $('saveBtn');
+  const validationMessage = $('budgetValidationMessage');
+  const validItems = Array.isArray(items) ? items : getCompleteBudgetItems();
+  const hasCompleteLine = validItems.some(item => item.desc && Number(item.qty) > 0 && Number(item.unit) > 0);
+
+  if (saveButton) {
+    saveButton.disabled = !hasCompleteLine;
+  }
+
+  if (validationMessage) {
+    validationMessage.style.display = hasCompleteLine ? 'none' : 'block';
+  }
 }
 
 // ========== ID DO USUÁRIO ==========
@@ -289,6 +353,8 @@ window.updateTotals = function() {
   if (grandTotalEl) {
     grandTotalEl.textContent = 'Total: ' + moneyEUR(totals.totalAmount);
   }
+
+  updateBudgetSaveState(getCompleteBudgetItems());
   
   return totals.totalAmount;
 };
@@ -353,19 +419,7 @@ if (newBudgetBtn) {
 const saveBtn = document.getElementById('saveBtn');
 if (saveBtn) {
   saveBtn.addEventListener('click', async () => {
-    const rows = document.querySelectorAll('#itemsTable tbody tr');
-    const items = [];
-    
-    rows.forEach(row => {
-      const desc = row.querySelector('.desc')?.value || '';
-      const sanitizedRow = sanitizeBudgetRow(row);
-      const qty = sanitizedRow.qty;
-      const unit = sanitizedRow.unit;
-      
-      if (desc.trim()) {
-        items.push({ desc, qty, unit, total: qty * unit });
-      }
-    });
+    const items = getCompleteBudgetItems();
     
     const data = {
       number: $('number')?.value || generateBudgetNumber(),
@@ -405,6 +459,8 @@ if (saveBtn) {
       window.loadSavedBudgets();
     }
   });
+
+  updateBudgetSaveState();
 }
 
 const cancelBtn = document.getElementById('cancelBtn');

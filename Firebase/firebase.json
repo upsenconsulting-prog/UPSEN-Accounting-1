@@ -1,4 +1,21 @@
 {
+  "functions": {
+    "source": "functions"
+  },
+  "hosting": {
+    "public": "../public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/metrics/financial-summary",
+        "function": "financialSummary"
+      }
+    ]
+  },
   "emulators": {
     "auth": {
       "port": 9099
@@ -19,4 +36,3 @@
     "singleProjectMode": true
   }
 }
-
