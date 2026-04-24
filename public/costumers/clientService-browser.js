@@ -13,6 +13,8 @@ const getDb = () => window.firebaseDb || (typeof firebase !== 'undefined' && fir
 
   const normalizeText = (value) => String(value || '').trim();
 
+  const normalizeEmail = (value) => normalizeText(value).toLowerCase();
+
   const findClientsByField = async (field, value) => {
     const snapshot = await getUserCollection().where(field, '==', value).get();
     return snapshot.docs.map(function(doc) {
@@ -40,7 +42,7 @@ const getDb = () => window.firebaseDb || (typeof firebase !== 'undefined' && fir
     async createClient(clientData) {
       try {
         const nif = normalizeText(clientData.nif_nie_cif).toUpperCase();
-        const email = normalizeText(clientData.email);
+        const email = normalizeEmail(clientData.email);
 
         if (!this.validateNifNie(nif)) {
           return { success: false, message: 'NIF/NIE/CIF inválido' };
@@ -99,7 +101,7 @@ const getDb = () => window.firebaseDb || (typeof firebase !== 'undefined' && fir
 
         const current = currentDoc.data() || {};
         const nextNif = clientData.nif_nie_cif ? normalizeText(clientData.nif_nie_cif).toUpperCase() : normalizeText(current.nif_nie_cif).toUpperCase();
-        const nextEmail = clientData.email ? normalizeText(clientData.email) : normalizeText(current.email);
+        const nextEmail = clientData.email ? normalizeEmail(clientData.email) : normalizeEmail(current.email);
 
         const nifMatches = await findClientsByField('nif_nie_cif', nextNif);
         const nifConflict = nifMatches.find(function(doc) { return doc.id !== id; });

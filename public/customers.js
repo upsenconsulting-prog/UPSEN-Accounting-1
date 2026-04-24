@@ -254,7 +254,7 @@
     const rawName = (clientFields.name.value || '').trim();
     const name = sanitizeName(rawName).trim();
     const nif = (clientFields.nif.value || '').trim().toUpperCase();
-    const email = (clientFields.email.value || '').trim();
+    const email = (clientFields.email.value || '').trim().toLowerCase();
     const phone = sanitizePhone(clientFields.phone.value).trim();
     const country = (clientFields.country.value || '').trim();
     const allowedCountries = getAllowedCountries();

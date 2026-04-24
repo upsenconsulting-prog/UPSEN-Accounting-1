@@ -91,11 +91,15 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((value || '').trim());
   }
 
+  function normalizeEmail(value) {
+    return (value || '').trim().toLowerCase();
+  }
+
   function normalizeClientData(data) {
     return {
       nombre: (data && data.nombre ? data.nombre : '').trim(),
       nif_nie_cif: (data && data.nif_nie_cif ? data.nif_nie_cif : '').trim().toUpperCase(),
-      email: (data && data.email ? data.email : '').trim(),
+      email: normalizeEmail(data && data.email ? data.email : ''),
       telefono: (data && data.telefono ? data.telefono : '').trim(),
       direccion_fiscal: (data && data.direccion_fiscal ? data.direccion_fiscal : '').trim(),
       pais: (data && data.pais ? data.pais : '').trim(),
@@ -149,8 +153,8 @@
       }
 
       const existingByEmail = await getClientsCollection()
-        .where('email', '==', data.email)
-        .get();
+      .where('email', '==', data.email)
+      .get();
 
       if (!existingByEmail.empty) {
         return { success: false, message: 'Ya existe un cliente con ese email' };
