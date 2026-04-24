@@ -19,6 +19,201 @@ function uid() {
   return "id-" + Date.now() + "-" + Math.random().toString(16).slice(2);
 }
 
+function toTrimmedString(value) {
+  return value === null || value === undefined ? '' : String(value).trim();
+}
+
+function toNumber(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : (fallback ?? 0);
+}
+
+function parseDateValue(value) {
+  if (!value) return null;
+  const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function normalizeStatusValue(value, allowedValues, fallback) {
+  const text = toTrimmedString(value);
+  if (!text) return fallback;
+  const lowered = text.toLowerCase();
+  const match = (allowedValues || []).find(function(option) {
+    return String(option).toLowerCase() === lowered;
+  });
+  return match || fallback;
+}
+
+function stateHistoryEntry(state, previousState) {
+  return {
+    state: state,
+    previousState: previousState ?? null,
+    changedAt: new Date().toISOString()
+  };
+}
+
+function appendStateHistory(currentHistory, nextState, previousState) {
+  const history = Array.isArray(currentHistory) ? currentHistory.slice() : [];
+  history.push(stateHistoryEntry(nextState, previousState));
+  return history;
+}
+
+function isWithinDateRange(dateValue, startDate, endDate) {
+  const parsed = parseDateValue(dateValue);
+  if (!parsed) return false;
+  if (startDate && parsed < startDate) return false;
+  if (endDate && parsed > endDate) return false;
+  return true;
+}
+
+function getDateRangeBounds(options) {
+  const filters = options || {};
+  if (filters.startDate || filters.endDate) {
+    return {
+      startDate: parseDateValue(filters.startDate),
+      endDate: parseDateValue(filters.endDate)
+    };
+  }
+
+  if (filters.month !== undefined && filters.year !== undefined) {
+    const startDate = new Date(filters.year, filters.month, 1);
+    const endDate = new Date(filters.year, filters.month + 1, 0, 23, 59, 59, 999);
+    return { startDate: startDate, endDate: endDate };
+  }
+
+  const now = new Date();
+  return {
+    startDate: new Date(now.getFullYear(), now.getMonth(), 1),
+    endDate: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+  };
+}
+
+function getInvoiceValue(invoice) {
+  return toNumber(invoice && (invoice.totalAmount ?? invoice.amount), 0);
+}
+
+function getExpenseValue(expense) {
+  return toNumber(expense && (expense.totalAmount ?? expense.amount), 0);
+}
+
+function isPendingState(state) {
+  return ['pendiente', 'pending', 'parcial', 'partial'].includes(String(state || '').toLowerCase());
+}
+
+function isPaidState(state) {
+  return ['pagada', 'paid', 'cobrada'].includes(String(state || '').toLowerCase());
+}
+
+function isOverdueState(item) {
+  const dueDate = parseDateValue(item && item.dueDate);
+  if (!dueDate) return false;
+  const state = String(item && (item.state || item.estado) || '').toLowerCase();
+  return isPendingState(state) && dueDate < new Date();
+}
+
+function calculateLineSubtotal(line) {
+  const quantity = toNumber(line && (line.quantity ?? line.qty), 0);
+  const price = toNumber(line && (line.price ?? line.unit), 0);
+  return quantity * price;
+}
+
+function calculateTaxableAmount(lines) {
+  return (Array.isArray(lines) ? lines : []).reduce(function(sum, line) {
+    return sum + calculateLineSubtotal(line);
+  }, 0);
+}
+
+function calculateVAT(amount, vatRate) {
+  return toNumber(amount, 0) * (toNumber(vatRate, 0) / 100);
+}
+
+function calculateInvoiceTotal(lines, vatRate) {
+  const taxableAmount = calculateTaxableAmount(lines);
+  const vatAmount = calculateVAT(taxableAmount, vatRate);
+  return {
+    taxableAmount: taxableAmount,
+    vatAmount: vatAmount,
+    totalAmount: taxableAmount + vatAmount
+  };
+}
+
+function calculateBudgetTotals(lines, retentionRate) {
+  const subtotal = calculateTaxableAmount(lines);
+  const retentionAmount = subtotal * (toNumber(retentionRate, 0) / 100);
+  return {
+    subtotal: subtotal,
+    retentionAmount: retentionAmount,
+    totalAmount: subtotal - retentionAmount
+  };
+}
+
+function calculateFinancialSummary(options) {
+  const filters = options || {};
+  const range = getDateRangeBounds(filters);
+  const issued = getInvoicesIssuedSync();
+  const received = getInvoicesReceivedSync();
+  const expenses = getExpensesSync();
+  const budgets = getBudgetsSync();
+
+  const revenueInvoices = issued.filter(function(invoice) {
+    return isPaidState(invoice.state) && isWithinDateRange(invoice.invoiceDate, range.startDate, range.endDate);
+  });
+  const expenseItems = expenses.filter(function(expense) {
+    return isWithinDateRange(expense.date, range.startDate, range.endDate);
+  });
+
+  const pendingIssued = issued.filter(function(invoice) { return isPendingState(invoice.state); });
+  const pendingReceived = received.filter(function(invoice) { return isPendingState(invoice.state); });
+  const overdueIssued = pendingIssued.filter(isOverdueState);
+  const overdueReceived = pendingReceived.filter(isOverdueState);
+  const pendingBudgets = budgets.filter(function(budget) {
+    return String(budget.status || '').toLowerCase() === 'pending';
+  });
+
+  const revenue = revenueInvoices.reduce(function(sum, invoice) { return sum + getInvoiceValue(invoice); }, 0);
+  const expensesTotal = expenseItems.reduce(function(sum, expense) { return sum + getExpenseValue(expense); }, 0);
+  const outstandingAmount = pendingIssued.reduce(function(sum, invoice) { return sum + getInvoiceValue(invoice); }, 0);
+  const payableAmount = pendingReceived.reduce(function(sum, invoice) { return sum + getInvoiceValue(invoice); }, 0);
+  const overdueAmount = overdueIssued.reduce(function(sum, invoice) { return sum + getInvoiceValue(invoice); }, 0) + overdueReceived.reduce(function(sum, invoice) { return sum + getInvoiceValue(invoice); }, 0);
+
+  return {
+    rangeStart: range.startDate ? range.startDate.toISOString() : null,
+    rangeEnd: range.endDate ? range.endDate.toISOString() : null,
+    revenue: revenue,
+    expenses: expensesTotal,
+    netResult: revenue - expensesTotal,
+    outstandingAmount: outstandingAmount,
+    payableAmount: payableAmount,
+    pendingDocuments: pendingIssued.length + pendingReceived.length + pendingBudgets.length,
+    overdueDocuments: overdueIssued.length + overdueReceived.length,
+    overdueAmount: overdueAmount,
+    accountsReceivable: outstandingAmount,
+    accountsPayable: payableAmount,
+    paidInvoices: issued.filter(function(invoice) { return isPaidState(invoice.state); }).length,
+    generatedAt: new Date().toISOString()
+  };
+}
+
+window.StatusEngine = {
+  normalizeStatusValue: normalizeStatusValue,
+  isPendingState: isPendingState,
+  isPaidState: isPaidState,
+  isOverdueState: isOverdueState
+};
+
+window.CalculationEngine = {
+  calculateLineSubtotal: calculateLineSubtotal,
+  calculateTaxableAmount: calculateTaxableAmount,
+  calculateVAT: calculateVAT,
+  calculateInvoiceTotal: calculateInvoiceTotal,
+  calculateBudgetTotals: calculateBudgetTotals,
+  calculateFinancialSummary: calculateFinancialSummary
+};
+
+window.DashboardSummary = {
+  getFinancialSummary: calculateFinancialSummary
+};
+
 // ===== Keys =====
 const KEYS = {
   invoicesReceived: "upsen_invoices_received",
@@ -165,7 +360,10 @@ async function addInvoiceReceived(invoice) {
     verifactuStatus: invoice.verifactuStatus ?? "draft"
   };
 
-const item = {
+  const createdAt = new Date().toISOString();
+  const state = invoice.state ?? "Pendiente";
+
+  const item = {
     id: uid(),
     invoiceNumber: invoice.invoiceNumber ?? "",
     invoiceDate: invoice.invoiceDate ?? "",
@@ -175,11 +373,13 @@ const item = {
     ivaRate: Number(invoice.ivaRate ?? 0),
     ivaAmount: Number(invoice.ivaAmount ?? 0),
     totalAmount: Number(invoice.totalAmount ?? 0),
-    state: invoice.state ?? "Pendiente",
+    state: state,
     description: invoice.description ?? "",
     paymentMethod: invoice.paymentMethod ?? null,  // efectivo|tarjeta|transferencia|recibo|cheque|paypal  
     paymentDate: invoice.paymentDate ?? null,     // YYYY-MM-DD
-    createdAt: new Date().toISOString(),
+    createdAt: createdAt,
+    updatedAt: createdAt,
+    stateHistory: [stateHistoryEntry(state, null)],
     ...verifactuFields
   };
   
@@ -242,7 +442,10 @@ async function addInvoiceIssued(invoice) {
     verifactuStatus: invoice.verifactuStatus ?? "draft" // draft, registered, error
   };
 
-const item = {
+  const createdAt = new Date().toISOString();
+  const state = invoice.state ?? "Pendiente";
+
+  const item = {
     id: uid(),
     invoiceNumber: invoice.invoiceNumber ?? "",
     customer: invoice.customer ?? "",
@@ -253,10 +456,12 @@ const item = {
     ivaRate: Number(invoice.ivaRate ?? 0),
     ivaAmount: Number(invoice.ivaAmount ?? 0),
     totalAmount: Number(invoice.totalAmount ?? 0),
-    state: invoice.state ?? "Pendiente",
+    state: state,
     paymentMethod: invoice.paymentMethod ?? null,  // efectivo|tarjeta|transferencia|recibo|cheque|paypal
     paymentDate: invoice.paymentDate ?? null,     // YYYY-MM-DD
-    createdAt: new Date().toISOString(),
+    createdAt: createdAt,
+    updatedAt: createdAt,
+    stateHistory: [stateHistoryEntry(state, null)],
     ...verifactuFields
   };
   
@@ -295,7 +500,12 @@ async function updateInvoiceIssued(id, updates) {
   let list = getInvoicesIssuedSync();
   const index = list.findIndex((x) => x.id === id);
   if (index !== -1) {
-    list[index] = { ...list[index], ...updates };
+    const previous = list[index];
+    const merged = { ...previous, ...updates, updatedAt: new Date().toISOString() };
+    if (updates && Object.prototype.hasOwnProperty.call(updates, 'state') && updates.state !== previous.state) {
+      merged.stateHistory = appendStateHistory(previous.stateHistory, updates.state, previous.state);
+    }
+    list[index] = merged;
     write(KEYS.invoicesIssued, list);
     
     // Atualizar no Firebase se disponível
@@ -316,7 +526,12 @@ async function updateInvoiceReceived(id, updates) {
   let list = getInvoicesReceivedSync();
   const index = list.findIndex((x) => x.id === id);
   if (index !== -1) {
-    list[index] = { ...list[index], ...updates };
+    const previous = list[index];
+    const merged = { ...previous, ...updates, updatedAt: new Date().toISOString() };
+    if (updates && Object.prototype.hasOwnProperty.call(updates, 'state') && updates.state !== previous.state) {
+      merged.stateHistory = appendStateHistory(previous.stateHistory, updates.state, previous.state);
+    }
+    list[index] = merged;
     write(KEYS.invoicesReceived, list);
     
     // Atualizar no Firebase se disponível
@@ -364,6 +579,7 @@ async function addExpense(expense) {
     supplierNif: expense.supplierNif ?? "",
     supplierName: expense.supplierName ?? "",
     createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
   
   // Adicionar à lista apenas uma vez
@@ -418,6 +634,9 @@ async function addBudget(budget) {
     list = [];
   }
 
+  const createdAt = new Date().toISOString();
+  const status = budget.status ?? "pending";
+
   const item = {
     id: uid(),
     number: budget.number ?? "",
@@ -431,7 +650,10 @@ async function addBudget(budget) {
     tags: budget.tags ?? "",
     items: budget.items ?? [],
     total: Number(budget.total ?? 0),
-    createdAt: new Date().toISOString(),
+    status: status,
+    createdAt: createdAt,
+    updatedAt: createdAt,
+    stateHistory: [stateHistoryEntry(status, null)],
   };
   
   list.push(item);
@@ -453,7 +675,12 @@ async function updateBudget(id, updates) {
   let list = await getBudgets();
   const index = list.findIndex((x) => x.id === id);
   if (index !== -1) {
-    list[index] = { ...list[index], ...updates };
+    const previous = list[index];
+    const merged = { ...previous, ...updates, updatedAt: new Date().toISOString() };
+    if (updates && Object.prototype.hasOwnProperty.call(updates, 'status') && updates.status !== previous.status) {
+      merged.stateHistory = appendStateHistory(previous.stateHistory, updates.status, previous.status);
+    }
+    list[index] = merged;
     write(KEYS.budgets, list);
     
     // Atualizar no Firebase se disponível
@@ -496,6 +723,10 @@ function getTotals() {
     expensesTotal,
     profit: issuedTotal - expensesTotal,
   };
+}
+
+function getFinancialSummary(options) {
+  return calculateFinancialSummary(options);
 }
 
 // Versão Assíncrona (para uso com await)
@@ -669,6 +900,7 @@ window.getBudgetsSync = getBudgetsSync;
 
 window.getTotals = getTotals;
 window.getTotalsAsync = getTotalsAsync;
+window.getFinancialSummary = getFinancialSummary;
 
 window.sumInvoicesReceivedMonth = sumInvoicesReceivedMonth;
 window.countInvoicesReceivedMonth = countInvoicesReceivedMonth;

@@ -11,6 +11,15 @@ if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length ===
 
 const getDb = () => window.firebaseDb || (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0 ? firebase.firestore() : null);
 
+  const normalizeText = (value) => String(value || '').trim();
+
+  const findClientsByField = async (field, value) => {
+    const snapshot = await getUserCollection().where(field, '==', value).get();
+    return snapshot.docs.map(function(doc) {
+      return { id: doc.id, ...doc.data() };
+    });
+  };
+
   const getUserCollection = () => {
     const db = getDb();
     if (!db) throw new Error("Firestore no disponible");
@@ -30,15 +39,30 @@ const getDb = () => window.firebaseDb || (typeof firebase !== 'undefined' && fir
 
     async createClient(clientData) {
       try {
-        if (!this.validateNifNie(clientData.nif_nie_cif)) {
+        const nif = normalizeText(clientData.nif_nie_cif).toUpperCase();
+        const email = normalizeText(clientData.email);
+
+        if (!this.validateNifNie(nif)) {
           return { success: false, message: 'NIF/NIE/CIF inválido' };
         }
-        if (!this.validateEmail(clientData.email)) {
+        if (!this.validateEmail(email)) {
           return { success: false, message: 'Email inválido' };
         }
 
+        const existingByNif = await findClientsByField('nif_nie_cif', nif);
+        if (existingByNif.length > 0) {
+          return { success: false, message: 'Ya existe un cliente con ese NIF/NIE/CIF' };
+        }
+
+        const existingByEmail = await findClientsByField('email', email);
+        if (existingByEmail.length > 0) {
+          return { success: false, message: 'Ya existe un cliente con ese email' };
+        }
+
         const docRef = await getUserCollection().add({ 
-          ...clientData, 
+          ...clientData,
+          nif_nie_cif: nif,
+          email: email,
           fecha_creacion: getFieldValue() ? getFieldValue().serverTimestamp() : new Date().toISOString()
         });
         console.log("Cliente creado con ID:", docRef.id);
@@ -68,7 +92,32 @@ const getDb = () => window.firebaseDb || (typeof firebase !== 'undefined' && fir
           return { success: false, message: 'Email inválido' };
         }
 
-        await getUserCollection().doc(id).update({ ...clientData });
+        const currentDoc = await getUserCollection().doc(id).get();
+        if (!currentDoc.exists) {
+          return { success: false, message: 'El cliente no existe' };
+        }
+
+        const current = currentDoc.data() || {};
+        const nextNif = clientData.nif_nie_cif ? normalizeText(clientData.nif_nie_cif).toUpperCase() : normalizeText(current.nif_nie_cif).toUpperCase();
+        const nextEmail = clientData.email ? normalizeText(clientData.email) : normalizeText(current.email);
+
+        const nifMatches = await findClientsByField('nif_nie_cif', nextNif);
+        const nifConflict = nifMatches.find(function(doc) { return doc.id !== id; });
+        if (nifConflict) {
+          return { success: false, message: 'Otro cliente ya usa ese NIF/NIE/CIF' };
+        }
+
+        const emailMatches = await findClientsByField('email', nextEmail);
+        const emailConflict = emailMatches.find(function(doc) { return doc.id !== id; });
+        if (emailConflict) {
+          return { success: false, message: 'Otro cliente ya usa ese email' };
+        }
+
+        await getUserCollection().doc(id).update({
+          ...clientData,
+          nif_nie_cif: nextNif,
+          email: nextEmail
+        });
         console.log("Cliente editado:", id);
         return { success: true };
       } catch (error) {
