@@ -465,6 +465,27 @@ function getFinancialSummaryData() {
   var y = now.getFullYear();
   var m = now.getMonth();
 
+  if (window.DashboardSummary && typeof window.DashboardSummary.getFinancialSummary === 'function') {
+    var rangeStart = new Date(y, m, 1);
+    var rangeEnd = new Date(y, m + 1, 0, 23, 59, 59, 999);
+    var summary = window.DashboardSummary.getFinancialSummary({ startDate: rangeStart, endDate: rangeEnd });
+    var netResult = Number(summary.netResult || 0);
+    return {
+      currentNetResult: netResult,
+      netResultClass: netResult >= 0 ? 'is-positive' : 'is-negative',
+      trendClass: 'is-neutral',
+      netStatusLabel: netResult >= 0 ? 'Positivo' : 'Negativo',
+      trendLabel: 'Resumen centralizado',
+      netChangePercent: null,
+      revenue: Number(summary.revenue || 0),
+      expenses: Number(summary.expenses || 0),
+      outstandingAmount: Number(summary.outstandingAmount || 0),
+      overdueAmount: Number(summary.overdueAmount || 0),
+      pendingDocuments: Number(summary.pendingDocuments || 0),
+      overdueDocuments: Number(summary.overdueDocuments || 0)
+    };
+  }
+
   var totalIssuedThisMonth = sumInvoicesIssuedMonthYear(y, m);
   var totalExpensesThisMonth = sumExpensesMonthYear(y, m);
   var currentNetResult = totalIssuedThisMonth - totalExpensesThisMonth;
@@ -506,7 +527,9 @@ function renderPendingSummaryCard() {
   var issuedPendingAmount = sumInvoicesIssuedPendingAmount();
   var budgetsPendingCount = countBudgetsPending();
 
-  primaryEl.textContent = 'Dos tareas clave del mes.';
+  var financial = getFinancialSummaryData();
+
+  primaryEl.textContent = 'Documentos y presupuestos pendientes del mes.';
 
   detailsEl.innerHTML = [
     '<div class="summary-row">',
@@ -518,8 +541,8 @@ function renderPendingSummaryCard() {
         '</div>',
       '</div>',
       '<div class="summary-value">',
-        '<div><span class="summary-count">' + issuedPendingCount + '</span></div>',
-        '<div class="summary-money">' + formatEUR(issuedPendingAmount) + '</div>',
+        '<div><span class="summary-count">' + (financial.pendingDocuments !== undefined ? financial.pendingDocuments : issuedPendingCount) + '</span></div>',
+        '<div class="summary-money">' + formatEUR(financial.outstandingAmount !== undefined ? financial.outstandingAmount : issuedPendingAmount) + '</div>',
       '</div>',
     '</div>',
     '<div class="summary-row">',
@@ -561,6 +584,19 @@ function renderFinancialSummaryCard() {
       '</div>',
       '<div class="summary-value">',
         '<div class="summary-trend ' + financial.netResultClass + '">' + formatEUR(financial.currentNetResult) + '</div>',
+      '</div>',
+    '</div>',
+    '<div class="summary-row">',
+      '<div class="summary-row-left">',
+        '<span class="summary-icon summary-icon--orange"><i class="fas fa-triangle-exclamation"></i></span>',
+        '<div class="summary-copy">',
+          '<div class="summary-label">Documentos vencidos</div>',
+          '<div class="summary-note">Cobros y pagos atrasados</div>',
+        '</div>',
+      '</div>',
+      '<div class="summary-value">',
+        '<div class="summary-trend is-negative">' + (financial.overdueDocuments !== undefined ? financial.overdueDocuments : 0) + '</div>',
+        '<div class="summary-money is-negative">' + formatEUR(financial.overdueAmount !== undefined ? financial.overdueAmount : 0) + '</div>',
       '</div>',
     '</div>',
     '<div class="summary-row">',

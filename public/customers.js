@@ -7,6 +7,11 @@
   const clientsTbody = document.getElementById('clientsTbody');
   const authStatus = document.getElementById('authStatus');
   const clearBtn = document.getElementById('clearBtn');
+  const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+  const countryDropdown = document.getElementById('countryDropdown');
+  const countryToggle = document.getElementById('countryToggle');
+  const countryEmpty = document.getElementById('countryEmpty');
+  let isSaving = false;
 
   const clientFields = {
     id: document.getElementById('clientId'),
@@ -25,10 +30,129 @@
     authStatus.classList.add('alert-' + (type || 'info'));
   }
 
+  function sanitizeName(value) {
+    return (value || '')
+      .replace(/[^A-Za-zÀ-ÖØ-öø-ÿĀ-žА-Яа-яЁёЇїІіЄє\s'-]/g, '')
+      .replace(/\s{2,}/g, ' ');
+  }
+
+  function sanitizePhone(value) {
+    const input = (value || '').toString();
+    const hasLeadingPlus = input.trim().startsWith('+');
+    const digitsOnly = input.replace(/\D/g, '');
+    return (hasLeadingPlus ? '+' : '') + digitsOnly;
+  }
+
+  function getCountryOptions() {
+    return Array.from(document.querySelectorAll('[data-country-value]'));
+  }
+
+  function getAllowedCountries() {
+    return getCountryOptions()
+      .map((option) => option.getAttribute('data-country-value'))
+      .filter((value) => value);
+  }
+
+  function openCountryDropdown() {
+    if (!countryDropdown) return;
+    countryDropdown.classList.remove('d-none');
+    countryDropdown.classList.add('show');
+    if (countryToggle) countryToggle.setAttribute('aria-expanded', 'true');
+  }
+
+  function closeCountryDropdown() {
+    if (!countryDropdown) return;
+    countryDropdown.classList.remove('show');
+    countryDropdown.classList.add('d-none');
+    if (countryToggle) countryToggle.setAttribute('aria-expanded', 'false');
+  }
+
+  function filterCountryOptions() {
+    if (!countryDropdown || !clientFields.country) return;
+
+    const query = (clientFields.country.value || '').trim().toLowerCase();
+    let visibleCount = 0;
+
+    getCountryOptions().forEach((option) => {
+      const value = (option.getAttribute('data-country-value') || '').toLowerCase();
+      const matches = !query || value.includes(query);
+      option.classList.toggle('d-none', !matches);
+      if (matches) visibleCount += 1;
+    });
+
+    if (countryEmpty) {
+      countryEmpty.classList.toggle('d-none', visibleCount !== 0);
+    }
+  }
+
+  function setupInputRestrictions() {
+    if (clientFields.name) {
+      clientFields.name.addEventListener('input', function () {
+        const sanitized = sanitizeName(this.value);
+        if (this.value !== sanitized) this.value = sanitized;
+      });
+    }
+
+    if (clientFields.phone) {
+      clientFields.phone.addEventListener('input', function () {
+        const sanitized = sanitizePhone(this.value);
+        if (this.value !== sanitized) this.value = sanitized;
+      });
+    }
+  }
+
+  function setupCountryCombobox() {
+    if (!clientFields.country || !countryDropdown) return;
+
+    clientFields.country.addEventListener('focus', function () {
+      filterCountryOptions();
+      openCountryDropdown();
+    });
+
+    clientFields.country.addEventListener('input', function () {
+      filterCountryOptions();
+      openCountryDropdown();
+    });
+
+    clientFields.country.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') closeCountryDropdown();
+    });
+
+    if (countryToggle) {
+      countryToggle.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (countryDropdown.classList.contains('d-none')) {
+          filterCountryOptions();
+          openCountryDropdown();
+          clientFields.country.focus();
+        } else {
+          closeCountryDropdown();
+        }
+      });
+    }
+
+    getCountryOptions().forEach((option) => {
+      option.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        clientFields.country.value = option.getAttribute('data-country-value') || '';
+        closeCountryDropdown();
+      });
+    });
+
+    document.addEventListener('click', function (event) {
+      const wrapper = clientFields.country.closest('.country-combobox');
+      if (wrapper && !wrapper.contains(event.target)) closeCountryDropdown();
+    });
+  }
+
   function getCurrentUserId() {
     let user = null;
-    if (window.AuthSystem && typeof window.AuthSystem.getCurrentUser === 'function') {
+    if (window.AuthService && typeof window.AuthService.getCurrentUser === 'function') {
       user = window.AuthService.getCurrentUser();
+    } else if (window.AuthSystem && typeof window.AuthSystem.getCurrentUser === 'function') {
+      user = window.AuthSystem.getCurrentUser();
     }
 
     if (!user) {
@@ -46,7 +170,11 @@
   }
 
   function clearForm() {
-    Object.values(clientFields).forEach(field => field.value = '');
+    Object.values(clientFields).forEach(field => {
+      if (field) field.value = '';
+    });
+    closeCountryDropdown();
+    filterCountryOptions();
     setMessage('Formulario listo para nuevo cliente.', 'info');
   }
 
@@ -100,13 +228,14 @@
 
   function populateForm(id, data) {
     clientFields.id.value = id;
-    clientFields.name.value = data.name || '';
+    clientFields.name.value = sanitizeName(data.nombre || data.name || '');
     clientFields.nif.value = data.nif_nie_cif || '';
     clientFields.email.value = data.email || '';
-    clientFields.phone.value = data.phone || '';
+    clientFields.phone.value = sanitizePhone(data.telefono || data.phone || '');
     clientFields.address.value = data.direccion_fiscal || '';
     clientFields.country.value = data.pais || '';
-    setMessage('Editando cliente: ' + (data.name || '-') , 'info');
+    filterCountryOptions();
+    setMessage('Editando cliente: ' + (data.nombre || data.name || '-') , 'info');
   }
 
   async function saveClient(event) {
@@ -117,12 +246,29 @@
       return;
     }
 
-    const name = (clientFields.name.value || '').trim();
+    if (isSaving) {
+      setMessage('Ya se esta enviando este cliente. Espera un momento.', 'warning');
+      return;
+    }
+
+    const rawName = (clientFields.name.value || '').trim();
+    const name = sanitizeName(rawName).trim();
     const nif = (clientFields.nif.value || '').trim().toUpperCase();
     const email = (clientFields.email.value || '').trim();
+    const phone = sanitizePhone(clientFields.phone.value).trim();
+    const country = (clientFields.country.value || '').trim();
+    const allowedCountries = getAllowedCountries();
+
+    clientFields.name.value = name;
+    clientFields.phone.value = phone;
 
     if (!name || !nif || !email) {
       setMessage('Nombre, NIF y email son obligatorios.', 'warning');
+      return;
+    }
+
+    if (rawName !== name) {
+      setMessage('El nombre solo puede contener letras.', 'warning');
       return;
     }
 
@@ -136,16 +282,24 @@
       return;
     }
 
+    if (country && allowedCountries.length > 0 && !allowedCountries.includes(country)) {
+      setMessage('Selecciona un pais valido de la lista.', 'warning');
+      return;
+    }
+
     const payload = {
       nombre: name,
       nif_nie_cif: nif,
       email: email,
-      telefono: (clientFields.phone.value || '').trim(),
+      telefono: phone,
       direccion_fiscal: (clientFields.address.value || '').trim(),
-      pais: (clientFields.country.value || '').trim()
+      pais: country
     };
 
     try {
+      isSaving = true;
+      if (submitBtn) submitBtn.disabled = true;
+
       if (clientFields.id.value) {
         const result = await window.ClientService.editClient(clientFields.id.value, payload);
         if (!result.success) throw new Error(result.message || 'Error actualizando cliente');
@@ -161,6 +315,9 @@
     } catch (err) {
       console.error('Error guardando cliente:', err);
       setMessage('Error guardando cliente: ' + (err.message || err), 'danger');
+    } finally {
+      isSaving = false;
+      if (submitBtn) submitBtn.disabled = false;
     }
   }
 
@@ -189,7 +346,7 @@
 
   function init() {
     if (!window.waitForAuth) {
-      setMessage('Auth no disponible. Asegúrate de cargar shared/auth-system.js', 'danger');
+      setMessage('Auth no disponible. Asegurate de cargar shared/auth-system.js', 'danger');
       return;
     }
 
@@ -201,7 +358,11 @@
         return;
       }
 
-      const user = window.AuthService.getCurrentUser();
+      const user = (window.AuthService && typeof window.AuthService.getCurrentUser === 'function')
+        ? window.AuthService.getCurrentUser()
+        : (window.AuthSystem && typeof window.AuthSystem.getCurrentUser === 'function'
+          ? window.AuthSystem.getCurrentUser()
+          : null);
       if (user) {
         setMessage('Bienvenido: '+ (user.name || user.email || user.uid), 'success');
       }
@@ -211,6 +372,8 @@
 
     form.addEventListener('submit', saveClient);
     clearBtn.addEventListener('click', clearForm);
+    setupInputRestrictions();
+    setupCountryCombobox();
     
     clearForm();
   }

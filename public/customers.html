@@ -269,7 +269,55 @@
           </div>
           <div class="col-md-4">
             <label for="country" class="form-label">País</label>
-            <input type="text" id="country" class="form-control" placeholder="España">
+            <div class="country-combobox position-relative">
+              <div class="input-group">
+                <input type="text" id="country" class="form-control" placeholder="España" autocomplete="off">
+                <button type="button" id="countryToggle" class="btn btn-outline-secondary" aria-label="Abrir lista de países">
+                  <i class="fas fa-chevron-down"></i>
+                </button>
+              </div>
+              <div id="countryDropdown" class="dropdown-menu w-100 d-none shadow-sm" style="max-height: 220px; overflow-y: auto; z-index: 20;">
+                <button type="button" class="dropdown-item" data-country-value="España">España</button>
+                <button type="button" class="dropdown-item" data-country-value="Portugal">Portugal</button>
+                <button type="button" class="dropdown-item" data-country-value="Francia">Francia</button>
+                <button type="button" class="dropdown-item" data-country-value="Alemania">Alemania</button>
+                <button type="button" class="dropdown-item" data-country-value="Italia">Italia</button>
+                <button type="button" class="dropdown-item" data-country-value="Andorra">Andorra</button>
+                <button type="button" class="dropdown-item" data-country-value="Austria">Austria</button>
+                <button type="button" class="dropdown-item" data-country-value="Bélgica">Bélgica</button>
+                <button type="button" class="dropdown-item" data-country-value="Croacia">Croacia</button>
+                <button type="button" class="dropdown-item" data-country-value="Dinamarca">Dinamarca</button>
+                <button type="button" class="dropdown-item" data-country-value="Eslovaquia">Eslovaquia</button>
+                <button type="button" class="dropdown-item" data-country-value="Eslovenia">Eslovenia</button>
+                <button type="button" class="dropdown-item" data-country-value="Estonia">Estonia</button>
+                <button type="button" class="dropdown-item" data-country-value="Finlandia">Finlandia</button>
+                <button type="button" class="dropdown-item" data-country-value="Grecia">Grecia</button>
+                <button type="button" class="dropdown-item" data-country-value="Hungría">Hungría</button>
+                <button type="button" class="dropdown-item" data-country-value="Irlanda">Irlanda</button>
+                <button type="button" class="dropdown-item" data-country-value="Letonia">Letonia</button>
+                <button type="button" class="dropdown-item" data-country-value="Lituania">Lituania</button>
+                <button type="button" class="dropdown-item" data-country-value="Luxemburgo">Luxemburgo</button>
+                <button type="button" class="dropdown-item" data-country-value="Malta">Malta</button>
+                <button type="button" class="dropdown-item" data-country-value="Noruega">Noruega</button>
+                <button type="button" class="dropdown-item" data-country-value="Polonia">Polonia</button>
+                <button type="button" class="dropdown-item" data-country-value="República Checa">República Checa</button>
+                <button type="button" class="dropdown-item" data-country-value="Rumanía">Rumanía</button>
+                <button type="button" class="dropdown-item" data-country-value="Suecia">Suecia</button>
+                <button type="button" class="dropdown-item" data-country-value="Suiza">Suiza</button>
+                <button type="button" class="dropdown-item" data-country-value="Reino Unido">Reino Unido</button>
+                <button type="button" class="dropdown-item" data-country-value="Estados Unidos">Estados Unidos</button>
+                <button type="button" class="dropdown-item" data-country-value="México">México</button>
+                <button type="button" class="dropdown-item" data-country-value="Argentina">Argentina</button>
+                <button type="button" class="dropdown-item" data-country-value="Brasil">Brasil</button>
+                <button type="button" class="dropdown-item" data-country-value="Chile">Chile</button>
+                <button type="button" class="dropdown-item" data-country-value="Colombia">Colombia</button>
+                <button type="button" class="dropdown-item" data-country-value="Perú">Perú</button>
+                <button type="button" class="dropdown-item" data-country-value="Uruguay">Uruguay</button>
+                <button type="button" class="dropdown-item" data-country-value="Venezuela">Venezuela</button>
+                <button type="button" class="dropdown-item" data-country-value="Países Bajos">Países Bajos</button>
+                <div id="countryEmpty" class="dropdown-item-text text-muted d-none">No hay coincidencias.</div>
+              </div>
+            </div>
           </div>
           <div class="col-12 d-flex gap-2">
             <button type="submit" class="btn btn-primary">

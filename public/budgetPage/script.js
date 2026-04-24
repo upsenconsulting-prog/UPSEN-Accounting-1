@@ -8,6 +8,34 @@ function moneyEUR(n) {
   return 'EUR ' + Number(n || 0).toFixed(2);
 }
 
+function clampBudgetNumber(value) {
+  const parsed = parseFloat(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return parsed;
+}
+
+function isCompleteBudgetRow(row) {
+  const desc = row.querySelector('.desc')?.value || '';
+  const qty = clampBudgetNumber(row.querySelector('.qty')?.value);
+  const unit = clampBudgetNumber(row.querySelector('.unit')?.value);
+  return desc.trim().length > 0 && qty > 0 && unit > 0;
+}
+
+function setBudgetMessage(message, type) {
+  let messageEl = document.getElementById('budgetValidationMessage');
+  const saveBtn = document.getElementById('saveBtn');
+  if (!messageEl && saveBtn && saveBtn.parentElement) {
+    messageEl = document.createElement('div');
+    messageEl.id = 'budgetValidationMessage';
+    messageEl.className = 'small mt-2';
+    saveBtn.parentElement.insertBefore(messageEl, saveBtn);
+  }
+
+  if (!messageEl) return;
+  messageEl.textContent = message || '';
+  messageEl.className = 'small mt-2 ' + (type === 'error' ? 'text-danger' : type === 'success' ? 'text-success' : 'text-muted');
+}
+
 // ========== ID DO USUÁRIO ==========
 // Use the global getUserId from store.js
 const getUserId = window.getUserId;
@@ -163,7 +191,7 @@ if (addItemBtn) {
     const newRow = document.createElement('tr');
     newRow.innerHTML = '<td><input type="text" class="form-control desc" placeholder="Artículo"></td>' +
       '<td><input type="number" class="form-control qty" value="1" min="1" oninput="updateTotals()"></td>' +
-      '<td><input type="number" class="form-control unit" value="0" step="0.01" oninput="updateTotals()"></td>' +
+      '<td><input type="number" class="form-control unit" value="0" min="0" step="0.01" oninput="updateTotals()"></td>' +
       '<td class="line-total">0.00</td>' +
       '<td><button type="button" class="btn btn-danger btn-sm remove-btn">X</button></td>';
     tbody.appendChild(newRow);
@@ -190,8 +218,14 @@ window.updateTotals = function() {
   let retentionRate = parseFloat($('retention')?.value) || 0;
   
   rows.forEach(row => {
-    const qty = parseFloat(row.querySelector('.qty')?.value) || 0;
-    const unit = parseFloat(row.querySelector('.unit')?.value) || 0;
+    const qtyInput = row.querySelector('.qty');
+    const unitInput = row.querySelector('.unit');
+    const qty = clampBudgetNumber(qtyInput?.value);
+    const unit = clampBudgetNumber(unitInput?.value);
+
+    if (qtyInput && String(qtyInput.value) !== String(qty)) qtyInput.value = qty || 0;
+    if (unitInput && String(unitInput.value) !== String(unit)) unitInput.value = unit || 0;
+
     const total = qty * unit;
     
     const lineTotalEl = row.querySelector('.line-total');
@@ -205,6 +239,18 @@ window.updateTotals = function() {
   const grandTotalEl = document.getElementById('grandTotal');
   if (grandTotalEl) {
     grandTotalEl.textContent = 'Total: ' + moneyEUR(totalWithRetention);
+  }
+
+  const invalidRow = Array.from(rows).some(function(row) {
+    const desc = row.querySelector('.desc')?.value || '';
+    const qty = clampBudgetNumber(row.querySelector('.qty')?.value);
+    const unit = clampBudgetNumber(row.querySelector('.unit')?.value);
+    return desc.trim().length > 0 && (qty <= 0 || unit <= 0);
+  });
+  if (invalidRow) {
+    setBudgetMessage('Cada línea completada debe tener cantidad y precio mayores que cero.', 'error');
+  } else {
+    setBudgetMessage('', '');
   }
   
   return grandTotal;
@@ -240,13 +286,14 @@ function clearForm() {
   if (statusSelect) {
     statusSelect.value = 'pending';
   }
+  setBudgetMessage('', '');
   
   const tbody = document.querySelector('#itemsTable tbody');
   if (tbody) {
     tbody.innerHTML = '<tr>' +
       '<td><input type="text" class="form-control desc" placeholder="Artículo"></td>' +
       '<td><input type="number" class="form-control qty" value="1" min="1" oninput="updateTotals()"></td>' +
-      '<td><input type="number" class="form-control unit" value="0" step="0.01" oninput="updateTotals()"></td>' +
+      '<td><input type="number" class="form-control unit" value="0" min="0" step="0.01" oninput="updateTotals()"></td>' +
       '<td class="line-total">0.00</td>' +
       '<td><button type="button" class="btn btn-danger btn-sm remove-btn">X</button></td></tr>';
   }
@@ -267,13 +314,20 @@ if (saveBtn) {
   saveBtn.addEventListener('click', async () => {
     const rows = document.querySelectorAll('#itemsTable tbody tr');
     const items = [];
+    const validationErrors = [];
     
     rows.forEach(row => {
       const desc = row.querySelector('.desc')?.value || '';
-      const qty = parseFloat(row.querySelector('.qty')?.value) || 0;
-      const unit = parseFloat(row.querySelector('.unit')?.value) || 0;
+      const qty = clampBudgetNumber(row.querySelector('.qty')?.value);
+      const unit = clampBudgetNumber(row.querySelector('.unit')?.value);
       
-      if (desc.trim()) {
+      if (desc.trim() || qty > 0 || unit > 0) {
+        if (!desc.trim()) validationErrors.push('Hay líneas sin descripción.');
+        if (qty <= 0) validationErrors.push('La cantidad debe ser mayor que cero.');
+        if (unit <= 0) validationErrors.push('El precio unitario debe ser mayor que cero.');
+      }
+
+      if (desc.trim() && qty > 0 && unit > 0) {
         items.push({ desc, qty, unit, total: qty * unit });
       }
     });
@@ -292,16 +346,25 @@ if (saveBtn) {
     };
     
     if (!data.date || !data.customer) {
+      setBudgetMessage('Por favor complete: fecha y cliente.', 'error');
       alert('Por favor complete: fecha y cliente.');
       return;
     }
     
     if (data.items.length === 0) {
+      setBudgetMessage('Por favor añada al menos un artículo completo.', 'error');
       alert('Por favor añada al menos un artículo.');
+      return;
+    }
+
+    if (validationErrors.length > 0) {
+      setBudgetMessage(validationErrors[0], 'error');
+      alert(validationErrors[0]);
       return;
     }
     
     await saveUserBudget(data);
+    setBudgetMessage('Presupuesto guardado correctamente.', 'success');
     alert('Presupuesto guardado correctamente!');
     clearForm();
     

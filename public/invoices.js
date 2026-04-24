@@ -97,10 +97,13 @@
 
       invoices.forEach(invoice => {
         const row = document.createElement('tr');
-        const estadoBadge = invoice.estado === 'pagada' ? 'badge-success' : 
-                           invoice.estado === 'parcial' ? 'badge-warning' : 'badge-danger';
-        const estadoText = invoice.estado === 'pagada' ? 'Pagada' : 
-                          invoice.estado === 'parcial' ? 'Parcial' : 'Pendiente';
+        const estado = String(invoice.estado || 'pendiente').toLowerCase();
+        const estadoBadge = estado === 'pagada' ? 'badge-success' : 
+                           estado === 'parcial' ? 'badge-warning' : 
+                           estado === 'vencida' ? 'badge-danger' : 'badge-secondary';
+        const estadoText = estado === 'pagada' ? 'Pagada' : 
+                          estado === 'parcial' ? 'Parcial' : 
+                          estado === 'vencida' ? 'Vencida' : 'Pendiente';
 
         // Get client and provider names
         const clientName = invoice.client ? `${invoice.client.nombre} (${invoice.client.nif_nie_cif})` : 'N/A';
@@ -165,7 +168,7 @@
     const clientId = document.getElementById('clientSelect').value;
     const providerId = document.getElementById('providerSelect').value;
     const total = parseFloat(document.getElementById('total').value) || 0;
-    const estado = document.getElementById('estado').value;
+    const estado = String(document.getElementById('estado').value || 'pendiente').toLowerCase();
     const descripcion = document.getElementById('descripcion').value.trim();
     const fecha = document.getElementById('fecha').value;
 

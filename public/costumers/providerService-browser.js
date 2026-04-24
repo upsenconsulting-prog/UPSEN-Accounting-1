@@ -10,6 +10,15 @@ if (typeof firebase === 'undefined' || !firebase.apps.length) {
 
 const getDb = () => window.firebaseDb || (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0 ? firebase.firestore() : null);
 
+  const normalizeText = (value) => String(value || '').trim();
+
+  const findDuplicateNif = async (nif, excludeId) => {
+    const snapshot = await getUserCollection().where('nif_nie_cif', '==', nif).get();
+    return snapshot.docs.some(function(doc) {
+      return !excludeId || doc.id !== excludeId;
+    });
+  };
+
   const getUserCollection = () => {
     const db = getDb();
     if (!db) throw new Error("Firestore no disponible");
@@ -28,16 +37,26 @@ const getDb = () => window.firebaseDb || (typeof firebase !== 'undefined' && fir
 
     async createProvider(providerData) {
       try {
-        if (!this.validateNifNie(providerData.nif_nie_cif)) {
+        const nif = normalizeText(providerData.nif_nie_cif);
+        const email = normalizeText(providerData.email);
+
+        if (!this.validateNifNie(nif)) {
           return { success: false, message: 'NIF/NIE/CIF inválido' };
         }
-        if (!this.validateEmail(providerData.email)) {
+        if (!this.validateEmail(email)) {
           return { success: false, message: 'Email inválido' };
         }
+        if (await findDuplicateNif(nif)) {
+          return { success: false, message: 'Ya existe un proveedor con ese NIF/NIE/CIF' };
+        }
 
+        const timestamp = getFieldValue() ? getFieldValue().serverTimestamp() : new Date().toISOString();
         const docRef = await getUserCollection().add({ 
-          ...providerData, 
-          fecha_creacion: getFieldValue() ? getFieldValue().serverTimestamp() : new Date().toISOString()
+          ...providerData,
+          nif_nie_cif: nif,
+          email: email,
+          fecha_creacion: timestamp,
+          fecha_actualizacion: timestamp
         });
         console.log("Proveedor creado con ID:", docRef.id);
         return { success: true };
@@ -66,7 +85,22 @@ const getDb = () => window.firebaseDb || (typeof firebase !== 'undefined' && fir
           return { success: false, message: 'Email inválido' };
         }
 
-        await getUserCollection().doc(id).update({ ...providerData });
+        const currentDoc = await getUserCollection().doc(id).get();
+        if (!currentDoc.exists) {
+          return { success: false, message: 'El proveedor no existe' };
+        }
+
+        const nextNif = providerData.nif_nie_cif ? normalizeText(providerData.nif_nie_cif) : normalizeText(currentDoc.data().nif_nie_cif);
+        if (nextNif && await findDuplicateNif(nextNif, id)) {
+          return { success: false, message: 'Ya existe un proveedor con ese NIF/NIE/CIF' };
+        }
+
+        await getUserCollection().doc(id).update({
+          ...providerData,
+          nif_nie_cif: nextNif,
+          email: providerData.email ? normalizeText(providerData.email) : currentDoc.data().email,
+          fecha_actualizacion: getFieldValue() ? getFieldValue().serverTimestamp() : new Date().toISOString()
+        });
         console.log("Proveedor editado:", id);
         return { success: true };
       } catch (error) {

@@ -437,10 +437,21 @@ async function renderInvoices() {
       '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>' +
       '<td>' + getPaymentMethodText(inv.paymentMethod) + (inv.paymentDate ? '<br><small>' + formatDate(inv.paymentDate) + '</small>' : '') + '</td>' +
       '<td class="action-buttons">' +
-        '<button class="btn btn-primary" data-view="' + inv.id + '" title="Ver detalles"><i class="fas fa-eye"></i></button>' +
-        '<button class="btn btn-info" data-rectify="' + inv.id + '" title="Cambiar a factura rectificativa"><i class="fas fa-redo"></i></button>' +
-        '<button class="btn btn-success" data-paid="' + inv.id + '" title="Marcar como pagada"><i class="fas fa-check"></i></button>' +
-        '<button class="btn btn-danger" data-del="' + inv.id + '" title="Eliminar"><i class="fas fa-trash"></i></button>' +
+        '<div class="dropdown" style="position:relative; z-index:2050">' +
+          '<button class="btn btn-secondary dropdown-toggle" type="button" id="actionsMenu-' + inv.id + '" data-bs-toggle="dropdown" aria-expanded="false">' +
+            'Acciones' +
+          '</button>' +
+          '<ul class="dropdown-menu" aria-labelledby="actionsMenu-' + inv.id + '" style="z-index:2150">' +
+            '<li><a class="dropdown-item" href="#" data-view="' + inv.id + '">Ver detalles</a></li>' +
+            '<li><a class="dropdown-item" href="#" data-register="' + inv.id + '">Registrar cobro</a></li>' +
+            '<li><a class="dropdown-item" href="#" data-send="' + inv.id + '">Enviar factura</a></li>' +
+            '<li><a class="dropdown-item" href="#" data-download="' + inv.id + '">Descargar PDF</a></li>' +
+            '<li><a class="dropdown-item" href="#" data-rectify="' + inv.id + '">Cambiar a rectificativa</a></li>' +
+            '<li><a class="dropdown-item" href="#" data-duplicate="' + inv.id + '">Duplicar factura</a></li>' +
+            '<li><hr class="dropdown-divider"></li>' +
+            '<li><a class="dropdown-item text-danger" href="#" data-del="' + inv.id + '">Eliminar factura</a></li>' +
+          '</ul>' +
+        '</div>' +
       '</td>';
     tbody.appendChild(tr);
   }
@@ -455,14 +466,69 @@ async function renderInvoices() {
     });
   }
 
-  var paidBtns = tbody.querySelectorAll('[data-paid]');
-  for (var k = 0; k < paidBtns.length; k++) {
-    paidBtns[k].addEventListener('click', function() {
-      var id = this.getAttribute('data-paid');
-      $('#markPaidInvoiceId').value = id;
-      $('formMarkPaid [name="paymentDate"]').value = new Date().toISOString().split('T')[0];
-      var modal = new bootstrap.Modal(document.getElementById('modalMarkPaid'));
-      modal.show();
+  // Registrar cobro (data-register)
+  var registerBtns = tbody.querySelectorAll('[data-register]');
+  for (var k = 0; k < registerBtns.length; k++) {
+    registerBtns[k].addEventListener('click', function(e) {
+      e.preventDefault();
+      var id = this.getAttribute('data-register');
+      var markEl = document.getElementById('markPaidInvoiceId');
+      if (markEl) markEl.value = id;
+      var formElem = document.querySelector('formMarkPaid');
+      var paymentDateInput = document.querySelector('#modalMarkPaid [name="paymentDate"]');
+      if (paymentDateInput) paymentDateInput.value = new Date().toISOString().split('T')[0];
+      var modalEl = document.getElementById('modalMarkPaid');
+      if (modalEl) {
+        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+      }
+    });
+  }
+
+  // Enviar factura (data-send)
+  var sendBtns = tbody.querySelectorAll('[data-send]');
+  for (var s = 0; s < sendBtns.length; s++) {
+    sendBtns[s].addEventListener('click', function(e) {
+      e.preventDefault();
+      var id = this.getAttribute('data-send');
+      if (typeof window.sendInvoice === 'function') {
+        window.sendInvoice(id);
+      } else {
+        alert('Función enviar factura no implementada.');
+      }
+    });
+  }
+
+  // Descargar PDF (data-download)
+  var downloadBtns = tbody.querySelectorAll('[data-download]');
+  for (var d = 0; d < downloadBtns.length; d++) {
+    downloadBtns[d].addEventListener('click', function(e) {
+      e.preventDefault();
+      var id = this.getAttribute('data-download');
+      var list = getAllInvoicesIssued();
+      var inv = list.find(function(x) { return x.id === id; });
+      if (!inv) { alert('Factura no encontrada para exportar.'); return; }
+      if (typeof exportToPDF === 'function') {
+        exportToPDF([inv]);
+      } else {
+        alert('Función de exportar PDF no disponible.');
+      }
+    });
+  }
+
+  // Duplicar factura (data-duplicate)
+  var dupBtns = tbody.querySelectorAll('[data-duplicate]');
+  for (var u = 0; u < dupBtns.length; u++) {
+    dupBtns[u].addEventListener('click', function(e) {
+      e.preventDefault();
+      var id = this.getAttribute('data-duplicate');
+      var list = getAllInvoicesIssued();
+      var original = list.find(function(x) { return x.id === id; });
+      if (!original) { alert('Factura original no encontrada.'); return; }
+      var copy = Object.assign({}, original);
+      copy.id = undefined; // allow processInvoiceIssued to assign new id
+      copy.invoiceNumber = 'COPY-' + (copy.invoiceNumber || '') + '-' + String(Date.now()).slice(-4);
+      try { processInvoiceIssued(copy); alert('Factura duplicada.'); } catch (e) { console.error(e); alert('No se pudo duplicar.'); }
     });
   }
 
