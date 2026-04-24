@@ -1,4 +1,4 @@
-import { editClient, getClients } from "./clientService.js";
+import { editClient, getClients } from "../../src/services/clients/clientService.js";
 
 async function runTest() {
   const clients = await getClients();

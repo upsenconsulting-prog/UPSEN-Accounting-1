@@ -5,10 +5,12 @@ function $(id) {
   return document.getElementById(id);
 }
 
-function moneyEUR(n) {
+var pageUtils = window.PageUtils || {};
+var moneyEUR = pageUtils.moneyEUR || function(n) {
   var v = Number(n || 0);
   return 'EUR ' + v.toFixed(2);
-}
+};
+var getCurrentUserId = pageUtils.getCurrentUserId || function() { return null; };
 
 // ========== MARK ACTIVE PAGE ==========
 function markActivePage() {
@@ -90,36 +92,18 @@ function deleteUserExpense(id) {
 
 // ========== IMPORTAR DADOS EM MASSA ==========
 async function importExpensesFromCSV(csvContent) {
-  var lines = csvContent.split('\n');
-  if (lines.length < 2) {
+  var parsed = window.CsvUtils ? window.CsvUtils.parseCsvContent(csvContent) : { headers: [], rows: [] };
+  if (!parsed.rows || parsed.rows.length === 0) {
     alert('CSV vazio ou sem dados.');
     return 0;
   }
-  
-  var headers = lines[0].split(',').map(function(h) { return h.trim().toLowerCase().replace(/"/g, ''); });
+
+  var headers = parsed.headers;
   var importedCount = 0;
   var promises = [];
-  
-  for (var i = 1; i < lines.length; i++) {
-    var line = lines[i].trim();
-    if (!line) continue;
-    
-    var values = [];
-    var current = '';
-    var inQuotes = false;
-    for (var j = 0; j < line.length; j++) {
-      var char = line[j];
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === ',' && !inQuotes) {
-        values.push(current.trim());
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-    values.push(current.trim());
-    
+
+  for (var i = 0; i < parsed.rows.length; i++) {
+    var values = parsed.rows[i];
     var expense = {};
     for (var k = 0; k < headers.length && k < values.length; k++) {
       var header = headers[k].replace(/"/g, '');

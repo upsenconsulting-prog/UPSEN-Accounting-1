@@ -1,4 +1,4 @@
-import { createProvider, getProviders } from "./providerService.js";
+import { createProvider, getProviders } from "../../src/services/providers/providerService.js";
 
 async function runTest() {
   console.log("=== TEST PROVIDER VALID ===");

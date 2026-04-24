@@ -1,12 +1,12 @@
 import { 
   createClient, getClients, editClient, deleteClient 
-} from "./clientService.js";
+} from "../../src/services/clients/clientService.js";
 import { 
   createProvider, getProviders, editProvider, deleteProvider 
-} from "./providerService.js";
+} from "../../src/services/providers/providerService.js";
 import { 
   createInvoice, getInvoices 
-} from "./invoiceService.js";
+} from "../../src/services/invoices/invoiceService.js";
 
 const runAllTests = async () => {
   console.log("=== CREATE CLIENT ===");

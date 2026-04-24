@@ -1,4 +1,4 @@
-import { createClient, getClients } from "./clientService.js";
+import { createClient, getClients } from "../../src/services/clients/clientService.js";
 
 async function run() {
   console.log("=== TEST CLIENT VALID ===");

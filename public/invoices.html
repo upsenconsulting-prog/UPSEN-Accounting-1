@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -6,84 +6,9 @@
   <title>Facturas - FactuFácil</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #f7f9fc;
-      color: #1f2937;
-      margin: 0;
-      overflow-x: hidden;
-    }
-    /* SIDEBAR (copied from frontPage) */
-    .sidebar {
-      width: 260px; 
-      background: #FFFFFF; 
-      border-right: 1px solid #e6eaf0;
-      color: #1F2937; 
-      min-height: 100vh; 
-      height: 100vh;
-      max-height: 100vh;
-      position: fixed; 
-      z-index: 100;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    .sidebar-content {
-      flex: 1;
-      min-height: 0;
-      overflow-y: auto;
-      overflow-x: hidden;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-gutter: stable;
-    }
-    .sidebar-content::-webkit-scrollbar { width: 6px; }
-    .sidebar-content::-webkit-scrollbar-track { background: #e6eaf0; border-radius: 3px; }
-    .sidebar-content::-webkit-scrollbar-thumb { background: #6B7280; border-radius: 3px; }
-    .sidebar-header { padding: 30px 20px; font-size: 1.4em; font-weight: 700; text-align: center; border-bottom: 1px solid #e6eaf0; display: flex; align-items: center; justify-content: center; gap: 10px; }
-    .app-brand { display: inline-flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; color: #1F2937; cursor: pointer; user-select: none; }
-    .app-brand:hover { opacity: 0.92; }
-    .app-logo { width: min(190px, 100%); height: auto; object-fit: contain; object-position: center; display: block; border-radius: 0; }
-    .app-brand-text { font-size: 1.75rem; font-weight: 700; line-height: 1; color: #1F2937; }
-    .sidebar-menu { list-style: none; padding: 15px 0; margin: 0; }
-    .sidebar-menu li { padding: 0 15px; margin-bottom: 5px; }
-    .sidebar-link { color: #6B7280; text-decoration: none; display: flex; align-items: center; gap: 12px; width: 100%; justify-content: flex-start; min-width: 0; padding: 12px 15px; border-radius: 8px; transition: all 0.2s ease; font-weight: 500; cursor: pointer; }
-    .sidebar-toggle { border: 0; background: transparent; font: inherit; text-align: left; }
-    .sidebar-link i { width: 24px; text-align: center; font-size: 1.1em; }
-    .sidebar-link:hover { background: #e6eaf0; color: #1F2937; }
-    .sidebar-menu li.active > .sidebar-link, .sidebar-link.active { background: #e2f1fd; color: #0958b2; font-weight: 600; }
-    .sidebar-menu li.active > .sidebar-link i, .sidebar-link.active i { color: #0958b2; }
-    .sidebar-link-disabled { color: #6B7280; cursor: default; opacity: 0.95; }
-    .sidebar-link-disabled:hover { background: transparent; color: #6B7280; }
-    a, button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"], summary, select, .clickable, .sidebar-link, .sidebar-toggle, .menu-item, .card-action, .icon-button, .menu-link { cursor: pointer; }
-    body, p, span, div, h1, h2, h3, h4, h5, h6, label, td, th { cursor: default; }
-    h1.clickable, h2.clickable, h3.clickable, h4.clickable, h5.clickable, h6.clickable, div.clickable, span.clickable { cursor: pointer; }
-    .clickable, .clickable *, a[href], a[href] *, [role="button"], [role="button"] *, .btn, .btn * { cursor: pointer !important; }
-    .section-title.clickable { display: inline-flex; align-items: center; gap: 8px; transition: opacity 0.2s ease; }
-    .section-title.clickable:hover { opacity: 0.85; }
-    .dashboard-card.clickable { transition: transform 0.15s ease, box-shadow 0.15s ease; }
-    .dashboard-card.clickable:hover { transform: translateY(-1px); }
-    .app-brand, .section-title.clickable, .dashboard-card.clickable, .sidebar-link, .sidebar-toggle, .btn, button, a { user-select: none; }
-    .sidebar-link-disabled, .sidebar-link-disabled:hover, [aria-disabled="true"], button:disabled, .btn:disabled, [disabled] { cursor: default !important; }
-    .sidebar-header-sm { padding: 12px 20px; font-size: 0.85em; font-weight: 600; color: #0958b2; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e6eaf0; margin: 0 15px; }
-    .sidebar-parent { position: relative; }
-    .sidebar-parent-arrow { margin-left: auto !important; transition: transform 0.2s ease; }
-    .sidebar-parent.open .sidebar-parent-arrow { transform: rotate(90deg); }
-    .sidebar-submenu { display: none; list-style: none; padding: 0 0 0 12px; margin: 4px 0 8px 18px; border-left: 2px solid #e2f1fd; width: calc(100% - 18px); }
-    .sidebar-submenu .sidebar-link { padding: 10px 12px; font-size: 0.95em; }
-    .sidebar-submenu.open, .sidebar-submenu.show { display: block; }
-    /* MAIN */
-    .main-content { margin-left: 260px; padding: 32px; min-height: 100vh; max-width: 1200px; margin-right: auto; }
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
-    .page-title { font-size: 1.8em; font-weight: 700; color: #1F2937; display: flex; align-items: center; gap: 15px; margin: 0; }
-    .card { border-radius: 12px; border: 1px solid #e6eaf0; }
-    .form-label { font-weight: 600; }
-    .table-wrapper { max-height: 500px; overflow-y: auto; }
-    .nav-tabs .nav-link { border-radius: 8px 8px 0 0; }
-    .tab-content { padding: 20px; }
-    @media (max-width: 992px) { .sidebar { position: relative; width: 100%; min-height: auto; height: auto; max-height: none; border-right: none; border-bottom: 1px solid #e6eaf0; overflow: visible; } .sidebar-content { max-height: 60vh; } .main-content { margin-left: 0; padding: 20px; } }
-  </style>
+  <link href="shared/app-shell.css" rel="stylesheet">
+  
+  <link href="invoices.css" rel="stylesheet">
 </head>
 <body>
   <!-- Sidebar -->
@@ -248,92 +173,15 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
   <script src="shared/firebase-config.js"></script>
   <script src="shared/auth-system.js"></script>
-  <script src="costumers/clientService-browser.js"></script>
-  <script src="costumers/providerService-browser.js"></script>
-  <script src="costumers/invoiceService-browser.js"></script>
-  <script src="invoices.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      initBasicInteractions();
-    });
-
-    function initBasicInteractions() {
-      const brand = document.querySelector('.app-brand');
-      if (brand) {
-        brand.addEventListener('keydown', function (e) {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            window.location.href = brand.getAttribute('href');
-          }
-        });
-      }
-
-      document.querySelectorAll('.clickable[role="button"]').forEach((el) => {
-        el.addEventListener('keydown', function (e) {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            el.click();
-          }
-        });
-      });
-
-      initSidebarNavigation();
-    }
-
-    function normalizeSidebarPath(path) {
-      return (path || '').replace(/\\/g, '/').toLowerCase();
-    }
-
-    function initSidebarNavigation() {
-      const currentPath = normalizeSidebarPath(window.location.pathname);
-      const links = Array.from(document.querySelectorAll('.sidebar a.sidebar-link[data-path]'));
-      let bestLink = null;
-      let bestScore = -1;
-
-      links.forEach((link) => {
-        const rawDataPath = link.getAttribute('data-path') || '';
-        const candidates = rawDataPath.split(',').map((part) => normalizeSidebarPath(part.trim())).filter(Boolean);
-        candidates.forEach((candidate) => {
-          if (currentPath.includes(candidate) && candidate.length > bestScore) {
-            bestLink = link;
-            bestScore = candidate.length;
-          }
-        });
-      });
-
-      if (bestLink) {
-        bestLink.classList.add('active');
-        const item = bestLink.closest('li');
-        if (item) item.classList.add('active');
-
-        const submenu = bestLink.closest('.sidebar-submenu');
-        if (submenu) {
-          submenu.classList.add('open');
-          const parent = submenu.closest('.sidebar-parent');
-          if (parent) {
-            parent.classList.add('open');
-            const toggle = parent.querySelector('.sidebar-toggle');
-            if (toggle) toggle.setAttribute('aria-expanded', 'true');
-          }
-        }
-      }
-
-      document.querySelectorAll('.sidebar .sidebar-toggle').forEach((toggle) => {
-        toggle.addEventListener('click', () => {
-          const parent = toggle.closest('.sidebar-parent');
-          const submenu = parent ? parent.querySelector('.sidebar-submenu') : null;
-          if (!submenu) return;
-
-          const willOpen = !submenu.classList.contains('open');
-          parent.classList.toggle('open', willOpen);
-          submenu.classList.toggle('open', willOpen);
-          toggle.setAttribute('aria-expanded', String(willOpen));
-        });
-      });
-    }
-    function confirmLogout() { 
-      if (confirm('¿Cerrar sesión?')) window.location.href = 'login.html'; 
-    }
-  </script>
+  <script src="shared/page-utils.js"></script>
+  <script src="../src/services/clients/clientService-browser.js"></script>
+  <script src="../src/services/providers/providerService-browser.js"></script>
+  <script src="shared/page-shell.js"></script>
+  <script src="../src/services/invoices/invoiceService-browser.js"></script>
+  <script src="../src/pages/invoices/invoices.js"></script>
+  
+  <script src="invoices.inline.js"></script>
 </body>
 </html>
+
+

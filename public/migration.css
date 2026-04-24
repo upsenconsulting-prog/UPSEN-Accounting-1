@@ -1,0 +1,14 @@
+﻿@import url("shared/app-shell.css");
+
+body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #2a4d9c 0%, #3a6cd6 100%); min-height: 100vh; padding: 20px; }
+    .container { max-width: 800px; }
+    .card { border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+    .card-header { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); color: white; border-radius: 16px 16px 0 0 !important; padding: 20px; }
+    .btn-primary { background: linear-gradient(135deg, #2a4d9c, #3a6cd6); border: none; }
+    .btn-primary:hover { background: linear-gradient(135deg, #1a3a7c, #2a4d9c); }
+    .status-badge { padding: 5px 10px; border-radius: 5px; font-size: 0.85em; }
+    .status-ok { background: #d4edda; color: #155724; }
+    .status-error { background: #f8d7da; color: #721c24; }
+    .status-warning { background: #fff3cd; color: #856404; }
+    pre { background: #f8f9fa; padding: 15px; border-radius: 8px; max-height: 300px; overflow-y: auto; }
+
